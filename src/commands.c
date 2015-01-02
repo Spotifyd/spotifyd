@@ -54,7 +54,7 @@ void command_lists(sp_session *session, const struct command * const command)
 	pthread_mutex_lock(&search_result_lock);
 	while(search_result[i] != NULL && i < NUM_SEARCH_RESULTS)
 	{
-		sock_send_track(command->sockfd, search_result[i], i);
+		sock_send_track_with_trackn(command->sockfd, search_result[i], i);
 		++i;
 	}
 	pthread_mutex_unlock(&search_result_lock);
@@ -69,7 +69,7 @@ void command_listq(sp_session *session, const struct command * const command)
 	pthread_mutex_lock(&queue_lock);
 	while(queue[i] != NULL && i < NUM_SEARCH_RESULTS)
 	{
-		sock_send_track(command->sockfd, queue[i], i);
+		sock_send_track_with_trackn(command->sockfd, queue[i], i);
 		++i;
 	}
 	pthread_mutex_unlock(&queue_lock);

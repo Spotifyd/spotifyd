@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <libspotify/api.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "queue.h"
 #include "session.h"
@@ -75,6 +76,12 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		exit(1);
 	}
 
+	/*
+	 * Unless the command is already handled, handle it here.
+	 * Commands get the 'done' property set to true once they
+	 * are done, before this a response is sent to the client
+	 * and the socket is closed.
+	 */
 	if(command->handled == 0)
 	{
 		if(command->type == SEARCH)
@@ -88,22 +95,26 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		}
 		else if(command->type == QLIST)
 		{
-			command_listq(session, command);	
+			command_listq(session, command);
+			close(command->sockfd);
 			command->done = 1;
 		}
 		else if(command->type == QRAND)
 		{
 			command_qrand(session, command);
+			close(command->sockfd);
 			command->done = 1;
 		}
 		else if(command->type == SLIST)
 		{
 			command_lists(session, command);	
+			close(command->sockfd);
 			command->done = 1;
 		}
 		else if(command->type == HELP)
 		{
 			sock_send_str(command->sockfd, help_str);
+			close(command->sockfd);
 			command->done = 1;
 		}
 		else if(command->type == QADD)
@@ -114,6 +125,9 @@ void commandq_execute_command(sp_session *session, struct command *command)
 				queue_add_track(search_result[command->track]);
 				pthread_mutex_unlock(&search_result_lock);
 			}
+			sock_send_str(command->sockfd, "Adding: ");
+			sock_send_track(command->sockfd, search_result[command->track]);
+			close(command->sockfd);
 			command->done = 1;
 		}
 		else if(command->type == QPLAY)
@@ -124,6 +138,9 @@ void commandq_execute_command(sp_session *session, struct command *command)
 				queue_position = command->track;
 				play(session, queue[command->track], 1);
 			}
+			sock_send_str(command->sockfd, "Playing: ");
+			sock_send_track(command->sockfd, queue[command->track]);
+			close(command->sockfd);
 			command->done = 1;
 		}
 		command->handled = 1;

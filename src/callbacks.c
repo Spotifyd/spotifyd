@@ -2,6 +2,7 @@
 #include <libspotify/api.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "audio.h"
 #include "queue.h"
@@ -126,14 +127,15 @@ void on_search_complete(sp_search *search, void *userdata)
 		track = sp_search_track(search, i);
 		sp_track_add_ref(track);
 		search_result[i] = track;
-		sock_send_track(sockfd, search_result[i], i);
+		sock_send_track_with_trackn(sockfd, search_result[i], i);
 	}
-
-	/*
+	
+/*
 	 * If we ended up here, that means that the first element on the
 	 * commandq is a search. Set it to done and notify the main thread 
 	 * so the search command can be freed.
 	 */
+	close(sockfd);
 	commandq.tqh_first->val->done = 1;
 	pthread_mutex_unlock(&commandq_lock);
 	pthread_mutex_unlock(&search_result_lock);

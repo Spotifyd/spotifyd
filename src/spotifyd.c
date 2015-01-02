@@ -16,7 +16,7 @@
 #include "commandq.h"
 #include "commandq.h"
 
-pthread_t thread;
+pthread_t accept_thread;
 
 int main()
 {
@@ -39,9 +39,9 @@ int main()
 	{
 		printf("%s", sp_error_message(error));
 	}
+		
+	pthread_create(&accept_thread, NULL, sock_accept_connections, NULL);
 
-	int s = sock_create_un();
-	
 	/* Main loop. Process spotify events and incoming socket connections. */
 	pthread_mutex_init(&notify_mutex, NULL);
 	pthread_mutex_lock(&notify_mutex);
@@ -65,24 +65,6 @@ int main()
 		}
 		notify_do = 0;	
 		pthread_mutex_unlock(&notify_mutex);
-
-		/* 
-		 * A bit of a hack. Makes s2 an unsigned integer
-		 * with the same length as a pointer. That means we
-		 * can cast it to a void pointer and avoid heap-allocating
-		 * an integer to send to the new thread.
-		 */
-		uintptr_t s2;
-		struct sockaddr_un remote_un;
-		unsigned remote_un_s = sizeof(remote_un);
-		if( (s2 = accept(s, (struct sockaddr *) &remote_un, &remote_un_s)) != -1)
-		{
-			/* 
-			 * we got someone connected. send them to the
-			 * connection handler.
-			 */
-			pthread_create(&thread, NULL, sock_connection_handler, (void*) s2);
-		}
 	
 		/* 
 		 * Executes the command on the top of the command queue,
