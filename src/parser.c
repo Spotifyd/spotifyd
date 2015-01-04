@@ -15,7 +15,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 	if(!strncasecmp(line, "search ", strlen("search ")))
 	{
 		command->type = SEARCH;
-		command->search_string = malloc(sizeof(char) * strlen(line + strlen("search ") + 1));
+		command->search_string = malloc(sizeof(char) * strlen(line + strlen("search ")) + 1);
 		strcpy(command->search_string, line + strlen("search "));
 
 		ret_val = entry;
