@@ -1,7 +1,7 @@
 CC      := gcc
 PKGS	:= libspotify alsa
 CFLAGS  := `pkg-config --cflags $(PKGS)` -Wall -g
-LIBS    := `pkg-config --libs $(PKGS)` -lpthread
+LIBS    := `pkg-config --libs $(PKGS)` -lpthread -pthread
 
 TARGET	:= spotifyd
 SOURCES := $(shell find src/ -type f -name *.c)
