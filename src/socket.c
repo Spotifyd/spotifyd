@@ -156,18 +156,14 @@ void *sock_connection_handler(void *sock)
 	int sockfd = (uintptr_t)sock;
 	
 	char *string = malloc(sizeof(char) * API_MESSAGE_LEN);
-	fprintf(stderr, "sock_connection_handler: malloc done.\n");
 	if(!sock_readline(sockfd, string))
 	{
 		struct commandq_entry *entry = malloc(sizeof(struct commandq_entry));
 		if(parse_input_line(entry, string, sockfd) != NULL)
 		{
 			pthread_mutex_lock(&commandq_lock);
-			fprintf(stderr, "sock_connection_handler: took mutex.\n");
 			commandq_insert(entry);
-			fprintf(stderr, "sock_connection_handler: inserted entry.\n");
 			pthread_mutex_unlock(&commandq_lock);
-			fprintf(stderr, "sock_connection_handler: released mutex.\n");
 			notify_main_thread();
 		}
 		else

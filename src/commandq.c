@@ -132,7 +132,6 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		}
 		else if(command->type == QPLAY)
 		{
-			printf("QPLAY.");
 			if(command->track < queue_len)
 			{
 				queue_position = command->track;
