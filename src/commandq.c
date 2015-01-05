@@ -119,14 +119,22 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		}
 		else if(command->type == QADD)
 		{
+			bool track_added = 0;
 			if(command->track < NUM_SEARCH_RESULTS)
 			{
 				pthread_mutex_lock(&search_result_lock);
-				queue_add_track(search_result[command->track]);
+				track_added = queue_add_track(search_result[command->track]);
 				pthread_mutex_unlock(&search_result_lock);
 			}
-			sock_send_str(command->sockfd, "Adding: ");
-			sock_send_track(command->sockfd, search_result[command->track]);
+			if(track_added)
+			{
+				sock_send_str(command->sockfd, "Adding: ");
+				sock_send_track(command->sockfd, search_result[command->track]);
+			}
+			else
+			{
+				sock_send_str(command->sockfd, "Not a valid track number!\n");
+			}
 			close(command->sockfd);
 			command->done = 1;
 		}

@@ -18,15 +18,24 @@ void queue_init()
 	pthread_mutex_unlock(&queue_lock);
 }
 
-void queue_add_track(sp_track *track)
+bool queue_add_track(sp_track *track)
 {
+	bool track_existed;
+
 	pthread_mutex_lock(&queue_lock);
 	if(track != NULL)
 	{
 		sp_track_add_ref(track);
 		queue[queue_len++] = track;
+		track_existed = 1;
+	}
+	else
+	{
+		track_existed = 0;
 	}
 	pthread_mutex_unlock(&queue_lock);
+
+	return track_existed;
 }
 
 int queue_get_next()
