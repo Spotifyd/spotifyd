@@ -7,6 +7,12 @@
 #include "queue.h"
 #include "spotifyd.h"
 
+sp_track *queue[PLAY_QUEUE_LEN];
+unsigned queue_len;
+bool queue_random;
+unsigned queue_position;
+
+
 void queue_init()
 {
 	pthread_mutex_init(&queue_lock, NULL);
@@ -61,6 +67,32 @@ bool queue_toggle_random()
 	queue_random = !queue_random;
 	pthread_mutex_unlock(&queue_lock);
 	return queue_random;
+}
+
+sp_track *queue_get(unsigned i)
+{
+	return queue[i];
+}
+
+void queue_set_current(unsigned i)
+{
+	pthread_mutex_lock(&queue_lock);
+	queue_position = i;
+	pthread_mutex_unlock(&queue_lock);
+}
+
+sp_track *queue_get_current()
+{
+	sp_track *ret_val = NULL;
+	pthread_mutex_lock(&queue_lock);
+	ret_val = queue[queue_position];
+	pthread_mutex_unlock(&queue_lock);
+	return ret_val;
+}
+
+unsigned queue_get_len()
+{
+	return queue_len;
 }
 
 void queue_del_track(unsigned trackn)

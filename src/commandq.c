@@ -140,13 +140,13 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		}
 		else if(command->type == QPLAY)
 		{
-			if(command->track < queue_len)
+			if(command->track < queue_get_len())
 			{
-				queue_position = command->track;
-				play(session, queue[command->track], 1);
+				queue_set_current(command->track);
+				play(session, queue_get(command->track), 1);
 			}
 			sock_send_str(command->sockfd, "Playing: ");
-			sock_send_track(command->sockfd, queue[command->track]);
+			sock_send_track(command->sockfd, queue_get(command->track));
 			close(command->sockfd);
 			command->done = 1;
 		}

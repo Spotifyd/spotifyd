@@ -65,11 +65,11 @@ void command_lists(sp_session *session, const struct command * const command)
  */
 void command_listq(sp_session *session, const struct command * const command)
 {
-	int i = 0;
+	unsigned i = 0;
 	pthread_mutex_lock(&queue_lock);
-	while(queue[i] != NULL && i < NUM_SEARCH_RESULTS)
+	while(queue_get(i) != NULL && i < NUM_SEARCH_RESULTS)
 	{
-		sock_send_track_with_trackn(command->sockfd, queue[i], i);
+		sock_send_track_with_trackn(command->sockfd, queue_get(i), i);
 		++i;
 	}
 	pthread_mutex_unlock(&queue_lock);

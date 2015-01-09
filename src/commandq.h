@@ -21,7 +21,6 @@ struct command
 		QLIST, /* show queue */
 		QRAND, /* toggle queue randomness */
 		QPLAY, /* play song from queue */
-		QPLADD, /* add search result to queue and play it */
 		QCLEAR, /* clear queue */
 		QADD, /* add search result to queue */
 		QDEL, /* delete track in queue */
