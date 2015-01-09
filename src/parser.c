@@ -55,6 +55,16 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 			ret_val = entry;
 		}
 	}
+	else if(!strncasecmp(line, "qrm ", strlen("qrm ")))
+	{
+		command->type = QRM;
+		char *tmp;
+		command->track = strtol(line + strlen("qrm "), &tmp, 10);
+		if(*tmp == '\0')
+		{
+			ret_val = entry;
+		}
+	}
 	else if(!strncasecmp(line, "play ", strlen("play ")))
 	{
 		command->type = PLAY;

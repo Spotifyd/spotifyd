@@ -21,7 +21,7 @@ struct command
 		PLAY, /* play song from queue */
 		QCLEAR, /* clear queue */
 		QADD, /* add search result to queue */
-		QDEL, /* delete track in queue */
+		QRM, /* remove track in queue */
 		PAUSE, /* toggle play/pause */	
 		SEARCH,
 		HELP /* send help text back on socket */
@@ -43,6 +43,7 @@ static const char help_str[] = "Usage:\n \
 \t QRAND      - Toggle queue randomness on/off.\n \
 \t QADD n     - Add song n from search results to queue.\n \
 \t QCLEAR     - Clear the queue.\n \
+\t QRM n      - Remove track n from queue.\n \
 \t PLAY n     - Play song n in queue.\n";
 
 void commandq_pop();
