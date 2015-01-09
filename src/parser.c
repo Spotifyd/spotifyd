@@ -69,7 +69,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 	{
 		command->type = PLAY;
 		char *tmp;
-		command->track = strtol(line + strlen("qplay "), &tmp, 10);
+		command->track = strtol(line + strlen("play "), &tmp, 10);
 		if(*tmp == '\0')
 		{
 			ret_val = entry;
