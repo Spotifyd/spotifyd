@@ -42,7 +42,8 @@ static const char help_str[] = "Usage:\n \
 \t SLIST      - List search results.\n \
 \t QRAND      - Toggle queue randomness on/off.\n \
 \t QADD n     - Add song n from search results to queue.\n \
-\t PLAY n    - Play song n in queue.\n";
+\t QCLEAR     - Clear the queue.\n \
+\t PLAY n     - Play song n in queue.\n";
 
 void commandq_pop();
 int commandq_init();

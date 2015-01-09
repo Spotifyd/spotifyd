@@ -40,6 +40,11 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 		command->type = HELP;
 		ret_val = entry;
 	}
+	else if(!strncasecmp(line, "qclear", strlen("qclear")))
+	{
+		command->type = QCLEAR;
+		ret_val = entry;
+	}
 	else if(!strncasecmp(line, "qadd ", strlen("qadd ")))
 	{
 		command->type = QADD;

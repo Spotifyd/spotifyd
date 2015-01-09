@@ -95,8 +95,10 @@ unsigned queue_get_len()
 	return queue_len;
 }
 
-void queue_del_track(unsigned trackn)
+bool queue_del_track(unsigned trackn)
 {
+	bool ret_val = 0;
+
 	pthread_mutex_lock(&queue_lock);
 	if(trackn < queue_len && queue[trackn] != NULL)
 	{
@@ -105,6 +107,8 @@ void queue_del_track(unsigned trackn)
 		--queue_len;
 		memmove(&queue[trackn], &queue[trackn+1], PLAY_QUEUE_LEN - trackn);
 		memset(&queue[queue_len], 0, sizeof(sp_track *)*(PLAY_QUEUE_LEN - queue_len));
+		ret_val = 1;
 	}
 	pthread_mutex_unlock(&queue_lock);
+	return ret_val;
 }

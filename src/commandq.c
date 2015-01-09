@@ -117,6 +117,13 @@ void commandq_execute_command(sp_session *session, struct command *command)
 			close(command->sockfd);
 			command->done = 1;
 		}
+		else if(command->type == QCLEAR)
+		{
+			sock_send_str(command->sockfd, "Clearing queue.\n");
+			close(command->sockfd);
+			while(queue_del_track(0));
+			command->done = 1;
+		}
 		else if(command->type == QADD)
 		{
 			bool track_added = 0;
