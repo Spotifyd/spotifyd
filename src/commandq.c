@@ -138,7 +138,7 @@ void commandq_execute_command(sp_session *session, struct command *command)
 			close(command->sockfd);
 			command->done = 1;
 		}
-		else if(command->type == QPLAY)
+		else if(command->type == PLAY)
 		{
 			if(command->track < queue_get_len())
 			{

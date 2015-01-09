@@ -15,12 +15,10 @@ struct commandq_entry
 struct command
 {
 	enum {
-		PLAY, /* add song and all songs following it in the search
-			result to queue, then play song */
 		SLIST, /* show search results */
 		QLIST, /* show queue */
 		QRAND, /* toggle queue randomness */
-		QPLAY, /* play song from queue */
+		PLAY, /* play song from queue */
 		QCLEAR, /* clear queue */
 		QADD, /* add search result to queue */
 		QDEL, /* delete track in queue */
@@ -44,7 +42,7 @@ static const char help_str[] = "Usage:\n \
 \t SLIST      - List search results.\n \
 \t QRAND      - Toggle queue randomness on/off.\n \
 \t QADD n     - Add song n from search results to queue.\n \
-\t QPLAY n    - Play song n in queue.\n";
+\t PLAY n    - Play song n in queue.\n";
 
 void commandq_pop();
 int commandq_init();
