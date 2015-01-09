@@ -74,3 +74,34 @@ void command_listq(sp_session *session, const struct command * const command)
 	}
 	pthread_mutex_unlock(&queue_lock);
 }
+
+void command_qadd(sp_session *session, const struct command * const command)
+{
+	bool track_added = 0;
+	if(command->track < NUM_SEARCH_RESULTS)
+	{
+		pthread_mutex_lock(&search_result_lock);
+		track_added = queue_add_track(search_result[command->track]);
+		pthread_mutex_unlock(&search_result_lock);
+	}
+	if(track_added)
+	{
+		sock_send_str(command->sockfd, "Adding: ");
+		sock_send_track(command->sockfd, search_result[command->track]);
+	}
+	else
+	{
+		sock_send_str(command->sockfd, "Not a valid track number!\n");
+	}
+}
+
+void command_play(sp_session *session, const struct command * const command)
+{
+	if(command->track < queue_get_len())
+	{
+		queue_set_current(command->track);
+		play(session, queue_get(command->track), 1);
+	}
+	sock_send_str(command->sockfd, "Playing: ");
+	sock_send_track(command->sockfd, queue_get(command->track));
+}
