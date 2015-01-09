@@ -105,3 +105,16 @@ void command_play(sp_session *session, const struct command * const command)
 	sock_send_str(command->sockfd, "Playing: ");
 	sock_send_track(command->sockfd, queue_get(command->track));
 }
+
+void command_pause(sp_session *session, const struct command * const command)
+{
+	sp_session_player_play(session, is_playing =! is_playing);
+	if(is_playing)
+	{
+		sock_send_str(command->sockfd, "Started playback.\n");
+	}
+	else
+	{
+		sock_send_str(command->sockfd, "Paused playback.\n");
+	}
+}

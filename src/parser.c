@@ -35,6 +35,11 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 		command->type = QRAND;
 		ret_val = entry;
 	}
+	else if(!strncasecmp(line, "pause", strlen("pause")))
+	{
+		command->type = PAUSE;
+		ret_val = entry;
+	}
 	else if(!strncasecmp(line, "help", strlen("help")))
 	{
 		command->type = HELP;

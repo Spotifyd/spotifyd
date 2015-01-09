@@ -23,6 +23,8 @@ int main()
 	sp_session *session = NULL;
 	sp_error error;
 
+	is_playing = 0;
+
 	if(commandq_init() != 0)
 	{
 		printf("Couldn't create commandq.");

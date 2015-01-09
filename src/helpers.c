@@ -65,4 +65,5 @@ void play(sp_session *session, sp_track *track, bool flush)
 	}
 
 	sp_session_player_play(session, 1);
+	is_playing = 1;
 }

@@ -44,7 +44,8 @@ static const char help_str[] = "Usage:\n \
 \t QADD n     - Add song n from search results to queue.\n \
 \t QCLEAR     - Clear the queue.\n \
 \t QRM n      - Remove track n from queue.\n \
-\t PLAY n     - Play song n in queue.\n";
+\t PLAY n     - Play song n in queue.\n \
+\t PAUSE      - Toggle play/pause.\n";
 
 void commandq_pop();
 int commandq_init();

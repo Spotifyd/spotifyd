@@ -18,3 +18,5 @@ pthread_mutex_t search_result_lock;
 pthread_mutex_t notify_mutex;
 pthread_cond_t notify_cond;
 char notify_do;
+
+bool is_playing;

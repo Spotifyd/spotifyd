@@ -8,3 +8,4 @@ void command_lists(sp_session *session, const struct command * const command);
 void command_listq(sp_session *session, const struct command * const command);
 void command_qadd(sp_session *session, const struct command * const command);
 void command_play(sp_session *session, const struct command * const command);
+void command_pause(sp_session *session, const struct command * const command);
