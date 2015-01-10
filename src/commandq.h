@@ -42,7 +42,10 @@ struct command
 		PAUSE, /* toggle play/pause */	
 		SEARCH, /* search for songs on spotify */
 		CUR_PLAYING, /* return currently playing song */
-		HELP /* send help text back on socket */
+		HELP, /* send help text back on socket */
+		PL, /* list available playlists */
+		SADDPL, /* put playlist to search list */
+		QADDPL /* put playlist in queue */
 	} type;
 	bool handled;
 	bool done;
@@ -64,7 +67,8 @@ static const char help_str[] = "Usage:\n \
 \t QCLEAR      - Clear the queue.\n \
 \t QRM n       - Remove track n from queue.\n \
 \t PLAY n      - Play song n in queue.\n \
-\t PAUSE       - Toggle play/pause.\n";
+\t PAUSE       - Toggle play/pause.\n \
+\t PL          - List available playlists\n";
 
 void commandq_pop();
 int commandq_init();

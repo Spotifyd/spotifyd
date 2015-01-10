@@ -22,6 +22,7 @@
 #include "socket.h"
 #include "queue.h"
 #include "helpers.h"
+#include "playlist.h"
 
 void command_search(sp_session *session, const struct command * const command)
 {
@@ -133,5 +134,15 @@ void command_pause(sp_session *session, const struct command * const command)
 	else
 	{
 		sock_send_str(command->sockfd, "Paused playback.\n");
+	}
+}
+
+void command_pl(const struct command * const command)
+{
+	unsigned i = 0;
+	for(i = 0; i<playlist_len(); ++i)
+	{
+		sock_send_str(command->sockfd, playlist_get_name(i));
+		sock_send_str(command->sockfd, "\n");
 	}
 }

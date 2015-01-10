@@ -19,11 +19,8 @@
 
 #include <libspotify/api.h>
 
-void command_search(sp_session *session, const struct command * const command);
-void command_qrand(sp_session *session, const struct command * const command);
-void command_lists(sp_session *session, const struct command * const command);
-void command_listq(sp_session *session, const struct command * const command);
-void command_qadd(sp_session *session, const struct command * const command);
-void command_play(sp_session *session, const struct command * const command);
-void command_pause(sp_session *session, const struct command * const command);
-void command_pl(const struct command * const command);
+void playlist_init(sp_session *session);
+void playlist_container_loaded(sp_playlistcontainer *pc, void *userdata);
+unsigned playlist_len();
+const char *playlist_get_name(unsigned i);
+bool playlist_for_each(unsigned playlistn, bool (*func_ptr)(sp_track *));

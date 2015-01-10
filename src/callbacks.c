@@ -28,11 +28,7 @@
 #include "helpers.h"
 #include "spotifyd.h"
 #include "audio.h"
-
-sp_playlistcontainer *playlist_container = NULL;
-static sp_playlistcontainer_callbacks pc_callbacks = {
-	.container_loaded = &container_loaded,
-};
+#include "playlist.h"
 
 /*
  * from jukebox.c in the libspotify examples. Thanks spotify <3
@@ -161,12 +157,6 @@ void on_search_complete(sp_search *search, void *userdata)
 	sp_search_release(search);
 }
 
-void container_loaded(sp_playlistcontainer *pc, void *userdata)
-{
-	debug("container_loaded\n");
-	playlist_container=pc;
-}
-
 void on_login(sp_session *session, sp_error error)
 {
 	debug("on_login\n");
@@ -175,10 +165,7 @@ void on_login(sp_session *session, sp_error error)
 		printf("Couldn't log in.\n");
 		exit (1);
 	}
-	sp_playlistcontainer *pc = sp_session_playlistcontainer(session);
-	sp_playlistcontainer_add_callbacks(
-		pc,
-		&pc_callbacks,
-		NULL
-	);
+
+	playlist_init(session);
+	notify_main_thread();
 }

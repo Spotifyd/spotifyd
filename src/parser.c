@@ -72,6 +72,11 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 		command->type = QCLEAR;
 		ret_val = entry;
 	}
+	else if(!strncasecmp(line, "pl", strlen("pl")))
+	{
+		command->type = PL;
+		ret_val = entry;
+	}
 	else if(!strncasecmp(line, "qadd ", strlen("qadd ")))
 	{
 		command->type = QADD;
