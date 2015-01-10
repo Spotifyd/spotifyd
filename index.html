@@ -28,18 +28,17 @@
 
     <div class="container">
       <section id="main_content">
-        <pre><code>~ $ sc () { echo $@ | socat - UNIX-CONNECT:/tmp/spotifyd 2&gt;/dev/null; } #make a shell function for easy communication to the server
-~ $ sc "search Art Blakey" #search for songs by Art Blakey
-0: Moanin' - Art Blakey &amp; The Jazz Messengers
-1: Moanin' - Art Blakey
+        <pre><code>~ $ sc "search Art Blakey" #search for songs by Art Blakey
+0 | Moanin' | Art Blakey &amp; The Jazz Messengers
+1 | Moanin' | Art Blakey
 [...]
-98: Salute To Birdland - Art Blakey
-99: Quicksilver - Art Blakey
+98 | Salute To Birdland | Art Blakey
+99 | Quicksilver | Art Blakey
 ~ $ sc qadd 0 #add the first search result to queue
-Adding: Moanin' - Art Blakey &amp; The Jazz Messengers
+Adding: Moanin' | Art Blakey &amp; The Jazz Messengers
 ~ $ sc play 0 #play the first song in the queue
-Playing: Moanin' - Art Blakey &amp; The Jazz Messengers
-~ $ 
+Playing: Moanin' | Art Blakey &amp; The Jazz Messengers
+~ $
 </code></pre>
 
 <h3>
@@ -72,62 +71,63 @@ any hardware you can imagine.</p>
 <p>Add many songs:</p>
 
 <pre><code>~ $ sc search rolling stones | head
-0: Gimme Shelter - The Rolling Stones
-1: Paint It Black - The Rolling Stones
-2: (I Can't Get No) Satisfaction - (Original Single Mono Version) - The Rolling Stones
-3: Start Me Up - Remastered - The Rolling Stones
-4: Sympathy For The Devil - The Rolling Stones
-5: Angie - Remastered - The Rolling Stones
-6: Sympathy For The Devil - The Rolling Stones
-7: Rolling Stones T-Shirt - Radio Edit - Dada Life
-8: (I Can't Get No) Satisfaction - Mono Version - The Rolling Stones
-9: Brown Sugar - 2009 Re-Mastered Digital Version - The Rolling Stones
+0 | Gimme Shelter | The Rolling Stones
+1 | Paint It Black | The Rolling Stones
+2 | (I Can't Get No) Satisfaction - (Original Single Mono Version) | The Rolling Stones
+3 | Start Me Up - Remastered | The Rolling Stones
+4 | Sympathy For The Devil | The Rolling Stones
+5 | Angie - Remastered | The Rolling Stones
+6 | Sympathy For The Devil | The Rolling Stones
+7 | Rolling Stones T-Shirt - Radio Edit | Dada Life
+8 | (I Can't Get No) Satisfaction - Mono Version | The Rolling Stones
+9 | Brown Sugar - 2009 Re-Mastered Digital Version | The Rolling Stones
 ~ $ for i in `seq 0 9`; do sc qadd $i; done
-Adding: Gimme Shelter - The Rolling Stones
-Adding: Paint It Black - The Rolling Stones
-Adding: (I Can't Get No) Satisfaction - (Original Single Mono Version) - The Rolling Stones
-Adding: Start Me Up - Remastered - The Rolling Stones
-Adding: Sympathy For The Devil - The Rolling Stones
-Adding: Angie - Remastered - The Rolling Stones
-Adding: Sympathy For The Devil - The Rolling Stones
-Adding: Rolling Stones T-Shirt - Radio Edit - Dada Life
-Adding: (I Can't Get No) Satisfaction - Mono Version - The Rolling Stones
-Adding: Brown Sugar - 2009 Re-Mastered Digital Version - The Rolling Stones
+Adding: Gimme Shelter | The Rolling Stones
+Adding: Paint It Black | The Rolling Stones
+Adding: (I Can't Get No) Satisfaction - (Original Single Mono Version) | The Rolling Stones
+Adding: Start Me Up - Remastered | The Rolling Stones
+Adding: Sympathy For The Devil | The Rolling Stones
+Adding: Angie - Remastered | The Rolling Stones
+Adding: Sympathy For The Devil | The Rolling Stones
+Adding: Rolling Stones T-Shirt - Radio Edit | Dada Life
+Adding: (I Can't Get No) Satisfaction - Mono Version | The Rolling Stones
+Adding: Brown Sugar - 2009 Re-Mastered Digital Version | The Rolling Stones
 ~ $ sc qlist
-0: Gimme Shelter - The Rolling Stones
-1: Paint It Black - The Rolling Stones
-2: (I Can't Get No) Satisfaction - (Original Single Mono Version) - The Rolling Stones
-3: Start Me Up - Remastered - The Rolling Stones
-4: Sympathy For The Devil - The Rolling Stones
-5: Angie - Remastered - The Rolling Stones
-6: Sympathy For The Devil - The Rolling Stones
-7: Rolling Stones T-Shirt - Radio Edit - Dada Life
-8: (I Can't Get No) Satisfaction - Mono Version - The Rolling Stones
-9: Brown Sugar - 2009 Re-Mastered Digital Version - The Rolling Stones
-~ $ 
+0 | Moanin' | Art Blakey &amp; The Jazz Messengers
+1 | Gimme Shelter | The Rolling Stones
+2 | Paint It Black | The Rolling Stones
+3 | (I Can't Get No) Satisfaction - (Original Single Mono Version) | The Rolling Stones
+4 | Start Me Up - Remastered | The Rolling Stones
+5 | Sympathy For The Devil | The Rolling Stones
+6 | Angie - Remastered | The Rolling Stones
+7 | Sympathy For The Devil | The Rolling Stones
+8 | Rolling Stones T-Shirt - Radio Edit | Dada Life
+9 | (I Can't Get No) Satisfaction - Mono Version | The Rolling Stones
+10 | Brown Sugar - 2009 Re-Mastered Digital Version | The Rolling Stones
+~ $
 </code></pre>
 
 <p>Lets say that I don't want those two duplicate songs?</p>
 
 <pre><code>~ $ for i in $(sc search rolling stones | head | sed 's/[:-]/|/g' | sort -u -t'|' -k2,2 | sort -t'|' -k1,1 | cut -d'|' -f1); do sc qadd $i; done
-Adding: Gimme Shelter - The Rolling Stones
-Adding: Paint It Black - The Rolling Stones
-Adding: (I Can't Get No) Satisfaction - (Original Single Mono Version) - The Rolling Stones
-Adding: Start Me Up - Remastered - The Rolling Stones
-Adding: Sympathy For The Devil - The Rolling Stones
-Adding: Angie - Remastered - The Rolling Stones
-Adding: Rolling Stones T-Shirt - Radio Edit - Dada Life
-Adding: Brown Sugar - 2009 Re-Mastered Digital Version - The Rolling Stones
+Adding: Gimme Shelter | The Rolling Stones
+Adding: Paint It Black | The Rolling Stones
+Adding: (I Can't Get No) Satisfaction - (Original Single Mono Version) | The Rolling Stones
+Adding: Start Me Up - Remastered | The Rolling Stones
+Adding: Sympathy For The Devil | The Rolling Stones
+Adding: Angie - Remastered | The Rolling Stones
+Adding: Rolling Stones T-Shirt - Radio Edit | Dada Life
+Adding: Brown Sugar - 2009 Re-Mastered Digital Version | The Rolling Stones
 ~ $ sc qlist
-0: Gimme Shelter - The Rolling Stones
-1: Paint It Black - The Rolling Stones
-2: (I Can't Get No) Satisfaction - (Original Single Mono Version) - The Rolling Stones
-3: Start Me Up - Remastered - The Rolling Stones
-4: Sympathy For The Devil - The Rolling Stones
-5: Angie - Remastered - The Rolling Stones
-6: Rolling Stones T-Shirt - Radio Edit - Dada Life
-7: Brown Sugar - 2009 Re-Mastered Digital Version - The Rolling Stones
-~ $ 
+0 | Gimme Shelter | The Rolling Stones
+1 | Paint It Black | The Rolling Stones
+2 | (I Can't Get No) Satisfaction - (Original Single Mono Version) | The Rolling Stones
+3 | Start Me Up - Remastered | The Rolling Stones
+4 | Sympathy For The Devil | The Rolling Stones
+5 | Angie - Remastered | The Rolling Stones
+6 | Rolling Stones T-Shirt - Radio Edit | Dada Life
+7 | Brown Sugar - 2009 Re-Mastered Digital Version | The Rolling Stones
+~ $
 </code></pre>
 
 <p>Okay, so no one would do that in practice. The point is just that
