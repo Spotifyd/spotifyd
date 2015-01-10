@@ -22,6 +22,9 @@ build/appkey.o: src/appkey.key
 clean:
 	@echo "  Cleaning..."; $(RM) -r build/ $(TARGET)
 
+install: $(TARGET)
+	@cp $(TARGET) ${DESTDIR}${PREFIX}/bin/
+
 -include $(DEPS)
 
 .PHONY: clean
