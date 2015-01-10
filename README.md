@@ -138,9 +138,14 @@ Configuration is done by editing config.h and rebuilding.
 At the very least, you have to add your username and password here.
 
 ## There's a weird binary among the source files, why!?
-Every application using libspotify requires an appkey.
+Every application using libspotifAy requires an appkey.
 However, spotify don't allow you to share it openly in plain text,
 only compiled as a part of your program. As I want anyone to be 
 able to build this program, I supply appkey.key, a binary version
 of the appkey. You can feel free to inspect this binary, or request
 your own appkey from spotify if you don't trust me.
+
+## License
+The project is licensed under GPLv3 with the exception of the files audio.h,
+audio.c and alsa-audio.c that are from the libspotify examples. The function
+`on_music_delivered` in callbacks.c is also from the libspotify documentation.
