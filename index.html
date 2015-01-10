@@ -28,7 +28,7 @@
 
     <div class="container">
       <section id="main_content">
-        <pre><code>sc () { echo $@ | socat - UNIX-CONNECT:/tmp/spotifyd 2>/dev/null; }
+        <pre><code>~ $ sc () { echo $@ | socat - UNIX-CONNECT:/tmp/spotifyd 2>/dev/null; }
 ~ $ sc "search Art Blakey" #search for songs by Art Blakey
 0 | Moanin' | Art Blakey &amp; The Jazz Messengers
 1 | Moanin' | Art Blakey
