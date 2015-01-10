@@ -129,7 +129,7 @@ Adding: Brown Sugar - 2009 Re-Mastered Digital Version - The Rolling Stones
 7: Brown Sugar - 2009 Re-Mastered Digital Version - The Rolling Stones
 ~ $ 
 ```
-Okay, so noone would do that in practise. The point is just that
+Okay, so no one would do that in practice. The point is just that
 the standard shell along with the unix tools are really powerful
 and allows you to do manage the queue efficiently.
 
