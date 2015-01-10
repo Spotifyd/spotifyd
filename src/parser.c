@@ -42,6 +42,11 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 		command->type = QLIST;
 		ret_val = entry;
 	}
+	else if(!strncasecmp(line, "cur_playing", strlen("cur_playing")))
+	{
+		command->type = CUR_PLAYING;
+		ret_val = entry;
+	}
 	else if(!strncasecmp(line, "slist", strlen("slist")))
 	{
 		command->type = SLIST;

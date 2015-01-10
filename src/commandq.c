@@ -134,6 +134,12 @@ void commandq_execute_command(sp_session *session, struct command *command)
 			close(command->sockfd);
 			command->done = 1;
 		}
+		else if(command->type == CUR_PLAYING)
+		{
+			sock_send_track(command->sockfd, queue_get_current());
+			close(command->sockfd);
+			command->done = 1;
+		}
 		else if(command->type == PAUSE)
 		{
 			command_pause(session, command);

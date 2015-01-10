@@ -40,7 +40,8 @@ struct command
 		QADD, /* add search result to queue */
 		QRM, /* remove track in queue */
 		PAUSE, /* toggle play/pause */	
-		SEARCH,
+		SEARCH, /* search for songs on spotify */
+		CUR_PLAYING, /* return currently playing song */
 		HELP /* send help text back on socket */
 	} type;
 	bool handled;
@@ -54,15 +55,16 @@ struct command
 };
 
 static const char help_str[] = "Usage:\n \
-\t SEARCH str - Searches spotify for str.\n \
-\t QLIST      - List content of the queue.\n \
-\t SLIST      - List search results.\n \
-\t QRAND      - Toggle queue randomness on/off.\n \
-\t QADD n     - Add song n from search results to queue.\n \
-\t QCLEAR     - Clear the queue.\n \
-\t QRM n      - Remove track n from queue.\n \
-\t PLAY n     - Play song n in queue.\n \
-\t PAUSE      - Toggle play/pause.\n";
+\t SEARCH str  - Searches spotify for str.\n \
+\t CUR_PLAYING - Returns the currently playing song.\n \
+\t QLIST       - List content of the queue.\n \
+\t SLIST       - List search results.\n \
+\t QRAND       - Toggle queue randomness on/off.\n \
+\t QADD n      - Add song n from search results to queue.\n \
+\t QCLEAR      - Clear the queue.\n \
+\t QRM n       - Remove track n from queue.\n \
+\t PLAY n      - Play song n in queue.\n \
+\t PAUSE       - Toggle play/pause.\n";
 
 void commandq_pop();
 int commandq_init();
