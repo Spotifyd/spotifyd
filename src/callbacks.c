@@ -29,6 +29,7 @@
 #include "spotifyd.h"
 #include "audio.h"
 #include "playlist.h"
+#include "search.h"
 
 /*
  * from jukebox.c in the libspotify examples. Thanks spotify <3
@@ -108,14 +109,7 @@ void on_search_complete(sp_search *search, void *userdata)
 	 * Begin by releasing the previous search results.
 	 */
 	pthread_mutex_lock(&search_result_lock);
-	for(i=0; i<NUM_SEARCH_RESULTS; ++i)
-	{
-		if(search_result[i] != NULL)
-		{
-			sp_track_release(search_result[i]);
-			search_result[i] = NULL;
-		}
-	}
+	search_clear();
 
 	sp_error error = sp_search_error(search);
 	if (error != SP_ERROR_OK)
@@ -138,12 +132,11 @@ void on_search_complete(sp_search *search, void *userdata)
 	for(i=0; i<num_tracks; ++i)
 	{
 		track = sp_search_track(search, i);
-		sp_track_add_ref(track);
-		search_result[i] = track;
-		sock_send_track_with_trackn(sockfd, search_result[i], i);
+		search_add_track(track);
+		sock_send_track_with_trackn(sockfd, track, i);
 	}
 	
-/*
+	/*
 	 * If we ended up here, that means that the first element on the
 	 * commandq is a search. Set it to done and notify the main thread 
 	 * so the search command can be freed.

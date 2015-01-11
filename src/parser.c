@@ -72,10 +72,25 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 		command->type = QCLEAR;
 		ret_val = entry;
 	}
-	else if(!strncasecmp(line, "pl", strlen("pl")))
+	else if(!strncasecmp(line, "saddpl ", strlen("saddpl ")))
 	{
-		command->type = PL;
-		ret_val = entry;
+		command->type = SADDPL;
+		char *tmp;
+		command->playlist = strtol(line + strlen("saddpl "), &tmp, 10);
+		if(*tmp == '\0')
+		{
+			ret_val = entry;
+		}
+	}
+	else if(!strncasecmp(line, "qaddpl ", strlen("qaddpl ")))
+	{
+		command->type = QADDPL;
+		char *tmp;
+		command->playlist = strtol(line + strlen("qaddpl "), &tmp, 10);
+		if(*tmp == '\0')
+		{
+			ret_val = entry;
+		}
 	}
 	else if(!strncasecmp(line, "qadd ", strlen("qadd ")))
 	{
@@ -106,6 +121,11 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 		{
 			ret_val = entry;
 		}
+	} /* pl must be after play, otherwise play matches pl first. */
+	else if(!strncasecmp(line, "pl", strlen("pl")))
+	{
+		command->type = PL;
+		ret_val = entry;
 	}
 
 	if(ret_val == NULL)

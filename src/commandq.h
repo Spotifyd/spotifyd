@@ -54,6 +54,7 @@ struct command
 	{
 		char *search_string;
 		long track;
+		int playlist;
 	};
 };
 
@@ -68,7 +69,9 @@ static const char help_str[] = "Usage:\n \
 \t QRM n       - Remove track n from queue.\n \
 \t PLAY n      - Play song n in queue.\n \
 \t PAUSE       - Toggle play/pause.\n \
-\t PL          - List available playlists\n";
+\t PL          - List available playlists.\n \
+\t SADDPL n    - Put playlist n in search list.\n \
+\t QADDPL n    - Put playlist n in queue.\n";
 
 void commandq_pop();
 int commandq_init();

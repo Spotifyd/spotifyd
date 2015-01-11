@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <stdio.h>
 #include <libspotify/api.h>
 
 #include "playlist.h"
@@ -24,7 +25,7 @@ static sp_playlistcontainer_callbacks pc_callbacks = {
 	.container_loaded = &playlist_container_loaded,
 };
 
-sp_playlistcontainer *playlist_container;
+sp_playlistcontainer *playlist_container = NULL;
 
 void playlist_init(sp_session *session)
 {
@@ -44,16 +45,29 @@ void playlist_container_loaded(sp_playlistcontainer *pc, void *userdata)
 
 unsigned playlist_len()
 {
+	if(playlist_container == NULL)
+	{
+		return 0;
+	}
 	return sp_playlistcontainer_num_playlists(playlist_container);
 }
 
 const char *playlist_get_name(unsigned i)
 {
+	if(playlist_container == NULL)
+	{
+		return NULL;
+	}
 	return sp_playlist_name(sp_playlistcontainer_playlist(playlist_container, i));
 }
 
 bool playlist_for_each(unsigned playlistn, bool (*func_ptr)(sp_track *))
 {
+	if(playlist_container == NULL)
+	{
+		return 0;
+	}
+
 	if(playlistn >= sp_playlistcontainer_num_playlists(playlist_container))
 	{
 		return 0;

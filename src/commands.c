@@ -23,6 +23,7 @@
 #include "queue.h"
 #include "helpers.h"
 #include "playlist.h"
+#include "search.h"
 
 void command_search(sp_session *session, const struct command * const command)
 {
@@ -70,9 +71,9 @@ void command_lists(sp_session *session, const struct command * const command)
 {
 	int i = 0;
 	pthread_mutex_lock(&search_result_lock);
-	while(search_result[i] != NULL && i < NUM_SEARCH_RESULTS)
+	while(search_get(i) != NULL)
 	{
-		sock_send_track_with_trackn(command->sockfd, search_result[i], i);
+		sock_send_track_with_trackn(command->sockfd, search_get(i), i);
 		++i;
 	}
 	pthread_mutex_unlock(&search_result_lock);
@@ -99,13 +100,13 @@ void command_qadd(sp_session *session, const struct command * const command)
 	if(command->track < NUM_SEARCH_RESULTS)
 	{
 		pthread_mutex_lock(&search_result_lock);
-		track_added = queue_add_track(search_result[command->track]);
+		track_added = queue_add_track(search_get(command->track));
 		pthread_mutex_unlock(&search_result_lock);
 	}
 	if(track_added)
 	{
 		sock_send_str(command->sockfd, "Adding: ");
-		sock_send_track(command->sockfd, search_result[command->track]);
+		sock_send_track(command->sockfd, search_get(command->track));
 	}
 	else
 	{
@@ -142,7 +143,48 @@ void command_pl(const struct command * const command)
 	unsigned i = 0;
 	for(i = 0; i<playlist_len(); ++i)
 	{
-		sock_send_str(command->sockfd, playlist_get_name(i));
+		const char *playlist_name = playlist_get_name(i);
+		if(playlist_name == NULL)
+		{
+			break;
+		}
+		sock_send_str(command->sockfd, playlist_name);
 		sock_send_str(command->sockfd, "\n");
 	}
+}
+
+void command_qaddpl(const struct command * const command)
+{	
+	while(queue_get_len() != 0) queue_del_track(0);
+	if(playlist_for_each(command->playlist, &queue_add_track))
+	{
+		sock_send_str(command->sockfd, "Added playlist \"");
+		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
+		sock_send_str(command->sockfd, "\" to queue.\n");
+	}
+	else
+	{
+		sock_send_str(command->sockfd, "Tried to add playlist \"");
+		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
+		sock_send_str(command->sockfd, "\" to queue but something went wrong.\n");
+	}
+}
+
+void command_saddpl(const struct command * const command)
+{
+	pthread_mutex_lock(&search_result_lock);
+	search_clear();
+	if(playlist_for_each(command->playlist, &search_add_track))
+	{
+		sock_send_str(command->sockfd, "Added playlist \"");
+		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
+		sock_send_str(command->sockfd, "\" to search list.\n");
+	}
+	else
+	{
+		sock_send_str(command->sockfd, "Tried to add playlist \"");
+		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
+		sock_send_str(command->sockfd, "\" to search list but something went wrong.\n");
+	}
+	pthread_mutex_unlock(&search_result_lock);
 }

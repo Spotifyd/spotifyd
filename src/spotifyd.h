@@ -29,9 +29,6 @@
 
 audio_fifo_t g_audiofifo;
 
-sp_track *search_result[NUM_SEARCH_RESULTS];
-pthread_mutex_t search_result_lock;
-
 pthread_mutex_t notify_mutex;
 pthread_cond_t notify_cond;
 char notify_do;

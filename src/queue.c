@@ -19,6 +19,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "config.h"
 #include "queue.h"
@@ -43,22 +44,22 @@ void queue_init()
 
 bool queue_add_track(sp_track *track)
 {
-	bool track_existed;
+	bool track_added;
 
 	pthread_mutex_lock(&queue_lock);
-	if(track != NULL)
+	if(track != NULL && queue_len + 1< PLAY_QUEUE_LEN)
 	{
 		sp_track_add_ref(track);
 		queue[queue_len++] = track;
-		track_existed = 1;
+		track_added = 1;
 	}
 	else
 	{
-		track_existed = 0;
+		track_added = 0;
 	}
 	pthread_mutex_unlock(&queue_lock);
 
-	return track_existed;
+	return track_added;
 }
 
 int queue_get_next()

@@ -32,6 +32,7 @@
 #include "session.h"
 #include "commandq.h"
 #include "commandq.h"
+#include "search.h"
 
 pthread_t accept_thread;
 

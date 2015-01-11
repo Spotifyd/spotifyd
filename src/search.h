@@ -18,14 +18,10 @@
 #pragma once
 
 #include <libspotify/api.h>
+#include <pthread.h>
 
-void command_search(sp_session *session, const struct command * const command);
-void command_qrand(sp_session *session, const struct command * const command);
-void command_lists(sp_session *session, const struct command * const command);
-void command_listq(sp_session *session, const struct command * const command);
-void command_qadd(sp_session *session, const struct command * const command);
-void command_play(sp_session *session, const struct command * const command);
-void command_pause(sp_session *session, const struct command * const command);
-void command_pl(const struct command * const command);
-void command_saddpl(const struct command * const command);
-void command_qaddpl(const struct command * const command);
+pthread_mutex_t search_result_lock;
+
+void search_clear();
+bool search_add_track(sp_track *track);
+sp_track *search_get(unsigned i);
