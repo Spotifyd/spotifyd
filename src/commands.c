@@ -148,8 +148,9 @@ void command_pl(const struct command * const command)
 		{
 			break;
 		}
-		sock_send_str(command->sockfd, playlist_name);
-		sock_send_str(command->sockfd, "\n");
+		char name_str[API_MESSAGE_LEN];
+		snprintf(name_str, API_MESSAGE_LEN, "%d | %s\n", i, playlist_name);
+		sock_send_str(command->sockfd, name_str);
 	}
 }
 
