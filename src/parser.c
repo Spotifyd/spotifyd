@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "commandq.h"
 
@@ -85,7 +86,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->type = SADDPL;
 		char *tmp = line;
 		command->playlist = strtol(line + strlen("saddpl "), &tmp, 10);
-		if(tmp != line)
+		if(isspace(*tmp) || *tmp == '\0' )
 		{
 			ret_val = entry;
 		}
@@ -106,7 +107,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		char *tmp = line;
 		command->track = strtol(line + strlen("pladd "), &tmp, 10);
 		command->playlist = strtol(tmp, &tmp, 10);
-		if(tmp != line)
+		if(isspace(*tmp) || *tmp == '\0' )
 		{
 			ret_val = entry;
 		}
@@ -117,7 +118,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		char *tmp = line;
 		command->track = strtol(line + strlen("plrm "), &tmp, 10);
 		command->playlist = strtol(tmp, &tmp, 10);
-		if(tmp != line)
+		if(isspace(*tmp) || *tmp == '\0' )
 		{
 			ret_val = entry;
 		}
@@ -127,7 +128,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->type = PLDELETE;
 		char *tmp = line;
 		command->playlist = strtol(line + strlen("pldelete "), &tmp, 10);
-		if(tmp != line)
+		if(isspace(*tmp) || *tmp == '\0' )
 		{
 			ret_val = entry;
 		}
@@ -137,7 +138,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->type = QADD;
 		char *tmp = line;
 		command->track = strtol(line + strlen("qadd "), &tmp, 10);
-		if(tmp != line)
+		if(isspace(*tmp) || *tmp == '\0' )
 		{
 			ret_val = entry;
 		}
@@ -147,7 +148,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->type = QRM;
 		char *tmp = line;
 		command->track = strtol(line + strlen("qrm "), &tmp, 10);
-		if(tmp != line)
+		if(isspace(*tmp) || *tmp == '\0' )
 		{
 			ret_val = entry;
 		}
@@ -157,7 +158,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->type = PLAY;
 		char *tmp = line;
 		command->track = strtol(line + strlen("play "), &tmp, 10);
-		if(tmp != line)
+		if(isspace(*tmp) || *tmp == '\0' )
 		{
 			ret_val = entry;
 		}
