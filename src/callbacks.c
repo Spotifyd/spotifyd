@@ -108,7 +108,6 @@ void on_search_complete(sp_search *search, void *userdata)
 	/*
 	 * Begin by releasing the previous search results.
 	 */
-	pthread_mutex_lock(&search_result_lock);
 	search_clear();
 
 	sp_error error = sp_search_error(search);
@@ -144,7 +143,6 @@ void on_search_complete(sp_search *search, void *userdata)
 	close(sockfd);
 	commandq.tqh_first->val->done = 1;
 	pthread_mutex_unlock(&commandq_lock);
-	pthread_mutex_unlock(&search_result_lock);
 	notify_main_thread();
 
 	sp_search_release(search);

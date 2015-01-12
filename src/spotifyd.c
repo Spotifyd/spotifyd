@@ -60,8 +60,6 @@ int main()
 
 	audio_init(&g_audiofifo);
 
-	pthread_mutex_init(&search_result_lock, NULL);
-
 	/*
 	 * init the queue of songs to play.
 	 */

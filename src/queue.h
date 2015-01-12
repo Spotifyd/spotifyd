@@ -19,8 +19,6 @@
 
 #include <libspotify/api.h>
 
-pthread_mutex_t queue_lock;
-
 int queue_get_next();
 unsigned queue_get_len();
 sp_track *queue_get(unsigned);

@@ -70,14 +70,12 @@ void command_qrand(sp_session *session, const struct command * const command)
 void command_lists(sp_session *session, const struct command * const command)
 {
 	int i = 0;
-	pthread_mutex_lock(&search_result_lock);
 	while(search_get(i) != NULL)
 	{
 		sock_send_track_with_trackn(command->sockfd, search_get(i), i);
 		sock_send_str(command->sockfd, "\n");
 		++i;
 	}
-	pthread_mutex_unlock(&search_result_lock);
 }
 
 /*
@@ -86,14 +84,12 @@ void command_lists(sp_session *session, const struct command * const command)
 void command_listq(sp_session *session, const struct command * const command)
 {
 	unsigned i = 0;
-	pthread_mutex_lock(&queue_lock);
 	while(queue_get(i) != NULL && i < NUM_SEARCH_RESULTS)
 	{
 		sock_send_track_with_trackn(command->sockfd, queue_get(i), i);
 		sock_send_str(command->sockfd, "\n");
 		++i;
 	}
-	pthread_mutex_unlock(&queue_lock);
 }
 
 void command_qadd(sp_session *session, const struct command * const command)
@@ -101,9 +97,7 @@ void command_qadd(sp_session *session, const struct command * const command)
 	bool track_added = 0;
 	if(command->track < NUM_SEARCH_RESULTS)
 	{
-		pthread_mutex_lock(&search_result_lock);
 		track_added = queue_add_track(search_get(command->track));
-		pthread_mutex_unlock(&search_result_lock);
 	}
 	if(track_added)
 	{
@@ -235,7 +229,6 @@ void command_qaddpl(const struct command * const command)
 
 void command_saddpl(const struct command * const command)
 {
-	pthread_mutex_lock(&search_result_lock);
 	search_clear();
 	if(playlist_for_each(command->playlist, &search_add_track))
 	{
@@ -249,5 +242,4 @@ void command_saddpl(const struct command * const command)
 		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
 		sock_send_str(command->sockfd, "\" to search list but something went wrong.\n");
 	}
-	pthread_mutex_unlock(&search_result_lock);
 }

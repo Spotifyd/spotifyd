@@ -20,8 +20,6 @@
 #include <libspotify/api.h>
 #include <pthread.h>
 
-pthread_mutex_t search_result_lock;
-
 void search_init();
 void search_clear();
 bool search_add_track(sp_track *track);
