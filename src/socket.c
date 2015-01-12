@@ -89,7 +89,7 @@ void sock_send_track_with_trackn(int sockfd, sp_track *track, int trackn)
 	{
 		sp_artist *artist = sp_track_artist(track, 0);
 		char str[API_MESSAGE_LEN];
-		snprintf(str, API_MESSAGE_LEN, "%d | %s | %s\n", trackn, sp_track_name(track), sp_artist_name(artist));
+		snprintf(str, API_MESSAGE_LEN, "%d | %s | %s", trackn, sp_track_name(track), sp_artist_name(artist));
 		sock_send_str(sockfd, str);
 	}
 }
@@ -100,7 +100,7 @@ void sock_send_track(int sockfd, sp_track *track)
 	{
 		sp_artist *artist = sp_track_artist(track, 0);
 		char str[API_MESSAGE_LEN];
-		snprintf(str, API_MESSAGE_LEN, "%s | %s\n", sp_track_name(track), sp_artist_name(artist));
+		snprintf(str, API_MESSAGE_LEN, "%s | %s", sp_track_name(track), sp_artist_name(artist));
 		sock_send_str(sockfd, str);
 	}
 }

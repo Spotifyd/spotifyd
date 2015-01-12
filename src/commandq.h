@@ -45,7 +45,11 @@ struct command
 		HELP, /* send help text back on socket */
 		PL, /* list available playlists */
 		SADDPL, /* put playlist to search list */
-		QADDPL /* put playlist in queue */
+		QADDPL, /* put playlist in queue */
+		PLADD, /* add track to playlist */
+		PLCREATE, /* create new playlist */
+		PLDELETE, /* delete playlist */
+		PLRM /* remove track from playlist */
 	} type;
 	bool handled;
 	bool done;
@@ -53,9 +57,10 @@ struct command
 	union
 	{
 		char *search_string;
-		long track;
-		int playlist;
+		char *name;
+		unsigned track;
 	};
+	int playlist;
 };
 
 static const char help_str[] = "Usage:\n \
@@ -70,8 +75,12 @@ static const char help_str[] = "Usage:\n \
 \t PLAY n      - Play song n in queue.\n \
 \t PAUSE       - Toggle play/pause.\n \
 \t PL          - List available playlists.\n \
+\t PLCREATE s  - Create new playlist with name s.\n \
+\t PLDELETE n  - Delete playlist n.\n \
 \t SADDPL n    - Put playlist n in search list.\n \
-\t QADDPL n    - Put playlist n in queue.\n";
+\t QADDPL n    - Put playlist n in queue.\n \
+\t PLADD n p   - Add track n from queue to playlist p. \n \
+\t PLRM n p    - Remove track n from playlist p.\n";
 
 void commandq_pop();
 int commandq_init();

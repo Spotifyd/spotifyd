@@ -74,6 +74,7 @@ void command_lists(sp_session *session, const struct command * const command)
 	while(search_get(i) != NULL)
 	{
 		sock_send_track_with_trackn(command->sockfd, search_get(i), i);
+		sock_send_str(command->sockfd, "\n");
 		++i;
 	}
 	pthread_mutex_unlock(&search_result_lock);
@@ -89,6 +90,7 @@ void command_listq(sp_session *session, const struct command * const command)
 	while(queue_get(i) != NULL && i < NUM_SEARCH_RESULTS)
 	{
 		sock_send_track_with_trackn(command->sockfd, queue_get(i), i);
+		sock_send_str(command->sockfd, "\n");
 		++i;
 	}
 	pthread_mutex_unlock(&queue_lock);
@@ -107,6 +109,7 @@ void command_qadd(sp_session *session, const struct command * const command)
 	{
 		sock_send_str(command->sockfd, "Adding: ");
 		sock_send_track(command->sockfd, search_get(command->track));
+		sock_send_str(command->sockfd, "\n");
 	}
 	else
 	{
@@ -123,6 +126,7 @@ void command_play(sp_session *session, const struct command * const command)
 	}
 	sock_send_str(command->sockfd, "Playing: ");
 	sock_send_track(command->sockfd, queue_get(command->track));
+	sock_send_str(command->sockfd, "\n");
 }
 
 void command_pause(sp_session *session, const struct command * const command)
@@ -151,6 +155,64 @@ void command_pl(const struct command * const command)
 		char name_str[API_MESSAGE_LEN];
 		snprintf(name_str, API_MESSAGE_LEN, "%d | %s\n", i, playlist_name);
 		sock_send_str(command->sockfd, name_str);
+	}
+}
+
+void command_pladd(sp_session *session, const struct command * const command)
+{
+	if(playlist_add_track(command->playlist, queue_get(command->track), session))
+	{
+		sock_send_str(command->sockfd, "Added track ");
+		sock_send_track(command->sockfd, queue_get(command->track));
+		sock_send_str(command->sockfd, " to playlist ");
+		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
+		sock_send_str(command->sockfd, ".\n");
+	}
+	else
+	{
+		sock_send_str(command->sockfd, "Couldn't add track.\n");
+	}
+
+}
+
+void command_plrm(const struct command * const command)
+{
+	if(playlist_del_track(command->playlist, command->track))
+	{
+		sock_send_str(command->sockfd, "Removed track ");
+		sock_send_track(command->sockfd, queue_get(command->track));
+		sock_send_str(command->sockfd, " from playlist ");
+		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
+		sock_send_str(command->sockfd, ".\n");
+	}
+	else
+	{
+		sock_send_str(command->sockfd, "Couldn't remove track.\n");
+	}
+
+}
+
+void command_plcreate(const struct command * const command)
+{
+	if(playlist_new(command->name))
+	{
+		sock_send_str(command->sockfd, "Created new playlist.\n");
+	}
+	else
+	{
+		sock_send_str(command->sockfd, "Couldn't create new playlist.\n");
+	}
+}
+
+void command_pldelete(const struct command * const command)
+{
+	if(playlist_remove(command->playlist))
+	{
+		sock_send_str(command->sockfd, "Removed playlist.\n");
+	}
+	else
+	{
+		sock_send_str(command->sockfd, "Couldn't remove playlist.\n");
 	}
 }
 

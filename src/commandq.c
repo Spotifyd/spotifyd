@@ -137,6 +137,7 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		else if(command->type == CUR_PLAYING)
 		{
 			sock_send_track(command->sockfd, queue_get_current());
+			sock_send_str(command->sockfd, "\n");
 			close(command->sockfd);
 			command->done = 1;
 		}
@@ -187,6 +188,30 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		else if(command->type == PLAY)
 		{
 			command_play(session, command);
+			close(command->sockfd);
+			command->done = 1;
+		}
+		else if(command->type == PLCREATE)
+		{
+			command_plcreate(command);
+			close(command->sockfd);
+			command->done = 1;
+		}
+		else if(command->type == PLDELETE)
+		{
+			command_pldelete(command);
+			close(command->sockfd);
+			command->done = 1;
+		}
+		else if(command->type == PLADD)
+		{
+			command_pladd(session, command);
+			close(command->sockfd);
+			command->done = 1;
+		}
+		else if(command->type == PLRM)
+		{
+			command_plrm(command);
 			close(command->sockfd);
 			command->done = 1;
 		}

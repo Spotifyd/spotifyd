@@ -29,3 +29,7 @@ void command_pause(sp_session *session, const struct command * const command);
 void command_pl(const struct command * const command);
 void command_saddpl(const struct command * const command);
 void command_qaddpl(const struct command * const command);
+void command_pladd(sp_session *session, const struct command * const command);
+void command_plrm(const struct command * const command);
+void command_plcreate(const struct command * const command);
+void command_pldelete(const struct command * const command);

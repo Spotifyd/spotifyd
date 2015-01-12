@@ -37,6 +37,14 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 
 		ret_val = entry;
 	}
+	if(!strncasecmp(line, "plcreate ", strlen("plcreate ")))
+	{
+		command->type = PLCREATE;
+		command->name = malloc(sizeof(char) * strlen(line + strlen("plcreate ")) + 1);
+		strcpy(command->search_string, line + strlen("plcreate "));
+
+		ret_val = entry;
+	}
 	else if(!strncasecmp(line, "qlist", strlen("qlist")))
 	{
 		command->type = QLIST;
@@ -87,6 +95,38 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->type = QADDPL;
 		char *tmp = line;
 		command->playlist = strtol(line + strlen("qaddpl "), &tmp, 10);
+		if(tmp != line)
+		{
+			ret_val = entry;
+		}
+	}
+	else if(!strncasecmp(line, "pladd ", strlen("pladd ")))
+	{
+		command->type = PLADD;
+		char *tmp = line;
+		command->track = strtol(line + strlen("pladd "), &tmp, 10);
+		command->playlist = strtol(tmp, &tmp, 10);
+		if(tmp != line)
+		{
+			ret_val = entry;
+		}
+	}
+	else if(!strncasecmp(line, "plrm ", strlen("plrm ")))
+	{
+		command->type = PLRM;
+		char *tmp = line;
+		command->track = strtol(line + strlen("plrm "), &tmp, 10);
+		command->playlist = strtol(tmp, &tmp, 10);
+		if(tmp != line)
+		{
+			ret_val = entry;
+		}
+	}
+	else if(!strncasecmp(line, "pldelete ", strlen("pldelete ")))
+	{
+		command->type = PLDELETE;
+		char *tmp = line;
+		command->playlist = strtol(line + strlen("pldelete "), &tmp, 10);
 		if(tmp != line)
 		{
 			ret_val = entry;

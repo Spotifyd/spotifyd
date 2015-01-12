@@ -61,6 +61,28 @@ const char *playlist_get_name(unsigned i)
 	return sp_playlist_name(sp_playlistcontainer_playlist(playlist_container, i));
 }
 
+bool playlist_new(const char * const name)
+{
+	return sp_playlistcontainer_add_new_playlist(playlist_container, name) != NULL;
+}
+
+bool playlist_add_track(unsigned playlist, sp_track * const track, sp_session *session)
+{
+	sp_playlist *pl = sp_playlistcontainer_playlist(playlist_container, playlist);
+	return sp_playlist_add_tracks(pl, &track, 1, sp_playlist_num_tracks(pl), session) == SP_ERROR_OK;
+}
+
+bool playlist_del_track(unsigned playlist, int track)
+{
+	sp_playlist *pl = sp_playlistcontainer_playlist(playlist_container, playlist);
+	return SP_ERROR_OK == sp_playlist_remove_tracks(pl, &track, 1);
+}
+
+bool playlist_remove(unsigned playlist)
+{
+	return SP_ERROR_OK == sp_playlistcontainer_remove_playlist(playlist_container, playlist);
+}
+
 bool playlist_for_each(unsigned playlistn, bool (*func_ptr)(sp_track *))
 {
 	if(playlist_container == NULL)
