@@ -38,13 +38,20 @@ pthread_t accept_thread;
 
 int main()
 {
+	/*
+	 * read username/password and where to listen for socket connections
+	 * from config file or stdin.
+	 */
 	read_config();
 
 	sp_session *session = NULL;
 	sp_error error;
-
 	is_playing = 0;
 
+	/*
+	 * set up the queue where commands from the user
+	 * will be stored.
+	 */
 	if(commandq_init() != 0)
 	{
 		printf("Couldn't create commandq.");
@@ -55,15 +62,33 @@ int main()
 
 	pthread_mutex_init(&search_result_lock, NULL);
 
+	/*
+	 * init the queue of songs to play.
+	 */
 	queue_init();
 
+	/*
+	 * make sure we free memory and close sockets 
+	 * when the application closes.
+	 */
 	atexit(&cleanup);
 
+	/*
+	 * sign in to spotify.
+	 */
 	if((error = session_init(&session)) != SP_ERROR_OK)
 	{
 		printf("%s", sp_error_message(error));
 	}
+	else
+	{
+		printf("Logged in!\n");
+	}
 
+	/*
+	 * if we have a path, listen to it as a unix socket.
+	 * if we have a port, listen to connections over network.
+	 */
 	if(have_socket_path())
 	{	
 		pthread_create(&accept_thread, NULL, sock_accept_connections_un, NULL);
