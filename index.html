@@ -59,7 +59,7 @@ any hardware you can imagine.</p>
 <pre><code>make &amp;&amp; sudo make install
 </code></pre>
 
-<p>Will install spotifyd.</p>
+<p>will install spotifyd. If you're running Arch Linux, you might want to install it from the <a href="https://aur.archlinux.org/packages/spotifyd/">AUR</a> instead.</p>
 
 <h3>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h3>
@@ -146,7 +146,30 @@ Adding: Brown Sugar - 2009 Re-Mastered Digital Version | The Rolling Stones
 
 <p>Okay, so no one would do that in practice. The point is just that
 the standard shell along with the unix tools are really powerful
-and allows you to do manage the queue efficiently.</p>
+and allows you to do manage the queue efficiently. For a list of all possible
+commands, send <code>help</code> to the server:</p>
+
+<pre><code>~ $ sc help
+Usage:
+     SEARCH str  - Searches spotify for str.
+     CUR_PLAYING - Returns the currently playing song.
+     QLIST       - List content of the queue.
+     SLIST       - List search results.
+     QRAND       - Toggle queue randomness on/off.
+     QADD n      - Add song n from search results to queue.
+     QCLEAR      - Clear the queue.
+     QRM n       - Remove track n from queue.
+     PLAY n      - Play song n in queue.
+     PAUSE       - Toggle play/pause.
+     PL          - List available playlists.
+     PLCREATE s  - Create new playlist with name s.
+     PLDELETE n  - Delete playlist n.
+     SADDPL n    - Put playlist n in search list.
+     QADDPL n    - Put playlist n in queue.
+     PLADD n p   - Add track n from queue to playlist p. 
+     PLRM n p    - Remove track n from playlist p.
+~ $
+</code></pre>
 
 <h3>
 <a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h3>
