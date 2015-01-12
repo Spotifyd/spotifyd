@@ -13,6 +13,10 @@ make
 As this software is not done yet, there's no install target. Do it
 manually if you want to install it globally.
 
+## Installation
+Installation is done with a simple `make install`. If you're running Arch Linux,
+there's a package on [AUR](https://aur.archlinux.org/packages/spotifyd/) as well.
+
 ### Dependencies
 libspotify and alsa (as far as I know!).
 
