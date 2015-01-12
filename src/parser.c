@@ -21,7 +21,7 @@
 
 #include "commandq.h"
 
-struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char * const line, int sockfd)
+struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line, int sockfd)
 {
 	struct commandq_entry *ret_val = NULL;
 	struct command *command = malloc(sizeof(struct command));
@@ -75,9 +75,9 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 	else if(!strncasecmp(line, "saddpl ", strlen("saddpl ")))
 	{
 		command->type = SADDPL;
-		char *tmp;
+		char *tmp = line;
 		command->playlist = strtol(line + strlen("saddpl "), &tmp, 10);
-		if(*tmp == '\0')
+		if(tmp != line)
 		{
 			ret_val = entry;
 		}
@@ -85,9 +85,9 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 	else if(!strncasecmp(line, "qaddpl ", strlen("qaddpl ")))
 	{
 		command->type = QADDPL;
-		char *tmp;
+		char *tmp = line;
 		command->playlist = strtol(line + strlen("qaddpl "), &tmp, 10);
-		if(*tmp == '\0')
+		if(tmp != line)
 		{
 			ret_val = entry;
 		}
@@ -95,9 +95,9 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 	else if(!strncasecmp(line, "qadd ", strlen("qadd ")))
 	{
 		command->type = QADD;
-		char *tmp;
+		char *tmp = line;
 		command->track = strtol(line + strlen("qadd "), &tmp, 10);
-		if(*tmp == '\0')
+		if(tmp != line)
 		{
 			ret_val = entry;
 		}
@@ -105,9 +105,9 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 	else if(!strncasecmp(line, "qrm ", strlen("qrm ")))
 	{
 		command->type = QRM;
-		char *tmp;
+		char *tmp = line;
 		command->track = strtol(line + strlen("qrm "), &tmp, 10);
-		if(*tmp == '\0')
+		if(tmp != line)
 		{
 			ret_val = entry;
 		}
@@ -115,9 +115,9 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, const char
 	else if(!strncasecmp(line, "play ", strlen("play ")))
 	{
 		command->type = PLAY;
-		char *tmp;
+		char *tmp = line;
 		command->track = strtol(line + strlen("play "), &tmp, 10);
-		if(*tmp == '\0')
+		if(tmp != line)
 		{
 			ret_val = entry;
 		}

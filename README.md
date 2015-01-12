@@ -17,15 +17,17 @@ manually if you want to install it globally.
 libspotify and alsa (as far as I know!).
 
 ## Connection
-For now spotifyd only accepts conenctions on a unix socket
-specified in config.h. The default is /tmp/spotifyd. For
+For now spotifyd only accepts conenctions on a socket, or a pair of sockets,
+specified in `~/.spotifyd.rc`. The example config listens uses `/tmp/spotifyd`
+as a unix socket and `127.0.0.1:12345` as an network socket. For
 testing purposes, one can connect to spotifyd with socat:
 ```
 socat UNIX:/tmp/spotifyd -
 ```
-This command lets you type commands to the server manually.
-
-I'm planning to add support for network sockets in the future.
+or with telnet:
+```
+telnet 127.0.0.1 12345
+```
 
 ## Commands
 The following commands are implemented in spotifyd. The same
@@ -137,8 +139,8 @@ the standard shell along with the unix tools are really powerful
 and allows you to do manage the queue efficiently.
 
 ## Configuration
-Configuration is done by editing config.h and rebuilding.
-At the very least, you have to add your username and password here.
+Configuration is done by placing a config file called `.spotifyd.rc` in the `$HOME` dir of whoever
+runs spotifyd. An example is provided.
 
 ## There's a weird binary among the source files, why!?
 Every application using libspotifAy requires an appkey.

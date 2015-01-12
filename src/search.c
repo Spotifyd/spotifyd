@@ -17,6 +17,7 @@
  */
 #include <libspotify/api.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 #include "search.h"
 #include "config.h"

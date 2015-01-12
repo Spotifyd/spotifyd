@@ -21,6 +21,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/queue.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #include <sys/un.h>
 #include <fcntl.h>
 #include <string.h>
@@ -33,6 +35,7 @@
 #include "helpers.h"
 
 pthread_t thread;
+int s_ip, s_un;
 
 /*
  * reads from sockfd into buf until either
@@ -103,7 +106,7 @@ void sock_send_track(int sockfd, sp_track *track)
 }
 
 /*
- * creates a non blocking unix socket.
+ * creates an unix socket.
  */
 int sock_create_un()
 {
@@ -112,7 +115,9 @@ int sock_create_un()
 
 	s = socket(AF_UNIX, SOCK_STREAM, 0);
 	local_un.sun_family = AF_UNIX;
-	strcpy(local_un.sun_path, SOCKET_PATH);
+	char *path = get_socket_path();
+	strcpy(local_un.sun_path, path);
+	free(path);
 	unlink(local_un.sun_path);
 	len = strlen(local_un.sun_path) + sizeof(local_un.sun_family);
 
@@ -128,18 +133,49 @@ int sock_create_un()
 		exit(1);
 	}
 
-	int flags = fcntl(s, F_GETFL, 0);
-	fcntl(s, F_SETFL, flags | O_NONBLOCK);
-
 	return s;
+}
+
+/*
+ * creates an IP socket.
+ */
+int sock_create_ip()
+{
+	struct sockaddr_storage;
+	struct addrinfo hints, *res;
+	int sockfd;
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+
+	char *port = get_port();
+	getaddrinfo(NULL, port, &hints, &res);
+	free(port);
+
+	sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	if(bind(sockfd, res->ai_addr, res->ai_addrlen) == -1)
+	{
+		perror("bind");
+		exit(1);
+	}
+
+	if(listen(sockfd, 10) == -1)
+	{
+		perror("listen");
+		exit(1);
+	}
+
+	return sockfd;
 }
 
 /*
  * Accepts connections to socket.
  */
-void *sock_accept_connections(void *sock)
+void *sock_accept_connections_un(void *not_used)
 {
-	int s = sock_create_un();
+	s_un = sock_create_un();
 
 	/* 
 	 * A bit of a hack. Makes s2 an unsigned integer
@@ -153,7 +189,35 @@ void *sock_accept_connections(void *sock)
 
 	for(;;)
 	{
-		if( (s2 = accept(s, (struct sockaddr *) &remote_un, &remote_un_s)) != -1)
+		if( (s2 = accept(s_un, (struct sockaddr *) &remote_un, &remote_un_s)) != -1)
+		{
+			/* 
+			 * we got someone connected. send them to the
+			 * connection handler.
+			 */
+			pthread_create(&thread, NULL, sock_connection_handler, (void*) s2);
+		}
+	}
+
+	return NULL;
+}
+
+void *sock_accept_connections_ip(void *not_used)
+{
+	int s_ip = sock_create_ip();
+
+	/* 
+	 * A bit of a hack. Makes s2 an unsigned integer
+	 * with the same length as a pointer. That means we
+	 * can cast it to a void pointer and avoid heap-allocating
+	 * an integer to send to the new thread.
+	 */
+	uintptr_t s2;
+	struct sockaddr_storage their_addr;
+	socklen_t addr_size = sizeof their_addr;
+	for(;;)
+	{
+		if( (s2 = accept(s_ip, (struct sockaddr *) &their_addr, &addr_size)) != -1)
 		{
 			/* 
 			 * we got someone connected. send them to the
@@ -200,4 +264,10 @@ void *sock_connection_handler(void *sock)
 	free(string);
 
 	return NULL;
+}
+
+void sock_close()
+{
+	close(s_ip);
+	close(s_un);
 }

@@ -38,6 +38,8 @@ pthread_t accept_thread;
 
 int main()
 {
+	read_config();
+
 	sp_session *session = NULL;
 	sp_error error;
 
@@ -55,12 +57,21 @@ int main()
 
 	queue_init();
 
+	atexit(&cleanup);
+
 	if((error = session_init(&session)) != SP_ERROR_OK)
 	{
 		printf("%s", sp_error_message(error));
 	}
-		
-	pthread_create(&accept_thread, NULL, sock_accept_connections, NULL);
+
+	if(have_socket_path())
+	{	
+		pthread_create(&accept_thread, NULL, sock_accept_connections_un, NULL);
+	}
+	if(have_port())
+	{
+		pthread_create(&accept_thread, NULL, sock_accept_connections_ip, NULL);
+	}
 
 	/* Main loop. Process spotify events and incoming socket connections. */
 	pthread_mutex_init(&notify_mutex, NULL);
@@ -103,3 +114,16 @@ int main()
 	}
 	return 0;
 }
+
+void cleanup()
+{
+	sock_close();
+	while(commandq.tqh_first != NULL)
+	{
+		commandq_pop();
+	}
+	while(queue_del_track(0));
+	search_clear();
+}
+
+

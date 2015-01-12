@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <libspotify/api.h>
 
 #include "callbacks.h"
@@ -53,6 +55,16 @@ sp_error session_init(sp_session **session)
 		return error;
 	}
 
-	return sp_session_login(*session, USERNAME, PASSWORD, 0, NULL);
+	char *username = get_username();
+	char *password = get_password();
+	error = sp_session_login(*session, username, password, 0, NULL);
+	/*
+	 * Don't keep a copy of the password in memory.
+	 */
+	memset(password, 0, strlen(password));
+	free(password);
+	free(username);
+
+	return error;
 }
 
