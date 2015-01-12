@@ -140,7 +140,8 @@ and allows you to do manage the queue efficiently.
 
 ## Configuration
 Configuration is done by placing a config file called `.spotifyd.rc` in the `$HOME` dir of whoever
-runs spotifyd. An example is provided.
+runs spotifyd. An example is provided. This file contains the port (or path if unix socket) that
+spotifyd should listen on and, optionally, the username and password to sign in with.
 
 ## There's a weird binary among the source files, why!?
 Every application using libspotifAy requires an appkey.

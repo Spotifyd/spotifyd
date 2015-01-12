@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include "spotifyd.h"
 #include "config.h"
@@ -110,17 +111,25 @@ bool read_config()
 		free(line);
 		n = 0;
 	}
-	
-	if(username == NULL)
+	if(username == NULL && password != NULL)
 	{
-		fprintf(stderr, "Couldn't read username!\n");
+		fprintf(stderr, "Couldn't read username.\n");
 		exit(-1);
 	}
-	if(password == NULL)
+	else if(username == NULL && password == NULL)
 	{
-		fprintf(stderr, "Couldn't read password!\n");
-		exit(-1);
+		n = 0;
+		printf("Username: ");
+		if(getline(&username, &n, stdin) == -1)
+		{
+			fprintf(stderr, "Couldn't read line.\n");
+			exit(-1);
+		}
+		password = getpass("Password: ");
 	}
-
+	else if(username != NULL && password == NULL)
+	{
+		password = getpass("Password: ");
+	}
 	return 1;
 }
