@@ -23,6 +23,7 @@
 #include <sys/un.h>
 #include <pthread.h>
 #include <errno.h>
+#include <signal.h>
 
 #include "queue.h"
 #include "helpers.h"
@@ -47,6 +48,11 @@ int main()
 	sp_session *session = NULL;
 	sp_error error;
 	is_playing = 0;
+
+	/*
+	 * Don't let the process die if the client hangs up on us.
+	 */
+	signal(SIGPIPE, SIG_IGN);
 
 	/*
 	 * set up the queue where commands from the user
