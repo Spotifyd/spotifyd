@@ -91,7 +91,9 @@ void on_end_of_track(sp_session *session)
 	struct commandq_entry *entry = malloc(sizeof(struct commandq_entry));
 	struct command *command = malloc(sizeof(struct command));
 	entry->val = command;
-	command->type = PLAY;	
+	command->type = PLAY;
+	command->done = 0;
+	command->handled = 0;
 	command->track = queue_get_next();
 	commandq_insert(entry);
 	pthread_mutex_lock(&commandq_lock);
