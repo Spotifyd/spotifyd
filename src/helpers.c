@@ -59,7 +59,7 @@ struct timespec rel_to_abstime(int msec)
 	return ts;
 }
 
-void play(sp_session *session, sp_track *track, bool flush)
+bool play(sp_session *session, sp_track *track, bool flush)
 {
 	debug("play\n");
 
@@ -70,17 +70,18 @@ void play(sp_session *session, sp_track *track, bool flush)
 
 	if(track == NULL)
 	{
-		return;
+		return 0;
 	}
-	
+
 	sp_error error = sp_session_player_load(session, track);
 
 	if(error != SP_ERROR_OK)
 	{
-		printf("Error: %s\n", sp_error_message(error));
-		return;
+		return 0;
 	}
 
 	sp_session_player_play(session, 1);
 	is_playing = 1;
+
+	return 1;
 }
