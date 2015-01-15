@@ -119,14 +119,15 @@ void command_play(sp_session *session, const struct command * const command)
 
 		/*
 		 * If the track fails to play, we try to play the next song.
-		 * If playing fails ten times in a row, we give up.
+		 * If no track is found within the maximum length of the queue,
+		 * give up.
 		 */
 		int cntr = 0;
 		int track = command->track;
 		while(!play(session, queue_get(track), 1))
 		{
 			++cntr;
-			if(cntr == 10)
+			if(cntr == PLAY_QUEUE_LEN)
 			{
 				sock_send_str(command->sockfd, "There doesn't seem to be any playable track in the queue.\n");
 				return;
