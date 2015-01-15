@@ -191,6 +191,18 @@ void commandq_execute_command(sp_session *session, struct command *command)
 			close(command->sockfd);
 			command->done = 1;
 		}
+		else if(command->type == PREV)
+		{
+			command_prev(session, command);
+			close(command->sockfd);
+			command->done = 1;
+		}
+		else if(command->type == NEXT)
+		{
+			command_next(session, command);
+			close(command->sockfd);
+			command->done = 1;
+		}
 		else if(command->type == PLCREATE)
 		{
 			command_plcreate(command);

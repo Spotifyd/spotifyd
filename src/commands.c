@@ -138,8 +138,22 @@ void command_play(sp_session *session, const struct command * const command)
 
 	}
 	sock_send_str(command->sockfd, "Playing: ");
-	sock_send_track(command->sockfd, queue_get(command->track));
+	sock_send_track(command->sockfd, queue_get_current());
 	sock_send_str(command->sockfd, "\n");
+}
+
+void command_prev(sp_session *session, struct command * const command)
+{
+	command->type = PLAY;
+	command->track = queue_get_prev();
+	command_play(session, command);
+}
+
+void command_next(sp_session *session, struct command * const command)
+{
+	command->type = PLAY;
+	command->track = queue_get_next();
+	command_play(session, command);
 }
 
 void command_pause(sp_session *session, const struct command * const command)

@@ -36,6 +36,8 @@ struct command
 		QLIST, /* show queue */
 		QRAND, /* toggle queue randomness */
 		PLAY, /* play song from queue */
+		PREV, /* skip to previous song */
+		NEXT, /* skip to next song */
 		QCLEAR, /* clear queue */
 		QADD, /* add search result to queue */
 		QRM, /* remove track in queue */
@@ -73,6 +75,8 @@ static const char help_str[] = "Usage:\n \
 \t QCLEAR      - Clear the queue.\n \
 \t QRM n       - Remove track n from queue.\n \
 \t PLAY n      - Play song n in queue.\n \
+\t PREV        - Play previous song.\n \
+\t NEXT        - Play next song.\n \
 \t PAUSE       - Toggle play/pause.\n \
 \t PL          - List available playlists.\n \
 \t PLCREATE s  - Create new playlist with name s.\n \

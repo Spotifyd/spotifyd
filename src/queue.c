@@ -30,7 +30,6 @@ unsigned queue_len;
 bool queue_random;
 unsigned queue_position;
 
-
 void queue_init()
 {
 	queue_len = 0;
@@ -70,6 +69,21 @@ int queue_get_next()
 		next_track = (queue_position + 1)%queue_len;
 	}
 	return next_track;
+}
+
+int queue_get_prev()
+{
+	srand(time(NULL));
+	int prev_track;
+	if(queue_random)
+	{
+		prev_track = rand()%queue_len;
+	}
+	else
+	{
+		prev_track = (queue_position - 1)%queue_len;
+	}
+	return prev_track;
 }
 
 bool queue_toggle_random()

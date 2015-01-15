@@ -71,6 +71,16 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->type = PAUSE;
 		ret_val = entry;
 	}
+	else if(!strncasecmp(line, "prev", strlen("prev")))
+	{
+		command->type = PREV;
+		ret_val = entry;
+	}
+	else if(!strncasecmp(line, "next", strlen("next")))
+	{
+		command->type = NEXT;
+		ret_val = entry;
+	}
 	else if(!strncasecmp(line, "help", strlen("help")))
 	{
 		command->type = HELP;

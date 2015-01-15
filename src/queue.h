@@ -20,6 +20,7 @@
 #include <libspotify/api.h>
 
 int queue_get_next();
+int queue_get_prev();
 unsigned queue_get_len();
 sp_track *queue_get(unsigned);
 void queue_set_current(unsigned);
