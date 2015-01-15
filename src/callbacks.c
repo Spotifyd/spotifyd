@@ -135,6 +135,7 @@ void on_search_complete(sp_search *search, void *userdata)
 		track = sp_search_track(search, i);
 		search_add_track(track);
 		sock_send_track_with_trackn(sockfd, track, i);
+		sock_send_str(sockfd, "\n");
 	}
 	
 	/*
