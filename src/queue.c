@@ -32,6 +32,7 @@ unsigned queue_position;
 
 void queue_init()
 {
+	srand(time(NULL));
 	queue_len = 0;
 	queue_position = 0;
 	queue_random = 0;
@@ -58,7 +59,6 @@ bool queue_add_track(sp_track *track)
 
 int queue_get_next()
 {
-	srand(time(NULL));
 	int next_track;
 	if(queue_random)
 	{
