@@ -36,7 +36,7 @@ void command_search(sp_session *session, const struct command * const command)
 		sp_search_create(session, 
 			command->search_string,
 			0,
-			100,
+			NUM_SEARCH_RESULTS,
 			0,
 			0,
 			0,

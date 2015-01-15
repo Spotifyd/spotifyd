@@ -19,7 +19,7 @@
 #include "spotifyd.h"
 
 #define PLAY_QUEUE_LEN 10000
-#define NUM_SEARCH_RESULTS 100
+#define NUM_SEARCH_RESULTS PLAY_QUEUE_LEN
 
 bool read_config();
 char *get_socket_path();
