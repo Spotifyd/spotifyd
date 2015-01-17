@@ -1,5 +1,5 @@
 # spotifyd(8) - A spotify daemon
-A **spotify** playing *daemon* in the spirit of MPD, **Music Player Daemon**.
+A **Spotify** daemon in the spirit of MPD, **Music Player Daemon**.
 
 ## Features
 Right now, spotifyd can search, add to a queue, play the queue
