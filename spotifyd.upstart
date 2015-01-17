@@ -1,0 +1,8 @@
+# This is an Upstart session job. Place in
+# ~/.config/upstart/sessions to launch
+# spotifyd with your upstart-managed sessions
+
+start on startup
+stop on session-end
+
+exec spotifyd
