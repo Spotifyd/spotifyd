@@ -48,9 +48,9 @@ Playing: Moanin' | Art Blakey &amp; The Jazz Messengers
 <h3>
 <a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h3>
 
-<p><strong>Spotifyd</strong>, <em>spotify daemon</em>, is a suckless alternative to the official <strong>Spotify</strong> client for linux.
+<p><strong>Spotifyd</strong>, <em>Spotify daemon</em>, is a suckless alternative to the official <strong>Spotify</strong> client for linux.
 It uses the same client/server model as the popular <strong>Music Player Daemon</strong>. This means that you can have
-a server running on one computer, a raspberry pi for example, and the control it from
+the <strong>Spotify</strong> daemon running on one computer, a raspberry pi for example, and the control it from
 any other machines on the network. Neat huh? It's very lightweight and will run on basically
 any hardware you can imagine.</p>
 
@@ -67,7 +67,7 @@ any hardware you can imagine.</p>
 <h3>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h3>
 
-<p>A simple configuration file is read from <code>$HOME/.spotifyd.rc</code>. It looks like this:</p>
+<p>The Spotify daemon reads simple configuration file is read from <code>$HOME/.spotifyd.rc</code>. It looks like this:</p>
 
 <pre><code>username my_user_name
 password my_password
@@ -75,7 +75,7 @@ unix-socket /tmp/spotifyd
 port 12345
 </code></pre>
 
-<p>The server can be configured to listen on a unix socket, a network socket, or both.</p>
+<p>The daemon can be configured to listen on a unix socket, a network socket, or both.</p>
 
 <h3>
 <a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h3>
