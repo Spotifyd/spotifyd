@@ -163,6 +163,12 @@ able to build this program, I supply appkey.key, a binary version
 of the appkey. You can feel free to inspect this binary, or request
 your own appkey from spotify if you don't trust me.
 
+## Spotifyd says "Couldn't log in.", why?
+Spotifyd requires Spotify Premium. This is a requirement on all applications using
+libspotify unfortunately. If you have premium and it still doesn't work, and you are sure
+that you're typing the correct username and password, open an issue and I'll investigate this
+further.
+
 ## License
 The project is licensed under GPLv3 with the exception of the files audio.h,
 audio.c and alsa-audio.c that are from the libspotify examples. The function
