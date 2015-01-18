@@ -60,13 +60,17 @@ bool queue_add_track(sp_track *track)
 int queue_get_next()
 {
 	int next_track;
-	if(queue_random)
+	/* Avoid division by zero */
+	if(queue_len > 0)
 	{
-		next_track = rand()%queue_len;
-	}
-	else
-	{
-		next_track = (queue_position + 1)%queue_len;
+		if(queue_random)
+		{
+			next_track = rand()%queue_len;
+		}
+		else
+		{
+			next_track = (queue_position + 1)%queue_len;
+		}
 	}
 	return next_track;
 }
@@ -75,13 +79,16 @@ int queue_get_prev()
 {
 	srand(time(NULL));
 	int prev_track;
-	if(queue_random)
+	if(queue_len > 0)
 	{
-		prev_track = rand()%queue_len;
-	}
-	else
-	{
-		prev_track = (queue_position - 1)%queue_len;
+		if(queue_random)
+		{
+			prev_track = rand()%queue_len;
+		}
+		else
+		{
+			prev_track = (queue_position - 1)%queue_len;
+		}
 	}
 	return prev_track;
 }
