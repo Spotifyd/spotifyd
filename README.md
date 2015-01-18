@@ -167,6 +167,15 @@ your own appkey from spotify if you don't trust me.
 Spotifyd requires Spotify Premium. This is a requirement on all applications using
 libspotify unfortunately.
 
+## Note for PulseAudio users
+spotifyd uses libalsa to play audio. If you are running a distribution that
+uses pulseaudio, this means that you may not be able to play audio via ALSA
+and PulseAudio at the same time. To fix this, audio from alsa needs to be
+piped to pulseaudio.
+
+For Arch Linux users, this can be done by simply installing the
+[pulseaudio-alsa](https://www.archlinux.org/packages/extra/any/pulseaudio-alsa/) package.
+
 ## License
 The project is licensed under GPLv3 with the exception of the files audio.h,
 audio.c and alsa-audio.c that are from the libspotify examples. The function
