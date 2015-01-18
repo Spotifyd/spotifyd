@@ -1,0 +1,14 @@
+#!/bin/bash
+# Made by /u/IceDane on reddit
+# Uses dmenu to fuzzy search playlist
+
+sc_dmenu () {
+	song=$(sc qlist \
+		| column -t -s '|' \
+		| dmenu -b -i -p "Song: " -l 10 -nb black -nf '#82b919' \
+			-fn 'Inconsolata-10' \
+	)
+	sc play $(echo $song | awk '{print $1}')
+}
+
+sc_dmenu

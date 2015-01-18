@@ -1,0 +1,18 @@
+#!/bin/bash
+# Made by /u/MacGuyverism on reddit 
+# with small modifications by SimonPersson.
+
+echo "Welcome!"
+echo "Terminate with exit, quit or ctrl-c"
+
+while :
+do
+
+read -e -p ">" INPUT
+
+[ "$INPUT" == "quit" ] ||  [ "$INPUT" == "exit" ] && break
+sc $INPUT
+
+done
+
+echo "Bye!"

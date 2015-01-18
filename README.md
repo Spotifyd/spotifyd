@@ -7,6 +7,10 @@ Right now, spotifyd can search, add to a queue, play the queue
 For my use it's pretty much feature complete but if you feel something is missing,
 please open an issue (or better yet, send a pull request with a patch for the new feature!).
 
+### Scripts
+Spotifyd is fairly scriptable and hence features can be added without modifying
+the source code of spotifyd itself. See the scripts directory for examples.
+
 ## Build
 Building is done with a single command:
 ```
