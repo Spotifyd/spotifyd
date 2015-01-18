@@ -74,6 +74,11 @@ char *trim_whitespace(char *str)
 bool read_config()
 {
 	char *config_file = malloc(sizeof(char) * (strlen(getenv("HOME")) + strlen("/.spotifyd.rc") + 1));
+	if(config_file == NULL)
+	{
+		fprintf(stderr, "Can't allocate memory. Quitting.\n");
+		exit(1);
+	}
 	strcat(config_file, getenv("HOME"));
 	strcat(config_file, "/.spotifyd.rc");
 	FILE *fp = fopen(config_file, "r");
@@ -87,24 +92,44 @@ bool read_config()
 		{
 			char *tmp = trim_whitespace(line + strlen("username"));
 			username = malloc(sizeof(char) * (strlen(tmp) + 1));
+			if(username == NULL)
+			{
+				fprintf(stderr, "Can't allocate memory. Quitting.\n");
+				exit(1);
+			}
 			strcpy(username, tmp);
 		}
 		else if(!strncasecmp(line, "password", strlen("password")))
 		{
 			char *tmp = trim_whitespace(line + strlen("password"));
 			password = malloc(sizeof(char) * (strlen(tmp) + 1));
+			if(password == NULL)
+			{
+				fprintf(stderr, "Can't allocate memory. Quitting.\n");
+				exit(1);
+			}
 			strcpy(password, tmp);
 		}
 		else if(!strncasecmp(line, "unix-socket", strlen("unix-socket")))
 		{
 			char *tmp = trim_whitespace(line + strlen("unix-socket"));
 			socket_path = malloc(sizeof(char) * (strlen(tmp) + 1));
+			if(socket_path == NULL)
+			{
+				fprintf(stderr, "Can't allocate memory. Quitting.\n");
+				exit(1);
+			}
 			strcpy(socket_path, tmp);
 		}
 		else if(!strncasecmp(line, "port", strlen("port")))
 		{
 			char *tmp = trim_whitespace(line + strlen("port"));
 			port = malloc(sizeof(char) * (strlen(tmp) + 1));
+			if(port == NULL)
+			{
+				fprintf(stderr, "Can't allocate memory. Quitting.\n");
+				exit(1);
+			}
 			strcpy(port, tmp);
 		}
 

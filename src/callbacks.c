@@ -58,6 +58,12 @@ int on_music_delivered(sp_session *session, const sp_audioformat *format, const 
 	s = num_frames * sizeof(int16_t) * format->channels;
 
 	afd = malloc(sizeof(*afd) + s);
+	if(afd == NULL)
+	{
+		fprintf(stderr, "Can't allocate memory. Quitting.\n");
+		exit(1);
+	}
+
 	memcpy(afd->samples, frames, s);
 
 	afd->nsamples = num_frames;
@@ -90,6 +96,11 @@ void on_end_of_track(sp_session *session)
 	 */
 	struct commandq_entry *entry = malloc(sizeof(struct commandq_entry));
 	struct command *command = malloc(sizeof(struct command));
+	if(command == NULL || entry == NULL)
+	{
+		fprintf(stderr, "Can't allocate memory. Quitting.\n");
+		exit(1);
+	}
 	entry->val = command;
 	command->type = PLAY;
 	command->done = 0;

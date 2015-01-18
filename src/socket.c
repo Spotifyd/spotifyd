@@ -243,10 +243,10 @@ void *sock_connection_handler(void *sock)
 	int sockfd = (uintptr_t)sock;
 	
 	char *string = malloc(sizeof(char) * API_MESSAGE_LEN);
-	if(!sock_readline(sockfd, string))
+	if(string != NULL && !sock_readline(sockfd, string))
 	{
 		struct commandq_entry *entry = malloc(sizeof(struct commandq_entry));
-		if(parse_input_line(entry, string, sockfd) != NULL)
+		if(entry != NULL && parse_input_line(entry, string, sockfd) != NULL)
 		{
 			pthread_mutex_lock(&commandq_lock);
 			commandq_insert(entry);

@@ -26,6 +26,11 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 {
 	struct commandq_entry *ret_val = NULL;
 	struct command *command = malloc(sizeof(struct command));
+	if(command == NULL)
+	{
+		fprintf(stderr, "Can't allocate memory. Quitting.\n");
+		exit(1);
+	}
 	command->handled = 0;
 	command->done = 0;
 	command->sockfd = sockfd;
@@ -34,6 +39,11 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 	{
 		command->type = SEARCH;
 		command->search_string = malloc(sizeof(char) * strlen(line + strlen("search ")) + 1);
+		if(command->search_string == NULL)
+		{
+			fprintf(stderr, "Can't allocate memory. Quitting.\n");
+			exit(1);
+		}
 		strcpy(command->search_string, line + strlen("search "));
 
 		ret_val = entry;
@@ -42,6 +52,11 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 	{
 		command->type = PLCREATE;
 		command->name = malloc(sizeof(char) * strlen(line + strlen("plcreate ")) + 1);
+		if(command->name == NULL)
+		{
+			fprintf(stderr, "Can't allocate memory. Quitting.\n");
+			exit(1);
+		}
 		strcpy(command->search_string, line + strlen("plcreate "));
 
 		ret_val = entry;
