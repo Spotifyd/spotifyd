@@ -26,6 +26,6 @@ sp_track *queue_get(unsigned);
 void queue_set_current(unsigned);
 sp_track *queue_get_current();
 bool queue_del_track(unsigned trackn);
-bool queue_toggle_random();
+void queue_shuffle();
 bool queue_add_track(sp_track *track);
 void queue_init();

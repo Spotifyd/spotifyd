@@ -52,16 +52,8 @@ void command_search(sp_session *session, const struct command * const command)
 
 void command_qrand(sp_session *session, const struct command * const command)
 {
-	sock_send_str(command->sockfd, "Turned queue ranomness ");
-	bool queue_is_random = queue_toggle_random();
-	if(queue_is_random)
-	{
-		sock_send_str(command->sockfd, "on.\n");
-	}
-	else
-	{
-		sock_send_str(command->sockfd, "off.\n");
-	}
+	queue_shuffle();
+	sock_send_str(command->sockfd, "Shuffled queue.\n");
 }
 
 /*

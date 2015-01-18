@@ -27,7 +27,6 @@
 
 sp_track *queue[PLAY_QUEUE_LEN];
 unsigned queue_len;
-bool queue_random;
 unsigned queue_position;
 
 void queue_init()
@@ -35,8 +34,26 @@ void queue_init()
 	srand(time(NULL));
 	queue_len = 0;
 	queue_position = 0;
-	queue_random = 0;
 	memset(queue, 0, PLAY_QUEUE_LEN * sizeof(sp_track *));
+}
+
+void queue_shuffle()
+{
+	int i;
+	/*
+	 * run five times the queue length to make sure most tracks
+	 * are moved.
+	 */
+	for(i=0; i<5*queue_len; ++i)
+	{
+		/*
+		 * take two random tracks and swap them.
+		 */
+		int p1 = rand()%queue_len, p2 = rand()%queue_len;
+		sp_track *tmp = queue[p1];
+		queue[p1] = queue[p2];
+		queue[p2] = tmp;
+	}
 }
 
 bool queue_add_track(sp_track *track)
@@ -63,40 +80,19 @@ int queue_get_next()
 	/* Avoid division by zero */
 	if(queue_len > 0)
 	{
-		if(queue_random)
-		{
-			next_track = rand()%queue_len;
-		}
-		else
-		{
-			next_track = (queue_position + 1)%queue_len;
-		}
+		next_track = (queue_position + 1)%queue_len;
 	}
 	return next_track;
 }
 
 int queue_get_prev()
 {
-	srand(time(NULL));
 	int prev_track;
 	if(queue_len > 0)
 	{
-		if(queue_random)
-		{
-			prev_track = rand()%queue_len;
-		}
-		else
-		{
-			prev_track = (queue_position - 1)%queue_len;
-		}
+		prev_track = (queue_position - 1)%queue_len;
 	}
 	return prev_track;
-}
-
-bool queue_toggle_random()
-{
-	queue_random = !queue_random;
-	return queue_random;
 }
 
 sp_track *queue_get(unsigned i)

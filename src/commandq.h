@@ -34,7 +34,7 @@ struct command
 	enum {
 		SLIST, /* show search results */
 		QLIST, /* show queue */
-		QRAND, /* toggle queue randomness */
+		QRAND, /* shuffle queue */
 		PLAY, /* play song from queue */
 		PREV, /* skip to previous song */
 		NEXT, /* skip to next song */
@@ -70,7 +70,7 @@ static const char help_str[] = "Usage:\n \
 \t CUR_PLAYING - Returns the currently playing song.\n \
 \t QLIST       - List content of the queue.\n \
 \t SLIST       - List search results.\n \
-\t QRAND       - Toggle queue randomness on/off.\n \
+\t QRAND       - Shuffle queue.\n \
 \t QADD n      - Add song n from search results to queue.\n \
 \t QCLEAR      - Clear the queue.\n \
 \t QRM n       - Remove track n from queue.\n \
