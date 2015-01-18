@@ -167,7 +167,7 @@ Spotifyd requires Spotify Premium. This is a requirement on all applications usi
 libspotify unfortunately.
 
 ## Note for PulseAudio users
-spotifyd uses libalsa to play audio. If you are running a distribution that
+Spotifyd uses libalsa to play audio. If you are running a distribution that
 uses pulseaudio, this means that you may not be able to play audio via ALSA
 and PulseAudio at the same time. To fix this, audio from alsa needs to be
 piped to pulseaudio.
