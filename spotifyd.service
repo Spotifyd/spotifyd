@@ -1,0 +1,9 @@
+[Unit]
+Description=Spotify Daemon
+
+[Service]
+ExecStart=/usr/bin/spotifyd
+User=<USER>
+
+[Install]
+WantedBy=multi-user.target
