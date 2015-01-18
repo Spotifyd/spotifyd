@@ -99,7 +99,25 @@ int main()
 	}
 
 	/* Main loop. Process spotify events and incoming socket connections. */
-	pthread_mutex_init(&notify_mutex, NULL);
+	int mutex_init_error;
+	do
+	{
+		mutex_init_error = pthread_mutex_init(&notify_mutex, NULL);
+	} while(mutex_init_error == EAGAIN);
+	if(mutex_init_error != 0)
+	{
+		fprintf(stderr, "Couldn't initialize mutex. Quitting.\n");
+	}
+
+	do
+	{
+		mutex_init_error = pthread_cond_init(&notify_cond, NULL);
+	} while(mutex_init_error == EAGAIN);
+	if(mutex_init_error != 0)
+	{
+		fprintf(stderr, "Couldn't initialize mutex. Quitting.\n");
+	}
+
 	pthread_mutex_lock(&notify_mutex);
 	notify_do = 1;
 	int next_timeout = 0;

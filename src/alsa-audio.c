@@ -220,8 +220,24 @@ void audio_init(audio_fifo_t *af)
 	TAILQ_INIT(&af->q);
 	af->qlen = 0;
 
-	pthread_mutex_init(&af->mutex, NULL);
-	pthread_cond_init(&af->cond, NULL);
+	int mutex_init_error;
+	do
+	{
+		mutex_init_error = pthread_mutex_init(&af->mutex, NULL);
+	} while(mutex_init_error == EAGAIN);
+	if(mutex_init_error != 0)
+	{
+		fprintf(stderr, "Couldn't initialize mutex. Quitting.\n");
+	}
+	
+	do
+	{
+		mutex_init_error = pthread_cond_init(&af->cond, NULL);
+	} while(mutex_init_error == EAGAIN);
+	if(mutex_init_error != 0)
+	{
+		fprintf(stderr, "Couldn't initialize mutex. Quitting.\n");
+	}
 
 	pthread_create(&tid, NULL, alsa_audio_start, af);
 }
