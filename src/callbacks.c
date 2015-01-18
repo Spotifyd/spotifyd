@@ -102,10 +102,9 @@ void on_end_of_track(sp_session *session)
 		exit(1);
 	}
 	entry->val = command;
-	command->type = PLAY;
+	command->type = NEXT;
 	command->done = 0;
 	command->handled = 0;
-	command->track = queue_get_next();
 	commandq_insert(entry);
 	pthread_mutex_lock(&commandq_lock);
 	notify_main_thread();
