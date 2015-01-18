@@ -154,6 +154,10 @@ Configuration is done by placing a config file called `.spotifyd.rc` in the `$HO
 runs spotifyd. An example is provided. This file contains the port (or path if unix socket) that
 spotifyd should listen on and, optionally, the username and password to sign in with.
 
+### Autostart
+If you want spotifyd to start at boot you need to add some sort of init script.
+In the `init/` directory there are examples for some init systems.
+
 ## There's a weird binary among the source files, why!?
 Every application using libspotify requires an appkey.
 However, spotify don't allow you to share it openly in plain text,
