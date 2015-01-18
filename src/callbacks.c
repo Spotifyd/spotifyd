@@ -156,8 +156,12 @@ void on_login(sp_session *session, sp_error error)
 	debug("on_login\n");
 	if(error != SP_ERROR_OK)
 	{
-		printf("Couldn't log in.\n");
+		printf("Couldn't log in: %s\n", sp_error_message(error));
 		exit (1);
+	}
+	else
+	{
+		printf("Logged in!\n");
 	}
 
 	playlist_init(session);

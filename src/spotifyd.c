@@ -84,10 +84,6 @@ int main()
 	{
 		printf("%s", sp_error_message(error));
 	}
-	else
-	{
-		printf("Logged in!\n");
-	}
 
 	/*
 	 * if we have a path, listen to it as a unix socket.
