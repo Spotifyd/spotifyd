@@ -180,6 +180,22 @@ The project is licensed under GPLv3 with the exception of the files audio.h,
 audio.c and alsa-audio.c that are from the libspotify examples. The function
 `on_music_delivered` in callbacks.c is also from the libspotify documentation.
 
+## Report a bug
+Did spotifyd behave unexpectedly? File an issue and I'll look into it.
+
+If spotifyd crashes with a nasty error message, I'd like you to provide a backtrace
+in the issue report. To create a backtrace, to the following:
+* Edit `Makefile`, append `-g` to the `CFLAGS` line.
+* Rebuild the program with `make clean && make`.
+* Run spotifyd in GDB `gdb ./spotifyd`
+   * If GDB is not installed on your computer, install it through your package manager.
+* In GDB, type `run`
+* Do what you normally do to make the application crash.
+* When it has crashed, type `bt` in the GDB shell.
+
+Post the output of the `bt` command together with a description of how the crash
+can be reproduced to the issue tracker.
+
 ## Contributions
 Found a bug or want to add a new feature? Great! Send a pull request and I will take a look.
 Let's make this the greatest Spotify client out there!
