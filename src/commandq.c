@@ -203,7 +203,7 @@ void commandq_execute_command(sp_session *session, struct command *command)
 			close(command->sockfd);
 			command->done = 1;
 		}
-		else if(command->type = QPRINT)
+		else if(command->type == QPRINT)
 		{
 			command_qprint(command);
 			close(command->sockfd);
