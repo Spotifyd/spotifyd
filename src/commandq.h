@@ -35,6 +35,7 @@ struct command
 		SLIST, /* show search results */
 		QLIST, /* show queue */
 		QRAND, /* shuffle queue */
+		QPRINT, /* toggle queue printing behavoiur */
 		PLAY, /* play song from queue */
 		PREV, /* skip to previous song */
 		NEXT, /* skip to next song */
@@ -73,6 +74,7 @@ static const char help_str[] = "Usage:\n \
 \t QRAND       - Shuffle queue.\n \
 \t QADD n      - Add song n from search results to queue.\n \
 \t QCLEAR      - Clear the queue.\n \
+\t QPRINT      - Toggle queue printing behaviour.\n \
 \t QRM n       - Remove track n from queue.\n \
 \t PLAY n      - Play song n in queue.\n \
 \t PREV        - Play previous song.\n \

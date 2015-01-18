@@ -32,6 +32,10 @@ unsigned queue_position;
 void queue_init()
 {
 	srand(time(NULL));
+	/*
+	 * Print first song in queue first.
+	 */
+	queue_print_cur_first = 0;
 	queue_len = 0;
 	queue_position = 0;
 	memset(queue, 0, PLAY_QUEUE_LEN * sizeof(sp_track *));
@@ -110,6 +114,11 @@ sp_track *queue_get_current()
 	sp_track *ret_val = NULL;
 	ret_val = queue[queue_position];
 	return ret_val;
+}
+
+int queue_get_pos()
+{
+	return queue_position;
 }
 
 unsigned queue_get_len()

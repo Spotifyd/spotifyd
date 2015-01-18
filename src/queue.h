@@ -19,11 +19,18 @@
 
 #include <libspotify/api.h>
 
+/*
+ * When printing the queue, which song should come first?
+ * Alternatives are: The currently playing song and the first song in queue.
+ */
+bool queue_print_cur_first;
+
 int queue_get_next();
 int queue_get_prev();
 unsigned queue_get_len();
 sp_track *queue_get(unsigned);
 void queue_set_current(unsigned);
+int queue_get_pos();
 sp_track *queue_get_current();
 bool queue_del_track(unsigned trackn);
 void queue_shuffle();

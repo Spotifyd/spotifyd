@@ -76,11 +76,29 @@ void command_lists(sp_session *session, const struct command * const command)
 void command_listq(sp_session *session, const struct command * const command)
 {
 	unsigned i = 0;
+	if(queue_print_cur_first)
+	{
+		i = queue_get_pos();
+	}
+
 	while(queue_get(i) != NULL && i < NUM_SEARCH_RESULTS)
 	{
 		sock_send_track_with_trackn(command->sockfd, queue_get(i), i);
 		sock_send_str(command->sockfd, "\n");
 		++i;
+	}
+}
+
+void command_qprint(const struct command * const command)
+{
+	queue_print_cur_first = !queue_print_cur_first;
+	if(queue_print_cur_first)
+	{
+		sock_send_str(command->sockfd, "Will print the currently playing song first.\n");
+	}	
+	else
+	{
+		sock_send_str(command->sockfd, "Will print the first song in queue first.\n");
 	}
 }
 

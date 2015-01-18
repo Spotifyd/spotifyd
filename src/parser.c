@@ -71,6 +71,11 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->type = CUR_PLAYING;
 		ret_val = entry;
 	}
+	else if(!strncasecmp(line, "qprint", strlen("qprint")))
+	{
+		command->type = QPRINT;
+		ret_val = entry;
+	}
 	else if(!strncasecmp(line, "slist", strlen("slist")))
 	{
 		command->type = SLIST;

@@ -21,6 +21,7 @@
 
 void command_prev(sp_session *session, const struct command * const command);
 void command_next(sp_session *session, const struct command * const command);
+void command_qprint(const struct command * const command);
 void command_search(sp_session *session, const struct command * const command);
 void command_qrand(sp_session *session, const struct command * const command);
 void command_lists(sp_session *session, const struct command * const command);
