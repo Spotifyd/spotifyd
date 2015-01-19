@@ -167,8 +167,9 @@ Every application using libspotify requires an appkey.
 However, spotify don't allow you to share it openly in plain text,
 only compiled as a part of your program. As I want anyone to be
 able to build this program, I supply appkey.key, a binary version
-of the appkey. You can feel free to inspect this binary, or request
-your own appkey from spotify if you don't trust me.
+of the appkey. You can feel free to inspect this binary, or [request
+your own appkey](https://devaccount.spotify.com/my-account/keys/) from spotify then download and 
+overwrite the binary yourself, if you don't trust me.
 
 ## Premium account
 Spotifyd requires Spotify Premium. This is a requirement on all applications using
