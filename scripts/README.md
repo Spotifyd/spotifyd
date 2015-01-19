@@ -25,6 +25,8 @@ export -f sc
 ```
 and change the location of the unix socket/the IP and port of the server.
 
+This little shell function is required by every other script so make sure you have it
+installed even though you don't plan on using it directly.
 
 ## sc-dmenu
 Searches the queue with dmenu and plays the selected song. Provided by [/u/IceDane](http://www.reddit.com/user/IceDane)
