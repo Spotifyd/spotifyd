@@ -28,9 +28,14 @@ and change the location of the unix socket/the IP and port of the server.
 This little shell function is required by every other script so make sure you have it
 installed even though you don't plan on using it directly.
 
-## sc-dmenu
-Searches the queue with dmenu and plays the selected song. Provided by [/u/IceDane](http://www.reddit.com/user/IceDane)
-on reddit.
+## spotifyd-dmenu
+Searches the queue with dmenu and plays the selected song. Provided by
+[Sævar Berg](http://www.github.com/saevarb).
+
+## spotifyd-nowplaying
+Parses `sc cur_playing` and allows for customization of the output as well
+as truncation and such. Ideal for trays/bars. See file for more details.
+Provided by [Sævar Berg](http://www.github.com/saevarb).
 
 ## scli
 Wrapper script for `sc`, keeps reading input from user so that
