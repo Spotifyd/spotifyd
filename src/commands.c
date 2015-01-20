@@ -183,10 +183,8 @@ void command_play(sp_session *session, const struct command * const command)
 				return;
 			}
 			track = queue_get_next();
-			queue_set_current(track);
 		}
-		
-
+		queue_set_current(track);
 	}
 	sock_send_str(command->sockfd, "Playing: ");
 	sock_send_track(command->sockfd, queue_get_current());
