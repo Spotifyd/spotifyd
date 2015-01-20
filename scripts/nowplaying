@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Shows currently playing song in spotifyd.
+# Trims output to desired length using dots
+# to denote there is more.
+# Example:
+#    NP: Song Title - Really long artist n...
+#    NP: Song Title - Short Artist Name
+#    Nothing is playing.
+#
+# As should be obvious, I am no bash scripting wizard.
+# Feel free to submit improvements.
+# By www.github.com/saevarb -- free as in beer
+# though i'd appreciate keeping the credit.
+
+# This is the max length of song + dots.
+maxlen=30
+# Number of dots
+numdots=3
+# "Now playing" text
+nowplaying="NP:"
+# "Nothing is playing" text
+nothingplaying="Nothing is playing."
+
+scoutput=$(sc cur_playing)
+IFS='|' read -ra array <<< $scoutput
+artist=$(sed -e 's/^ *//' -e 's/ *$//' <<< ${array[1]})
+song=$(sed -e 's/^ *//' -e 's/ *$//' <<< ${array[0]})
+
+# Customize this
+output="$artist - $song"
+
+if [ "$scoutput" == "" ]; then
+    echo $nothingplaying
+else
+    len=${#output}
+    if [ $len -ge $maxlen ]; then
+        output=$(cut -c -$(($maxlen-$numdots)) <<< $output)
+        printf "$nowplaying $output"
+        # Prints $numdots dots
+        printf "%0.s." $(seq 1 $numdots)
+        printf "\n"
+    else
+        echo "$nowplaying $output"
+    fi
+fi
+
