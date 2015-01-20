@@ -75,7 +75,7 @@ void sock_send_str(int sockfd, const char * const str)
 	int bytes_sent = 0;
 	while(bytes_sent < strlen(str))
 	{
-		bytes_sent += send(sockfd, str + bytes_sent, strlen(str) - bytes_sent, 0);
+		bytes_sent += send(sockfd, str + bytes_sent, strlen(str) - bytes_sent, MSG_NOSIGNAL);
 	}
 }
 
