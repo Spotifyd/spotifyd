@@ -26,12 +26,15 @@
 #include "spotifyd.h"
 
 sp_track *queue[PLAY_QUEUE_LEN];
+sp_track *cur_playing;
+
 unsigned queue_len;
 unsigned queue_position;
 
 void queue_init()
 {
 	srand(time(NULL));
+	cur_playing = NULL;
 	/*
 	 * Print first song in queue first.
 	 */
@@ -106,14 +109,18 @@ sp_track *queue_get(unsigned i)
 
 void queue_set_current(unsigned i)
 {
+	if(cur_playing != NULL)
+	{
+		sp_track_release(cur_playing);
+	}
 	queue_position = i;
+	sp_track_add_ref(queue[i]);
+	cur_playing = queue[i];
 }
 
 sp_track *queue_get_current()
 {
-	sp_track *ret_val = NULL;
-	ret_val = queue[queue_position];
-	return ret_val;
+	return cur_playing;
 }
 
 int queue_get_pos()

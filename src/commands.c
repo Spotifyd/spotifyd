@@ -121,6 +121,21 @@ void command_qadd(sp_session *session, const struct command * const command)
 	}
 }
 
+void command_cur_playing(const struct command * const command)
+{
+	sp_track *t;
+	if((t =queue_get_current()) == NULL)
+	{
+		sock_send_str(command->sockfd, "Not playing a track right now.\n");
+	}
+	else
+	{
+		sock_send_track(command->sockfd, t);
+		sock_send_str(command->sockfd, "\n");
+	}
+}
+	
+
 void command_play(sp_session *session, const struct command * const command)
 {
 	if(command->track < queue_get_len())
