@@ -42,7 +42,8 @@
 		COMMAND(PLADD) \
 		COMMAND(PLCREATE) \
 		COMMAND(PLDELETE) \
-		COMMAND(PLRM ) \
+		COMMAND(PLRM) \
+		COMMAND(LINK) \
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
@@ -95,6 +96,7 @@ static const char help_str[] = "Usage:\n \
 \t SADDPL n    - Put playlist n in search list.\n \
 \t QADDPL n    - Put playlist n in queue.\n \
 \t PLADD n p   - Add track n from queue to playlist p. \n \
+\t LINK s      - Looks up spotify uri s and adds to search list. \n \
 \t PLRM n p    - Remove track n from playlist p.\n";
 
 void commandq_pop();

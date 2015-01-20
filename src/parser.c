@@ -48,6 +48,19 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 
 		ret_val = entry;
 	}
+	if(!strncasecmp(line, "link ", strlen("link ")))
+	{
+		command->type = LINK;
+		command->search_string = malloc(sizeof(char) * strlen(line + strlen("link ")) + 1);
+		if(command->search_string == NULL)
+		{
+			fprintf(stderr, "Can't allocate memory. Quitting.\n");
+			exit(1);
+		}
+		strcpy(command->search_string, line + strlen("link "));
+
+		ret_val = entry;
+	}
 	if(!strncasecmp(line, "plcreate ", strlen("plcreate ")))
 	{
 		command->type = PLCREATE;

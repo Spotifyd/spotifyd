@@ -72,7 +72,7 @@ void commandq_insert(struct commandq_entry *entry)
 
 void commandq_free_entry(struct commandq_entry *e)
 {
-	if(e->val->type == SEARCH)
+	if(e->val->type == SEARCH || e->val->type == LINK)
 	{
 		free(e->val->search_string);
 	}
@@ -117,6 +117,12 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		else if(command->type == QLIST)
 		{
 			command_listq(session, command);
+			close(command->sockfd);
+			command->done = 1;
+		}
+		else if(command->type == LINK)
+		{
+			command_link(command);
 			close(command->sockfd);
 			command->done = 1;
 		}

@@ -20,6 +20,7 @@
 #include <libspotify/api.h>
 
 void command_prev(sp_session *session, const struct command * const command);
+void command_link(const struct command * const command);
 void command_next(sp_session *session, const struct command * const command);
 void command_qprint(const struct command * const command);
 void command_search(sp_session *session, const struct command * const command);

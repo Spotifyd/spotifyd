@@ -50,6 +50,28 @@ void command_search(sp_session *session, const struct command * const command)
 	}
 }
 
+void command_link(sp_session *session, const struct command * const command)
+{
+	sp_link *l = sp_link_create_from_string(command->search_string);
+
+	if(l == NULL || sp_link_type(l) == SP_LINKTYPE_INVALID)
+	{
+		sock_send_str(command->sockfd, "Not a valid link.\n");
+		return;
+	}
+	else if(sp_link_type(l) == SP_LINKTYPE_TRACK)
+	{
+		search_clear();
+		search_add_track(sp_link_as_track(l));
+		sock_send_str(command->sockfd, "Added track to search list.\n");
+	}
+	else
+	{
+		sock_send_str(command->sockfd, "Link is valid but its type is not supported. Only links to tracks are supported.\n");
+	}
+
+	sp_link_release(l);
+}
 void command_qrand(sp_session *session, const struct command * const command)
 {
 	queue_shuffle();
