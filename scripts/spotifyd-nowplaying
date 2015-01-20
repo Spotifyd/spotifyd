@@ -30,7 +30,7 @@ song=$(sed -e 's/^ *//' -e 's/ *$//' <<< ${array[0]})
 # Customize this
 output="$artist - $song"
 
-if [ "$scoutput" == "" ]; then
+if [ "$scoutput" == "Not playing a track right now." ]; then
     echo $nothingplaying
 else
     len=${#output}
