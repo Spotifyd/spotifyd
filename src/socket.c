@@ -85,23 +85,31 @@ void sock_send_str(int sockfd, const char * const str)
  */
 void sock_send_track_with_trackn(int sockfd, sp_track *track, int trackn)
 {
-	if(track != NULL)
+	if(track != NULL && sp_track_error(track) == SP_ERROR_OK)
 	{
 		sp_artist *artist = sp_track_artist(track, 0);
 		char str[API_MESSAGE_LEN];
 		snprintf(str, API_MESSAGE_LEN, "%d | %s | %s", trackn, sp_track_name(track), sp_artist_name(artist));
 		sock_send_str(sockfd, str);
 	}
+	else if(track != NULL && sp_track_error(track) == SP_ERROR_IS_LOADING)
+	{
+		sock_send_str(sockfd, "Track is loading, try again.");
+	}
 }
 
 void sock_send_track(int sockfd, sp_track *track)
 {
-	if(track != NULL)
+	if(track != NULL && sp_track_error(track) == SP_ERROR_OK)
 	{
 		sp_artist *artist = sp_track_artist(track, 0);
 		char str[API_MESSAGE_LEN];
 		snprintf(str, API_MESSAGE_LEN, "%s | %s", sp_track_name(track), sp_artist_name(artist));
 		sock_send_str(sockfd, str);
+	}
+	else if(track != NULL && sp_track_error(track) == SP_ERROR_IS_LOADING)
+	{
+		sock_send_str(sockfd, "Track is loading, try again.");
 	}
 }
 

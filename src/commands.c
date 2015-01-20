@@ -62,7 +62,10 @@ void command_link(sp_session *session, const struct command * const command)
 	else if(sp_link_type(l) == SP_LINKTYPE_TRACK)
 	{
 		search_clear();
-		search_add_track(sp_link_as_track(l));
+		sp_track *t = sp_link_as_track(l);
+		if(t == NULL)
+			fprintf(stderr, "t is null\n");
+		search_add_track(t);
 		sock_send_str(command->sockfd, "Added track to search list.\n");
 	}
 	else
