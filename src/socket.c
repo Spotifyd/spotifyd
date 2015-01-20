@@ -89,7 +89,10 @@ void sock_send_track_with_trackn(int sockfd, sp_track *track, int trackn)
 	{
 		sp_artist *artist = sp_track_artist(track, 0);
 		char str[API_MESSAGE_LEN];
-		snprintf(str, API_MESSAGE_LEN, "%d | %s | %s", trackn, sp_track_name(track), sp_artist_name(artist));
+		sp_link *l = sp_link_create_from_track(track, 0);
+		snprintf(str, API_MESSAGE_LEN, "%d | %s | %s | ", trackn, sp_track_name(track), sp_artist_name(artist));
+		sp_link_as_string(l, str + strlen(str), API_MESSAGE_LEN - strlen(str));
+		sp_link_release(l);
 		sock_send_str(sockfd, str);
 	}
 	else if(track != NULL && sp_track_error(track) == SP_ERROR_IS_LOADING)
@@ -104,7 +107,10 @@ void sock_send_track(int sockfd, sp_track *track)
 	{
 		sp_artist *artist = sp_track_artist(track, 0);
 		char str[API_MESSAGE_LEN];
-		snprintf(str, API_MESSAGE_LEN, "%s | %s", sp_track_name(track), sp_artist_name(artist));
+		sp_link *l = sp_link_create_from_track(track, 0);
+		snprintf(str, API_MESSAGE_LEN, "%s | %s | ", sp_track_name(track), sp_artist_name(artist));
+		sp_link_as_string(l, str + strlen(str), API_MESSAGE_LEN - strlen(str));
+		sp_link_release(l);
 		sock_send_str(sockfd, str);
 	}
 	else if(track != NULL && sp_track_error(track) == SP_ERROR_IS_LOADING)
