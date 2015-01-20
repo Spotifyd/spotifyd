@@ -22,6 +22,7 @@
 
 #include "spotifyd.h"
 #include "helpers.h"
+#include "commandq.h"
 
 void notify_main_thread()
 {
@@ -31,7 +32,7 @@ void notify_main_thread()
 	pthread_mutex_unlock(&notify_mutex);
 }
 
-void debug(char *debug_msg)
+void debug(const char *debug_msg)
 {
 	if(DEBUG)
 		printf("%s", debug_msg);

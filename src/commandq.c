@@ -93,6 +93,10 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		exit(1);
 	}
 
+	debug("Entered commandq_execute_command with ");
+	debug(COMMAND_STR[command->type]);
+	debug(" on top of queue.\n");
+
 	/*
 	 * Unless the command is already handled, handle it here.
 	 * Commands get the 'done' property set to true once they

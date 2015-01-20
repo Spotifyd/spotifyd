@@ -23,5 +23,5 @@
 
 void notify_main_thread();
 struct timespec rel_to_abstime(int msec);
-void debug(char *debug_msg);
+void debug(const char *debug_msg);
 bool play(sp_session *session, sp_track *track, bool flush);

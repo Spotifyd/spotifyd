@@ -21,6 +21,32 @@
 #include <sys/queue.h>
 #include <libspotify/api.h>
 
+#define FOREACH_COMMAND(COMMAND) \
+		COMMAND(SLIST) \
+		COMMAND(QLIST) \
+		COMMAND(QRAND) \
+		COMMAND(QPRINT) \
+		COMMAND(PLAY) \
+		COMMAND(PREV) \
+		COMMAND(NEXT) \
+		COMMAND(QCLEAR) \
+		COMMAND(QADD) \
+		COMMAND(QRM) \
+		COMMAND(PAUSE) \
+		COMMAND(SEARCH) \
+		COMMAND(CUR_PLAYING) \
+		COMMAND(HELP) \
+		COMMAND(PL) \
+		COMMAND(SADDPL) \
+		COMMAND(QADDPL) \
+		COMMAND(PLADD) \
+		COMMAND(PLCREATE) \
+		COMMAND(PLDELETE) \
+		COMMAND(PLRM ) \
+
+#define GENERATE_ENUM(ENUM) ENUM,
+#define GENERATE_STRING(STRING) #STRING,
+
 pthread_mutex_t commandq_lock;
 TAILQ_HEAD(tailhead, commandq_entry) commandq;
 struct commandq_entry
@@ -32,27 +58,7 @@ struct commandq_entry
 struct command
 {
 	enum {
-		SLIST, /* show search results */
-		QLIST, /* show queue */
-		QRAND, /* shuffle queue */
-		QPRINT, /* toggle queue printing behavoiur */
-		PLAY, /* play song from queue */
-		PREV, /* skip to previous song */
-		NEXT, /* skip to next song */
-		QCLEAR, /* clear queue */
-		QADD, /* add search result to queue */
-		QRM, /* remove track in queue */
-		PAUSE, /* toggle play/pause */	
-		SEARCH, /* search for songs on spotify */
-		CUR_PLAYING, /* return currently playing song */
-		HELP, /* send help text back on socket */
-		PL, /* list available playlists */
-		SADDPL, /* put playlist to search list */
-		QADDPL, /* put playlist in queue */
-		PLADD, /* add track to playlist */
-		PLCREATE, /* create new playlist */
-		PLDELETE, /* delete playlist */
-		PLRM /* remove track from playlist */
+		FOREACH_COMMAND(GENERATE_ENUM)
 	} type;
 	bool handled;
 	bool done;
@@ -65,6 +71,9 @@ struct command
 	};
 	int playlist;
 };
+
+__attribute__((unused))
+static const char *COMMAND_STR[] = { FOREACH_COMMAND(GENERATE_STRING)  };
 
 static const char help_str[] = "Usage:\n \
 \t SEARCH str  - Searches spotify for str.\n \
