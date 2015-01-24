@@ -104,7 +104,10 @@ int queue_get_prev()
 
 sp_track *queue_get(unsigned i)
 {
-	return queue[i];
+	if(i < queue_len)
+		return queue[i];
+	else
+		return NULL;
 }
 
 void queue_set_current(unsigned i)
