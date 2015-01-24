@@ -176,6 +176,7 @@ void command_play(sp_session *session, const struct command * const command)
 		int track = command->track;
 		while(!play(session, queue_get(track), 1))
 		{
+			queue_del_track(track);	
 			++cntr;
 			if(cntr == PLAY_QUEUE_LEN)
 			{
