@@ -57,18 +57,27 @@ bool have_socket_path()
 	return socket_path != NULL;
 }
 
-char *trim_whitespace(char *str)
+char *trim_whitespace_front(char *str)
 {
 	/*
 	 * remove leading whitespace.
 	 */
 	while(isspace(*str)) ++str;
+	return str;
+}
 
+char *trim_whitespace_back(char *str)
+{
 	char *end = str + strlen(str) - 1;
 	while(isspace(*end)) --end;
 	*(end + 1) = '\0';
 
 	return str;
+}
+
+char *trim_whitespace(char *str)
+{
+	return trim_whitespace_back(trim_whitespace_front(str));
 }
 
 bool read_config()
@@ -150,11 +159,23 @@ bool read_config()
 			fprintf(stderr, "Couldn't read line.\n");
 			exit(-1);
 		}
-		password = getpass("Password: ");
+		else
+		{
+			username = trim_whitespace_back(username);
+		}
+		if((password = getpass("Password: ")) == NULL)
+		{
+			fprintf(stderr, "Couldn't password.\n");
+			exit(-1);
+		}
 	}
 	else if(username != NULL && password == NULL)
 	{
-		password = getpass("Password: ");
+		if((password = getpass("Password: ")) == NULL)
+		{
+			fprintf(stderr, "Couldn't password.\n");
+			exit(-1);
+		}
 	}
 	return 1;
 }
