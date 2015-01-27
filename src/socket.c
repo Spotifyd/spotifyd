@@ -88,9 +88,10 @@ void sock_send_track_with_trackn(int sockfd, sp_track *track, int trackn)
 	if(track != NULL && sp_track_error(track) == SP_ERROR_OK)
 	{
 		sp_artist *artist = sp_track_artist(track, 0);
+		sp_album * album = sp_track_album(track);
 		char str[API_MESSAGE_LEN];
 		sp_link *l = sp_link_create_from_track(track, 0);
-		snprintf(str, API_MESSAGE_LEN, "%d | %s | %s | ", trackn, sp_track_name(track), sp_artist_name(artist));
+		snprintf(str, API_MESSAGE_LEN, "%d | %s | %s | %s | ", trackn, sp_track_name(track), sp_artist_name(artist),sp_album_name(album));
 		sp_link_as_string(l, str + strlen(str), API_MESSAGE_LEN - strlen(str));
 		sp_link_release(l);
 		sock_send_str(sockfd, str);
