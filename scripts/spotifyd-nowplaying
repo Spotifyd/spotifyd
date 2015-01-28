@@ -32,6 +32,8 @@ output="$artist - $song"
 
 if [ "$scoutput" == "Not playing a track right now." ]; then
     echo $nothingplaying
+elif [[ $scoutput == "" ]]; then
+    echo "spotifyd is not running."
 else
     len=${#output}
     if [ $len -ge $maxlen ]; then
