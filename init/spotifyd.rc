@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# RC script for using spotifyd with CRUX linux.
+#
+# /etc/rc.d/spotifyd: start/stop ssh daemon
+#
+
+USER=username
+
+case $1 in
+start)
+	su $USER -c spotifyd	
+	;;
+stop)
+	killall spotifyd
+	;;
+restart)
+	$0 stop
+	sleep 2
+	$0 start
+	;;
+*)
+	echo "usage: $0 [start|stop|restart]"
+	;;
+esac
+
+# End of file
