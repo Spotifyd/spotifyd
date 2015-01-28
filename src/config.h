@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <stdio.h>
 #include "spotifyd.h"
 
 #define PLAY_QUEUE_LEN 10000
@@ -23,6 +24,7 @@
 
 bool read_config();
 char *get_socket_path();
+FILE *get_logfile();
 char *get_port();
 char *get_password();
 char *get_username();

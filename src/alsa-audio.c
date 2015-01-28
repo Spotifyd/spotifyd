@@ -34,6 +34,8 @@
 #include <sys/time.h>
 
 #include "audio.h"
+#include "config.h"
+#include "helpers.h"
 
 
 static snd_pcm_t *alsa_open(char *dev, int rate, int channels)
@@ -75,7 +77,7 @@ static snd_pcm_t *alsa_open(char *dev, int rate, int channels)
 	r = snd_pcm_hw_params_set_period_size_near(h, hwp, &period_size, &dir);
 
 	if (r < 0) {
-		fprintf(stderr, "audio: Unable to set period size %lu (%s)\n",
+		LOG_PRINT("audio: Unable to set period size %lu (%s)\n",
 		        period_size, snd_strerror(r));
 		snd_pcm_close(h);
 		return NULL;
@@ -85,7 +87,7 @@ static snd_pcm_t *alsa_open(char *dev, int rate, int channels)
 	r = snd_pcm_hw_params_get_period_size(hwp, &period_size, &dir);
 
 	if (r < 0) {
-		fprintf(stderr, "audio: Unable to get period size (%s)\n",
+		LOG_PRINT("audio: Unable to get period size (%s)\n",
 		        snd_strerror(r));
 		snd_pcm_close(h);
 		return NULL;
@@ -101,7 +103,7 @@ static snd_pcm_t *alsa_open(char *dev, int rate, int channels)
 	r = snd_pcm_hw_params_set_buffer_size_near(h, hwp, &buffer_size);
 
 	if (r < 0) {
-		fprintf(stderr, "audio: Unable to set buffer size %lu (%s)\n",
+		LOG_PRINT("audio: Unable to set buffer size %lu (%s)\n",
 		        buffer_size, snd_strerror(r));
 		snd_pcm_close(h);
 		return NULL;
@@ -110,7 +112,7 @@ static snd_pcm_t *alsa_open(char *dev, int rate, int channels)
 	r = snd_pcm_hw_params_get_buffer_size(hwp, &buffer_size);
 
 	if (r < 0) {
-		fprintf(stderr, "audio: Unable to get buffer size (%s)\n",
+		LOG_PRINT("audio: Unable to get buffer size (%s)\n",
 		        snd_strerror(r));
 		snd_pcm_close(h);
 		return NULL;
@@ -120,7 +122,7 @@ static snd_pcm_t *alsa_open(char *dev, int rate, int channels)
 	r = snd_pcm_hw_params(h, hwp);
 
 	if (r < 0) {
-		fprintf(stderr, "audio: Unable to configure hardware parameters (%s)\n",
+		LOG_PRINT("audio: Unable to configure hardware parameters (%s)\n",
 		        snd_strerror(r));
 		snd_pcm_close(h);
 		return NULL;
@@ -137,7 +139,7 @@ static snd_pcm_t *alsa_open(char *dev, int rate, int channels)
 	r = snd_pcm_sw_params_set_avail_min(h, swp, period_size);
 
 	if (r < 0) {
-		fprintf(stderr, "audio: Unable to configure wakeup threshold (%s)\n",
+		LOG_PRINT("audio: Unable to configure wakeup threshold (%s)\n",
 		        snd_strerror(r));
 		snd_pcm_close(h);
 		return NULL;
@@ -146,7 +148,7 @@ static snd_pcm_t *alsa_open(char *dev, int rate, int channels)
 	snd_pcm_sw_params_set_start_threshold(h, swp, 0);
 
 	if (r < 0) {
-		fprintf(stderr, "audio: Unable to configure start threshold (%s)\n",
+		LOG_PRINT("audio: Unable to configure start threshold (%s)\n",
 		        snd_strerror(r));
 		snd_pcm_close(h);
 		return NULL;
@@ -155,7 +157,7 @@ static snd_pcm_t *alsa_open(char *dev, int rate, int channels)
 	r = snd_pcm_sw_params(h, swp);
 
 	if (r < 0) {
-		fprintf(stderr, "audio: Cannot set soft parameters (%s)\n",
+		LOG_PRINT("audio: Cannot set soft parameters (%s)\n",
 		snd_strerror(r));
 		snd_pcm_close(h);
 		return NULL;
@@ -163,7 +165,7 @@ static snd_pcm_t *alsa_open(char *dev, int rate, int channels)
 
 	r = snd_pcm_prepare(h);
 	if (r < 0) {
-		fprintf(stderr, "audio: Cannot prepare audio for playback (%s)\n",
+		LOG_PRINT("audio: Cannot prepare audio for playback (%s)\n",
 		snd_strerror(r));
 		snd_pcm_close(h);
 		return NULL;
@@ -194,7 +196,7 @@ static void* alsa_audio_start(void *aux)
 			h = alsa_open("default", cur_rate, cur_channels);
 
 			if (!h) {
-				fprintf(stderr, "Unable to open ALSA device (%d channels, %d Hz), dying\n",
+				LOG_PRINT("Unable to open ALSA device (%d channels, %d Hz), dying\n",
 				        cur_channels, cur_rate);
 				exit(1);
 			}
@@ -227,7 +229,7 @@ void audio_init(audio_fifo_t *af)
 	} while(mutex_init_error == EAGAIN);
 	if(mutex_init_error != 0)
 	{
-		fprintf(stderr, "Couldn't initialize mutex. Quitting.\n");
+		LOG_PRINT("Couldn't initialize mutex. Quitting.\n");
 	}
 	
 	do
@@ -236,7 +238,7 @@ void audio_init(audio_fifo_t *af)
 	} while(mutex_init_error == EAGAIN);
 	if(mutex_init_error != 0)
 	{
-		fprintf(stderr, "Couldn't initialize mutex. Quitting.\n");
+		LOG_PRINT("Couldn't initialize mutex. Quitting.\n");
 	}
 
 	pthread_create(&tid, NULL, alsa_audio_start, af);

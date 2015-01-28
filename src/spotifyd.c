@@ -24,6 +24,9 @@
 #include <pthread.h>
 #include <errno.h>
 #include <signal.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "queue.h"
 #include "helpers.h"
@@ -39,6 +42,11 @@ pthread_t accept_thread;
 
 int main()
 {
+	/*
+	 * Fork off and daemonize the program.
+	 */
+	daemonize();
+
 	/*
 	 * read username/password and where to listen for socket connections
 	 * from config file or stdin.
@@ -60,7 +68,7 @@ int main()
 	 */
 	if(commandq_init() != 0)
 	{
-		printf("Couldn't create commandq.");
+		LOG_PRINT("Couldn't create commandq.");
 		exit(1);
 	}
 
@@ -82,7 +90,7 @@ int main()
 	 */
 	if((error = session_init(&session)) != SP_ERROR_OK)
 	{
-		printf("%s", sp_error_message(error));
+		LOG_PRINT("%s", sp_error_message(error));
 	}
 
 	/*
@@ -106,7 +114,7 @@ int main()
 	} while(mutex_init_error == EAGAIN);
 	if(mutex_init_error != 0)
 	{
-		fprintf(stderr, "Couldn't initialize mutex. Quitting.\n");
+		LOG_PRINT("Couldn't initialize mutex. Quitting.\n");
 	}
 
 	do
@@ -115,7 +123,7 @@ int main()
 	} while(mutex_init_error == EAGAIN);
 	if(mutex_init_error != 0)
 	{
-		fprintf(stderr, "Couldn't initialize mutex. Quitting.\n");
+		LOG_PRINT("Couldn't initialize mutex. Quitting.\n");
 	}
 
 	pthread_mutex_lock(&notify_mutex);
@@ -158,6 +166,38 @@ int main()
 	return 0;
 }
 
+void daemonize()
+{
+	pid_t pid, sid;
+	pid = fork();
+	if(pid < 0)
+	{
+		exit(1);
+	}
+	
+	if(pid > 0)
+	{
+		exit(0);
+	}
+
+	umask(0);
+	
+	sid = setsid();
+	if(sid < 0)
+	{
+		exit(1);
+	}
+
+	if(chdir("/") < 0)
+	{
+		exit(1);
+	}
+
+	close(STDIN_FILENO);
+	close(STDERR_FILENO);
+	close(STDOUT_FILENO);
+}
+
 void cleanup()
 {
 	sock_close();
@@ -166,6 +206,10 @@ void cleanup()
 		commandq_pop();
 	}
 	while(queue_del_track(0));
+	if(get_logfile() != NULL)
+	{
+		fclose(get_logfile());
+	}
 	search_clear();
 }
 

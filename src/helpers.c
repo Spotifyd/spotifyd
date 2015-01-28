@@ -35,7 +35,7 @@ void notify_main_thread()
 void debug(const char *debug_msg)
 {
 	if(DEBUG)
-		printf("%s", debug_msg);
+		LOG_PRINT("%s", debug_msg);
 }
 
 struct timespec rel_to_abstime(int msec)

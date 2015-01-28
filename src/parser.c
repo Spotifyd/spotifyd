@@ -21,6 +21,7 @@
 #include <ctype.h>
 
 #include "commandq.h"
+#include "helpers.h"
 
 struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line, int sockfd)
 {
@@ -28,7 +29,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 	struct command *command = malloc(sizeof(struct command));
 	if(command == NULL)
 	{
-		fprintf(stderr, "Can't allocate memory. Quitting.\n");
+		LOG_PRINT("Can't allocate memory. Quitting.\n");
 		exit(1);
 	}
 	command->handled = 0;
@@ -41,7 +42,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->search_string = malloc(sizeof(char) * strlen(line + strlen("search ")) + 1);
 		if(command->search_string == NULL)
 		{
-			fprintf(stderr, "Can't allocate memory. Quitting.\n");
+			LOG_PRINT("Can't allocate memory. Quitting.\n");
 			exit(1);
 		}
 		strcpy(command->search_string, line + strlen("search "));
@@ -54,7 +55,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->search_string = malloc(sizeof(char) * strlen(line + strlen("link ")) + 1);
 		if(command->search_string == NULL)
 		{
-			fprintf(stderr, "Can't allocate memory. Quitting.\n");
+			LOG_PRINT("Can't allocate memory. Quitting.\n");
 			exit(1);
 		}
 		strcpy(command->search_string, line + strlen("link "));
@@ -67,7 +68,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->name = malloc(sizeof(char) * strlen(line + strlen("plcreate ")) + 1);
 		if(command->name == NULL)
 		{
-			fprintf(stderr, "Can't allocate memory. Quitting.\n");
+			LOG_PRINT("Can't allocate memory. Quitting.\n");
 			exit(1);
 		}
 		strcpy(command->search_string, line + strlen("plcreate "));

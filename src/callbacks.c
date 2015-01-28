@@ -60,7 +60,7 @@ int on_music_delivered(sp_session *session, const sp_audioformat *format, const 
 	afd = malloc(sizeof(*afd) + s);
 	if(afd == NULL)
 	{
-		fprintf(stderr, "Can't allocate memory. Quitting.\n");
+		LOG_PRINT("Can't allocate memory. Quitting.\n");
 		exit(1);
 	}
 
@@ -98,7 +98,7 @@ void on_end_of_track(sp_session *session)
 	struct command *command = malloc(sizeof(struct command));
 	if(command == NULL || entry == NULL)
 	{
-		fprintf(stderr, "Can't allocate memory. Quitting.\n");
+		LOG_PRINT("Can't allocate memory. Quitting.\n");
 		exit(1);
 	}
 	entry->val = command;
@@ -125,7 +125,7 @@ void on_search_complete(sp_search *search, void *userdata)
 	sp_error error = sp_search_error(search);
 	if (error != SP_ERROR_OK)
 	{
-		printf("Error: %s\n", sp_error_message(error));
+		LOG_PRINT("Error: %s\n", sp_error_message(error));
 		exit(1);
 	}
 
@@ -166,12 +166,12 @@ void on_login(sp_session *session, sp_error error)
 	debug("on_login\n");
 	if(error != SP_ERROR_OK)
 	{
-		printf("Couldn't log in: %s\n", sp_error_message(error));
+		LOG_PRINT("Couldn't log in: %s\n", sp_error_message(error));
 		exit (1);
 	}
 	else
 	{
-		printf("Logged in!\n");
+		LOG_PRINT("Logged in!\n");
 	}
 
 	playlist_init(session);

@@ -2,3 +2,4 @@ username my_user_name
 password my_password
 unix-socket /tmp/spotifyd
 port 12345
+log /tmp/spotifyd-log

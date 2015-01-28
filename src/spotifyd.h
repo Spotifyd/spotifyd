@@ -36,3 +36,4 @@ char notify_do;
 bool is_playing;
 
 void cleanup();
+void daemonize();

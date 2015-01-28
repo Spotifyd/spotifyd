@@ -7,11 +7,13 @@
 
 #include "spotifyd.h"
 #include "config.h"
+#include "helpers.h"
 
 char *socket_path = NULL;
 char *username = NULL;
 char *password = NULL;
 char *port = NULL;
+FILE *logfile = NULL;
 
 /*
  * We only want to get these values
@@ -46,6 +48,16 @@ char *get_password()
 	password = NULL;
 	return tmp;
 }
+
+/*
+ * The following methods can be called multiple times.
+ */
+
+FILE *get_logfile()
+{
+	return logfile;
+}
+
 
 bool have_port()
 {
@@ -85,7 +97,7 @@ bool read_config()
 	char *config_file = malloc(sizeof(char) * (strlen(getenv("HOME")) + strlen("/.spotifyd.rc") + 1));
 	if(config_file == NULL)
 	{
-		fprintf(stderr, "Can't allocate memory. Quitting.\n");
+		LOG_PRINT("Can't allocate memory. Quitting.\n");
 		exit(1);
 	}
 	strcat(config_file, getenv("HOME"));
@@ -103,7 +115,7 @@ bool read_config()
 			username = malloc(sizeof(char) * (strlen(tmp) + 1));
 			if(username == NULL)
 			{
-				fprintf(stderr, "Can't allocate memory. Quitting.\n");
+				LOG_PRINT("Can't allocate memory. Quitting.\n");
 				exit(1);
 			}
 			strcpy(username, tmp);
@@ -114,7 +126,7 @@ bool read_config()
 			password = malloc(sizeof(char) * (strlen(tmp) + 1));
 			if(password == NULL)
 			{
-				fprintf(stderr, "Can't allocate memory. Quitting.\n");
+				LOG_PRINT("Can't allocate memory. Quitting.\n");
 				exit(1);
 			}
 			strcpy(password, tmp);
@@ -125,7 +137,7 @@ bool read_config()
 			socket_path = malloc(sizeof(char) * (strlen(tmp) + 1));
 			if(socket_path == NULL)
 			{
-				fprintf(stderr, "Can't allocate memory. Quitting.\n");
+				LOG_PRINT("Can't allocate memory. Quitting.\n");
 				exit(1);
 			}
 			strcpy(socket_path, tmp);
@@ -136,27 +148,31 @@ bool read_config()
 			port = malloc(sizeof(char) * (strlen(tmp) + 1));
 			if(port == NULL)
 			{
-				fprintf(stderr, "Can't allocate memory. Quitting.\n");
+				LOG_PRINT("Can't allocate memory. Quitting.\n");
 				exit(1);
 			}
 			strcpy(port, tmp);
 		}
-
+		else if(!strncasecmp(line, "log", strlen("log")))
+		{
+			char *tmp = trim_whitespace(line + strlen("log"));
+			logfile = fopen(tmp, "w");
+		}
 		free(line);
 		n = 0;
 	}
 	if(username == NULL && password != NULL)
 	{
-		fprintf(stderr, "Couldn't read username.\n");
+		LOG_PRINT("Couldn't read username.\n");
 		exit(-1);
 	}
 	else if(username == NULL && password == NULL)
 	{
 		n = 0;
-		printf("Username: ");
+		LOG_PRINT("Username: ");
 		if(getline(&username, &n, stdin) == -1)
 		{
-			fprintf(stderr, "Couldn't read line.\n");
+			LOG_PRINT("Couldn't read line.\n");
 			exit(-1);
 		}
 		else
@@ -165,7 +181,7 @@ bool read_config()
 		}
 		if((password = getpass("Password: ")) == NULL)
 		{
-			fprintf(stderr, "Couldn't password.\n");
+			LOG_PRINT("Couldn't password.\n");
 			exit(-1);
 		}
 	}
@@ -173,7 +189,7 @@ bool read_config()
 	{
 		if((password = getpass("Password: ")) == NULL)
 		{
-			fprintf(stderr, "Couldn't password.\n");
+			LOG_PRINT("Couldn't password.\n");
 			exit(-1);
 		}
 	}

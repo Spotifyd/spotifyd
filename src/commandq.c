@@ -33,11 +33,11 @@ void commandq_pop()
 {
 	if(commandq.tqh_first == NULL)
 	{
-		printf("commandq_pop: first elem is NULL!\n");
+		LOG_PRINT("commandq_pop: first elem is NULL!\n");
 	}
 	else if(commandq.tqh_first->val->done == 0)
 	{
-		printf("commandq_pop: first elem isn't handled.\n");
+		LOG_PRINT("commandq_pop: first elem isn't handled.\n");
 	}
 	else
 	{
@@ -84,12 +84,12 @@ void commandq_execute_command(sp_session *session, struct command *command)
 {
 	if(command == NULL)
 	{
-		printf("execute_command: command is null-ptr\n");
+		LOG_PRINT("execute_command: command is null-ptr\n");
 		exit(1);
 	}
 	else if(session == NULL)
 	{
-		printf("execute_command: session is null-ptr\n");
+		LOG_PRINT("execute_command: session is null-ptr\n");
 		exit(1);
 	}
 

@@ -29,7 +29,7 @@ void command_search(sp_session *session, const struct command * const command)
 {
 	if(command->search_string == NULL)
 	{
-		printf("execute_command: search_string is null-ptr.\n");
+		LOG_PRINT("execute_command: search_string is null-ptr.\n");
 	}
 	else
 	{
@@ -63,8 +63,6 @@ void command_link(sp_session *session, const struct command * const command)
 	{
 		search_clear();
 		sp_track *t = sp_link_as_track(l);
-		if(t == NULL)
-			fprintf(stderr, "t is null\n");
 		search_add_track(t);
 		sock_send_str(command->sockfd, "Added track to search list.\n");
 	}

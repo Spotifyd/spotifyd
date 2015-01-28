@@ -21,6 +21,8 @@
 
 #define DEBUG 0
 
+#define LOG_PRINT(...) if(get_logfile() != NULL) { fprintf(get_logfile(), __VA_ARGS__); fflush(get_logfile()); }
+
 void notify_main_thread();
 struct timespec rel_to_abstime(int msec);
 void debug(const char *debug_msg);
