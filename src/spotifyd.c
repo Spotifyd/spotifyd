@@ -205,7 +205,7 @@ void cleanup()
 	{
 		commandq_pop();
 	}
-	while(queue_del_track(0));
+	queue_clear();
 	if(get_logfile() != NULL)
 	{
 		fclose(get_logfile());

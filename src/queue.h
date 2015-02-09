@@ -36,3 +36,4 @@ bool queue_del_track(unsigned trackn);
 void queue_shuffle();
 bool queue_add_track(sp_track *track);
 void queue_init();
+void queue_clear();

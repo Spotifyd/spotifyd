@@ -165,7 +165,7 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		else if(command->type == QCLEAR)
 		{
 			sock_send_str(command->sockfd, "Clearing queue.\n");
-			close(command->sockfd);
+			command_qclear(session);
 			while(queue_del_track(0));
 			command->done = 1;
 		}

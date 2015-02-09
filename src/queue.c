@@ -121,6 +121,13 @@ void queue_set_current(unsigned i)
 	cur_playing = queue[i];
 }
 
+void queue_clear()
+{
+	while(queue_del_track(0));
+	sp_track_release(cur_playing);
+	cur_playing = NULL;
+}
+
 sp_track *queue_get_current()
 {
 	return cur_playing;

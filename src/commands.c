@@ -73,6 +73,14 @@ void command_link(sp_session *session, const struct command * const command)
 
 	sp_link_release(l);
 }
+
+void command_qclear(sp_session *session)
+{
+	sp_session_player_play(session, 0);
+	sp_session_player_unload(session);
+	queue_clear();
+}
+
 void command_qrand(sp_session *session, const struct command * const command)
 {
 	queue_shuffle();
