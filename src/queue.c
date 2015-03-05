@@ -124,8 +124,11 @@ void queue_set_current(unsigned i)
 void queue_clear()
 {
 	while(queue_del_track(0));
-	sp_track_release(cur_playing);
-	cur_playing = NULL;
+	if(cur_playing != NULL)
+	{
+		sp_track_release(cur_playing);
+		cur_playing = NULL;
+	}
 }
 
 sp_track *queue_get_current()
