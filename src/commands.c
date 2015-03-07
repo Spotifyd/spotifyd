@@ -326,9 +326,7 @@ void command_qaddpl(const struct command * const command)
 	}
 	else
 	{
-		sock_send_str(command->sockfd, "Tried to add playlist \"");
-		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
-		sock_send_str(command->sockfd, "\" to queue but something went wrong.\n");
+		sock_send_str(command->sockfd, "No such playlist.\n");
 	}
 }
 
@@ -343,8 +341,6 @@ void command_saddpl(const struct command * const command)
 	}
 	else
 	{
-		sock_send_str(command->sockfd, "Tried to add playlist \"");
-		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
-		sock_send_str(command->sockfd, "\" to search list but something went wrong.\n");
+		sock_send_str(command->sockfd, "No such playlist.\n");
 	}
 }
