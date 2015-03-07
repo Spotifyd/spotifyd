@@ -259,7 +259,8 @@ void command_pl(const struct command * const command)
 
 void command_pladd(sp_session *session, const struct command * const command)
 {
-	if(playlist_add_track(command->playlist, queue_get(command->track), session))
+	sp_track *t = queue_get(command->track);
+	if(t != NULL && playlist_add_track(command->playlist, t, session))
 	{
 		sock_send_str(command->sockfd, "Added track ");
 		sock_send_track(command->sockfd, queue_get(command->track));

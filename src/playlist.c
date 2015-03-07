@@ -69,6 +69,10 @@ bool playlist_new(const char * const name)
 bool playlist_add_track(unsigned playlist, sp_track * const track, sp_session *session)
 {
 	sp_playlist *pl = sp_playlistcontainer_playlist(playlist_container, playlist);
+	if(pl == NULL)
+	{
+		return 0;
+	}
 	return sp_playlist_add_tracks(pl, &track, 1, sp_playlist_num_tracks(pl), session) == SP_ERROR_OK;
 }
 
