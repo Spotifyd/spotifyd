@@ -79,6 +79,10 @@ bool playlist_add_track(unsigned playlist, sp_track * const track, sp_session *s
 bool playlist_del_track(unsigned playlist, int track)
 {
 	sp_playlist *pl = sp_playlistcontainer_playlist(playlist_container, playlist);
+	if(pl == NULL || sp_playlist_num_tracks(pl) <= track)
+	{
+		return 0;
+	}
 	return SP_ERROR_OK == sp_playlist_remove_tracks(pl, &track, 1);
 }
 
