@@ -87,6 +87,18 @@ void command_qrand(sp_session *session, const struct command * const command)
 	sock_send_str(command->sockfd, "Shuffled queue.\n");
 }
 
+void command_qrm(sp_session *session, const struct command * const command)
+{
+	if(queue_del_track(command->track))
+	{
+		sock_send_str(command->sockfd, "Removing from queue.\n");
+	}
+	else
+	{
+		sock_send_str(command->sockfd, "Track not in queue!\n");
+	}
+}
+
 /*
  * Send a list of the search result to the client.
  */

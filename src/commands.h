@@ -39,3 +39,4 @@ void command_plrm(const struct command * const command);
 void command_plcreate(const struct command * const command);
 void command_pldelete(const struct command * const command);
 void command_cur_playing(const struct command * const command);
+void command_qrm(sp_session *session, const struct command * const command);

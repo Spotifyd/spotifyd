@@ -171,9 +171,8 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		}
 		else if(command->type == QRM)
 		{
-			sock_send_str(command->sockfd, "Removing from queue.\n");
+			command_qrm(session, command);
 			close(command->sockfd);
-			queue_del_track(command->track);
 			command->done = 1;
 		}
 		else if(command->type == QADD)
