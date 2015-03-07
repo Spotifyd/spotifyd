@@ -128,9 +128,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 	else if(!strncasecmp(line, "saddpl ", strlen("saddpl ")))
 	{
 		command->type = SADDPL;
-		char *tmp = line;
-		command->playlist = strtol(line + strlen("saddpl "), &tmp, 10);
-		if(isspace(*tmp) || *tmp == '\0' )
+		if(sscanf(line + strlen("saddpl "), "%d", &command->playlist) == 1)
 		{
 			ret_val = entry;
 		}
@@ -138,9 +136,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 	else if(!strncasecmp(line, "qaddpl ", strlen("qaddpl ")))
 	{
 		command->type = QADDPL;
-		char *tmp = line;
-		command->playlist = strtol(line + strlen("qaddpl "), &tmp, 10);
-		if(tmp != line)
+		if(sscanf(line + strlen("qaddpl "), "%d", &command->playlist) == 1)
 		{
 			ret_val = entry;
 		}
@@ -148,10 +144,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 	else if(!strncasecmp(line, "pladd ", strlen("pladd ")))
 	{
 		command->type = PLADD;
-		char *tmp = line;
-		command->track = strtol(line + strlen("pladd "), &tmp, 10);
-		command->playlist = strtol(tmp, &tmp, 10);
-		if(isspace(*tmp) || *tmp == '\0' )
+		if(sscanf(line + strlen("pladd "), "%d %d", &command->track, &command->playlist) == 2)
 		{
 			ret_val = entry;
 		}
@@ -159,10 +152,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 	else if(!strncasecmp(line, "plrm ", strlen("plrm ")))
 	{
 		command->type = PLRM;
-		char *tmp = line;
-		command->track = strtol(line + strlen("plrm "), &tmp, 10);
-		command->playlist = strtol(tmp, &tmp, 10);
-		if(isspace(*tmp) || *tmp == '\0' )
+		if(sscanf(line + strlen("plrm "), "%d %d", &command->track, &command->playlist) == 2)
 		{
 			ret_val = entry;
 		}
@@ -170,9 +160,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 	else if(!strncasecmp(line, "pldelete ", strlen("pldelete ")))
 	{
 		command->type = PLDELETE;
-		char *tmp = line;
-		command->playlist = strtol(line + strlen("pldelete "), &tmp, 10);
-		if(isspace(*tmp) || *tmp == '\0' )
+		if(sscanf(line + strlen("pldelete "), "%d", &command->playlist) == 1)
 		{
 			ret_val = entry;
 		}
@@ -180,9 +168,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 	else if(!strncasecmp(line, "qadd ", strlen("qadd ")))
 	{
 		command->type = QADD;
-		char *tmp = line;
-		command->track = strtol(line + strlen("qadd "), &tmp, 10);
-		if(isspace(*tmp) || *tmp == '\0' )
+		if(sscanf(line + strlen("qadd "), "%d", &command->track) == 1)
 		{
 			ret_val = entry;
 		}
@@ -190,9 +176,7 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 	else if(!strncasecmp(line, "qrm ", strlen("qrm ")))
 	{
 		command->type = QRM;
-		char *tmp = line;
-		command->track = strtol(line + strlen("qrm "), &tmp, 10);
-		if(isspace(*tmp) || *tmp == '\0' )
+		if(sscanf(line + strlen("qrm "), "%d", &command->track) == 1)
 		{
 			ret_val = entry;
 		}
@@ -200,14 +184,12 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 	else if(!strncasecmp(line, "play ", strlen("play ")))
 	{
 		command->type = PLAY;
-		char *tmp = line;
-		command->track = strtol(line + strlen("play "), &tmp, 10);
-		if(isspace(*tmp) || *tmp == '\0' )
+		if(sscanf(line + strlen("play "), "%d", &command->track) == 1)
 		{
 			ret_val = entry;
 		}
 	} /* pl must be after play, otherwise play matches pl first. */
-	else if(!strncasecmp(line, "pl", strlen("pl")))
+	else if(!strncasecmp(line, "pl", strlen("pl")) && (*(line + strlen("pl")) == '\0' || isspace(*(line + strlen("pl")))))
 	{
 		command->type = PL;
 		ret_val = entry;
