@@ -166,7 +166,7 @@ void commandq_execute_command(sp_session *session, struct command *command)
 		{
 			sock_send_str(command->sockfd, "Clearing queue.\n");
 			command_qclear(session);
-			while(queue_del_track(0));
+			close(command->sockfd);
 			command->done = 1;
 		}
 		else if(command->type == QRM)
