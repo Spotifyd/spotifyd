@@ -345,3 +345,15 @@ void command_saddpl(const struct command * const command)
 		sock_send_str(command->sockfd, "No such playlist.\n");
 	}
 }
+
+void command_vol(const struct command * const command)
+{
+	if(command->volume > 100)
+	{
+		sock_send_str(command->sockfd, "Error: volume must be in the range 0 to 100.\n");
+	}
+	else
+	{
+		set_volume(command->volume / 100.0);
+	}
+}

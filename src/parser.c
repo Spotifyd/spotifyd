@@ -181,6 +181,14 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 			ret_val = entry;
 		}
 	}
+	else if(!strncasecmp(line, "vol ", strlen("vol ")))
+	{
+		command->type = VOL;
+		if(sscanf(line + strlen("vol "), "%u", &command->volume) == 1)
+		{
+			ret_val = entry;
+		}
+	}
 	else if(!strncasecmp(line, "play ", strlen("play ")))
 	{
 		command->type = PLAY;

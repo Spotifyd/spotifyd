@@ -241,6 +241,12 @@ void commandq_execute_command(sp_session *session, struct command *command)
 			close(command->sockfd);
 			command->done = 1;
 		}
+		else if(command->type == VOL)
+		{
+			command_vol(command);
+			close(command->sockfd);
+			command->done = 1;
+		}
 		command->handled = 1;
 	}
 

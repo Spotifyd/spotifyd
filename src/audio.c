@@ -28,9 +28,17 @@
 #include "audio.h"
 #include <stdlib.h>
 
+static double volume = 1.0;
+
+void set_volume(double new_volume)
+{
+    volume = new_volume;
+}
+
 audio_fifo_data_t* audio_get(audio_fifo_t *af)
 {
     audio_fifo_data_t *afd;
+    int i;
     pthread_mutex_lock(&af->mutex);
   
     while (!(afd = TAILQ_FIRST(&af->q)))
@@ -40,6 +48,14 @@ audio_fifo_data_t* audio_get(audio_fifo_t *af)
     af->qlen -= afd->nsamples;
   
     pthread_mutex_unlock(&af->mutex);
+
+    if(volume != 1.0) {
+	int nsamples = afd->nsamples * afd->channels;
+	for(i = 0; i < nsamples; i++) {
+	    afd->samples[i] = afd->samples[i] * volume;
+	}
+    }
+
     return afd;
 }
 
