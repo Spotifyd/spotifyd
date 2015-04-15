@@ -35,15 +35,20 @@ void set_volume(double new_volume)
     volume = new_volume;
 }
 
-audio_fifo_data_t* audio_get(audio_fifo_t *af)
+audio_fifo_data_t* audio_get(audio_fifo_t *af, snd_pcm_t **h)
 {
     audio_fifo_data_t *afd;
     int i;
     pthread_mutex_lock(&af->mutex);
-  
-    while (!(afd = TAILQ_FIRST(&af->q)))
-	pthread_cond_wait(&af->cond, &af->mutex);
-  
+
+    while(!(afd = TAILQ_FIRST(&af->q))) {
+		if(*h != NULL) {
+			snd_pcm_close(*h);
+			*h = NULL;
+		}
+		pthread_cond_wait(&af->cond, &af->mutex);
+    }
+
     TAILQ_REMOVE(&af->q, afd, link);
     af->qlen -= afd->nsamples;
   
