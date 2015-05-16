@@ -32,7 +32,6 @@ void command_qadd(sp_session *session, const struct command * const command);
 void command_play(sp_session *session, const struct command * const command);
 void command_pause(sp_session *session, const struct command * const command);
 void command_pl(const struct command * const command);
-void command_saddpl(const struct command * const command);
 void command_qaddpl(const struct command * const command);
 void command_pladd(sp_session *session, const struct command * const command);
 void command_plrm(const struct command * const command);

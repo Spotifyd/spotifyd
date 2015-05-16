@@ -125,14 +125,6 @@ struct commandq_entry *parse_input_line(struct commandq_entry *entry, char *line
 		command->type = QCLEAR;
 		ret_val = entry;
 	}
-	else if(!strncasecmp(line, "saddpl ", strlen("saddpl ")))
-	{
-		command->type = SADDPL;
-		if(sscanf(line + strlen("saddpl "), "%d", &command->playlist) == 1)
-		{
-			ret_val = entry;
-		}
-	}
 	else if(!strncasecmp(line, "qaddpl ", strlen("qaddpl ")))
 	{
 		command->type = QADDPL;

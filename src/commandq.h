@@ -37,7 +37,6 @@
 		COMMAND(CUR_PLAYING) \
 		COMMAND(HELP) \
 		COMMAND(PL) \
-		COMMAND(SADDPL) \
 		COMMAND(QADDPL) \
 		COMMAND(PLADD) \
 		COMMAND(PLCREATE) \
@@ -95,7 +94,6 @@ static const char help_str[] = "Usage:\n \
 \t PL          - List available playlists.\n \
 \t PLCREATE s  - Create new playlist with name s.\n \
 \t PLDELETE n  - Delete playlist n.\n \
-\t SADDPL n    - Put playlist n in search list.\n \
 \t QADDPL n    - Put playlist n in queue.\n \
 \t PLADD n p   - Add track n from queue to playlist p. \n \
 \t LINK s      - Looks up spotify uri s and adds to search list. \n \

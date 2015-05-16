@@ -331,21 +331,6 @@ void command_qaddpl(const struct command * const command)
 	}
 }
 
-void command_saddpl(const struct command * const command)
-{
-	search_clear();
-	if(playlist_for_each(command->playlist, &search_add_track))
-	{
-		sock_send_str(command->sockfd, "Added playlist \"");
-		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
-		sock_send_str(command->sockfd, "\" to search list.\n");
-	}
-	else
-	{
-		sock_send_str(command->sockfd, "No such playlist.\n");
-	}
-}
-
 void command_vol(const struct command * const command)
 {
 	if(command->volume > 100)

@@ -181,12 +181,6 @@ void commandq_execute_command(sp_session *session, struct command *command)
 			close(command->sockfd);
 			command->done = 1;
 		}
-		else if(command->type == SADDPL)
-		{
-			command_saddpl(command);
-			close(command->sockfd);
-			command->done = 1;
-		}
 		else if(command->type == QADDPL)
 		{
 			command_qaddpl(command);
