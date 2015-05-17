@@ -22,5 +22,6 @@
 
 void search_init();
 void search_clear();
-bool search_add_track(sp_track *track);
-sp_track *search_get(unsigned i);
+char *search_str_list();
+void search_new_search(sp_search *s);
+void search_for_tracks_at(sp_session *session, char *buf, size_t len, size_t i, bool (*f)(sp_track *));

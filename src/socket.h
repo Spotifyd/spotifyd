@@ -21,8 +21,6 @@
 void sock_send_str(int sockfd, const char * const str);
 int sock_readline(int sockfd, char *buf);
 void *sock_connection_handler(void *sockfd_ptr);
-void sock_send_track_with_trackn(int sockfd, sp_track *track, int trackn);
-void sock_send_track(int sockfd, sp_track *track);
 void *sock_accept_connections_ip(void *not_used);
 void *sock_accept_connections_un(void *not_used);
 int sock_create_un();

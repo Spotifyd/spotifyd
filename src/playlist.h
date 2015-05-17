@@ -22,7 +22,7 @@
 void playlist_init(sp_session *session);
 void playlist_container_loaded(sp_playlistcontainer *pc, void *userdata);
 unsigned playlist_len();
-const char *playlist_get_name(unsigned i);
+void playlist_get_name(char *buf, size_t len, unsigned i);
 bool playlist_for_each(unsigned playlistn, bool (*func_ptr)(sp_track *));
 bool playlist_add_track(unsigned playlist, sp_track * const track, sp_session *session);
 bool playlist_del_track(unsigned playlist, int track);

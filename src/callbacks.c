@@ -115,13 +115,6 @@ void on_search_complete(sp_search *search, void *userdata)
 {
 	debug("on_search_complete\n");
 	
-	int i;
-
-	/*
-	 * Begin by releasing the previous search results.
-	 */
-	search_clear();
-
 	sp_error error = sp_search_error(search);
 	if (error != SP_ERROR_OK)
 	{
@@ -129,24 +122,13 @@ void on_search_complete(sp_search *search, void *userdata)
 		exit(1);
 	}
 
-	int num_tracks = sp_search_num_tracks(search);
-	
-	sp_track *track;
-
 	pthread_mutex_lock(&commandq_lock);
 	int sockfd = commandq.tqh_first->val->sockfd;
-
-	/*
-	 * Put store all the search results. Add one reference to them,
-	 * as they loose one reference when the search is freed.
-	 */
-	for(i=0; i<num_tracks; ++i)
-	{
-		track = sp_search_track(search, i);
-		search_add_track(track);
-		sock_send_track_with_trackn(sockfd, track, i);
-		sock_send_str(sockfd, "\n");
-	}
+	
+	search_new_search(search);
+	char *search_list = search_str_list();
+	sock_send_str(sockfd, search_list);
+	free(search_list);
 	
 	/*
 	 * If we ended up here, that means that the first element on the
@@ -159,6 +141,18 @@ void on_search_complete(sp_search *search, void *userdata)
 	notify_main_thread();
 
 	sp_search_release(search);
+}
+
+void on_albumbrowse_complete(sp_albumbrowse *result, void *userdata)
+{
+	bool (*f)(sp_track *) = (bool (*)(sp_track *)) userdata;
+	int i;
+	for(i=0; i<sp_albumbrowse_num_tracks(result); ++i)
+	{
+		f(sp_albumbrowse_track(result, i));
+	}
+
+	sp_albumbrowse_release(result);
 }
 
 void on_login(sp_session *session, sp_error error)

@@ -24,6 +24,74 @@
 #include "helpers.h"
 #include "commandq.h"
 
+void num_pre(char *buf, size_t len, int trackn, void (*f)(char *, size_t, void *), void *p)
+{
+	snprintf(buf, len, "%d | ", trackn);
+	f(buf + strlen(buf), len - strlen(buf), p);
+}
+void track_to_str(char *buf, size_t len, void *v)
+{
+	sp_track *track = (sp_track *) v;
+	if(track != NULL && sp_track_error(track) == SP_ERROR_OK)
+	{
+		sp_artist *artist = sp_track_artist(track, 0);
+		sp_link *l = sp_link_create_from_track(track, 0);
+		snprintf(buf, len, "%s | %s | ", sp_track_name(track), sp_artist_name(artist));
+		sp_link_as_string(l, buf + strlen(buf), len - strlen(buf));
+		sp_link_release(l);
+		strncat(buf+strlen(buf), " | TRACK", len - strlen(buf));
+	}
+	else if(track != NULL && sp_track_error(track) == SP_ERROR_IS_LOADING)
+	{
+		snprintf(buf, len, "Track is loading, wait a second.");
+	}
+	else if(track == NULL)
+	{
+		snprintf(buf, len, "Track is NULL-ptr, this is a bug.");
+	}
+	else
+	{
+		snprintf(buf, len, "An unknown error occured. Try again.");
+	}
+}
+
+void album_to_str(char *buf, size_t len, void *v)
+{
+	sp_album *album = (sp_album *) v;
+	if(sp_album_is_loaded(album))
+	{
+		sp_link *l = sp_link_create_from_album(album);
+		sp_artist *artist = sp_album_artist(album);
+		const char *name = sp_album_name(album);
+		snprintf(buf, len, "%s | %s | ", name, sp_artist_name(artist));
+		sp_link_as_string(l, buf + strlen(buf), len - strlen(buf));
+		sp_link_release(l);
+		strncat(buf+strlen(buf), " | ALBUM", len - strlen(buf));
+	}
+	else
+	{
+		strncat(buf, "Album is not loaded yet...", len);
+	}
+}
+
+void playlist_to_str(char *buf, size_t len, void *v)
+{
+	sp_playlist *playlist = (sp_playlist *)v;
+	if(sp_playlist_is_loaded(playlist))
+	{
+		sp_link *l = sp_link_create_from_playlist(playlist);
+		const char *name = sp_playlist_name(playlist);
+		snprintf(buf, len, "%s | ", name);
+		sp_link_as_string(l, buf + strlen(buf), len - strlen(buf));
+		sp_link_release(l);
+		strncat(buf+strlen(buf), " | PLAYLIST", len - strlen(buf));
+	}
+	else
+	{
+		strncat(buf, "Playlist is not loaded yet...", len);
+	}
+}
+
 void notify_main_thread()
 {
 	pthread_mutex_lock(&notify_mutex);

@@ -52,13 +52,13 @@ unsigned playlist_len()
 	return sp_playlistcontainer_num_playlists(playlist_container);
 }
 
-const char *playlist_get_name(unsigned i)
+void playlist_get_name(char *buf, size_t len, unsigned i)
 {
-	if(playlist_container == NULL)
+	buf[0] = '\0';
+	if(playlist_container != NULL)
 	{
-		return NULL;
+		playlist_to_str(buf, len, sp_playlistcontainer_playlist(playlist_container, i));
 	}
-	return sp_playlist_name(sp_playlistcontainer_playlist(playlist_container, i));
 }
 
 bool playlist_new(const char * const name)

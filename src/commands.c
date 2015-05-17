@@ -38,9 +38,9 @@ void command_search(sp_session *session, const struct command * const command)
 			0,
 			NUM_SEARCH_RESULTS,
 			0,
+			NUM_SEARCH_RESULTS,
 			0,
-			0,
-			0,
+			NUM_SEARCH_RESULTS,
 			0,
 			0,
 			SP_SEARCH_STANDARD,
@@ -103,13 +103,7 @@ void command_qrm(sp_session *session, const struct command * const command)
  */
 void command_lists(sp_session *session, const struct command * const command)
 {
-	int i = 0;
-	while(search_get(i) != NULL)
-	{
-		sock_send_track_with_trackn(command->sockfd, search_get(i), i);
-		sock_send_str(command->sockfd, "\n");
-		++i;
-	}
+	sock_send_str(command->sockfd, search_str_list());
 }
 
 /*
@@ -125,7 +119,9 @@ void command_listq(sp_session *session, const struct command * const command)
 
 	while(queue_get(i) != NULL && i < NUM_SEARCH_RESULTS)
 	{
-		sock_send_track_with_trackn(command->sockfd, queue_get(i), i);
+		char buf[API_MESSAGE_LEN];
+		num_pre(buf, API_MESSAGE_LEN, i, track_to_str, queue_get(i));
+		sock_send_str(command->sockfd, buf);
 		sock_send_str(command->sockfd, "\n");
 		++i;
 	}
@@ -146,33 +142,33 @@ void command_qprint(const struct command * const command)
 
 void command_qadd(sp_session *session, const struct command * const command)
 {
-	bool track_added = 0;
-	if(command->track < NUM_SEARCH_RESULTS)
-	{
-		track_added = queue_add_track(search_get(command->track));
-	}
-	if(track_added)
+	char buf[API_MESSAGE_LEN];
+	buf[0] = '\0';
+	search_for_tracks_at(session, buf, API_MESSAGE_LEN, command->track, queue_add_track);
+	if(strlen(buf) != 0)
 	{
 		sock_send_str(command->sockfd, "Adding: ");
-		sock_send_track(command->sockfd, search_get(command->track));
+		sock_send_str(command->sockfd, buf);
 		sock_send_str(command->sockfd, "\n");
 	}
 	else
 	{
-		sock_send_str(command->sockfd, "Not a valid track number!\n");
+		sock_send_str(command->sockfd, "Couldn't add that!\n");
 	}
 }
 
 void command_cur_playing(const struct command * const command)
 {
 	sp_track *t;
-	if((t =queue_get_current()) == NULL)
+	if((t = queue_get_current()) == NULL)
 	{
 		sock_send_str(command->sockfd, "Not playing a track right now.\n");
 	}
 	else
 	{
-		sock_send_track(command->sockfd, t);
+		char buf[API_MESSAGE_LEN];
+		track_to_str(buf, API_MESSAGE_LEN, t);
+		sock_send_str(command->sockfd, buf);
 		sock_send_str(command->sockfd, "\n");
 	}
 }
@@ -203,8 +199,10 @@ void command_play(sp_session *session, const struct command * const command)
 			track = queue_get_next();
 		}
 		queue_set_current(track);
+		char buf[API_MESSAGE_LEN];
+		track_to_str(buf, API_MESSAGE_LEN, queue_get(track));
 		sock_send_str(command->sockfd, "Playing: ");
-		sock_send_track(command->sockfd, queue_get_current());
+		sock_send_str(command->sockfd, buf);
 		sock_send_str(command->sockfd, "\n");
 	}
 	else
@@ -245,7 +243,8 @@ void command_pl(const struct command * const command)
 	unsigned i = 0;
 	for(i = 0; i<playlist_len(); ++i)
 	{
-		const char *playlist_name = playlist_get_name(i);
+		char playlist_name[API_MESSAGE_LEN];
+		playlist_get_name(playlist_name, API_MESSAGE_LEN, i);
 		if(playlist_name == NULL)
 		{
 			break;
@@ -262,9 +261,12 @@ void command_pladd(sp_session *session, const struct command * const command)
 	if(t != NULL && playlist_add_track(command->playlist, t, session))
 	{
 		sock_send_str(command->sockfd, "Added track ");
-		sock_send_track(command->sockfd, queue_get(command->track));
+		char buf[API_MESSAGE_LEN];
+		track_to_str(buf, API_MESSAGE_LEN, queue_get(command->track));
+		sock_send_str(command->sockfd, buf);
 		sock_send_str(command->sockfd, " to playlist ");
-		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
+		playlist_get_name(buf, API_MESSAGE_LEN, command->playlist);
+		sock_send_str(command->sockfd, buf);
 		sock_send_str(command->sockfd, ".\n");
 	}
 	else
@@ -279,9 +281,12 @@ void command_plrm(const struct command * const command)
 	if(playlist_del_track(command->playlist, command->track))
 	{
 		sock_send_str(command->sockfd, "Removed track ");
-		sock_send_track(command->sockfd, queue_get(command->track));
+		char buf[API_MESSAGE_LEN];
+		track_to_str(buf, API_MESSAGE_LEN, queue_get(command->track));
+		sock_send_str(command->sockfd, buf);
 		sock_send_str(command->sockfd, " from playlist ");
-		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
+		playlist_get_name(buf, API_MESSAGE_LEN, command->playlist);
+		sock_send_str(command->sockfd, buf);
 		sock_send_str(command->sockfd, ".\n");
 	}
 	else
@@ -321,7 +326,9 @@ void command_qaddpl(const struct command * const command)
 	if(playlist_for_each(command->playlist, &queue_add_track))
 	{
 		sock_send_str(command->sockfd, "Added playlist \"");
-		sock_send_str(command->sockfd, playlist_get_name(command->playlist));
+		char buf[API_MESSAGE_LEN];
+		playlist_get_name(buf, API_MESSAGE_LEN, command->playlist);
+		sock_send_str(command->sockfd, buf);
 		sock_send_str(command->sockfd, "\" to queue.\n");
 	}
 	else
