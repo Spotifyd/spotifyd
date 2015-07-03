@@ -109,6 +109,10 @@ bool search_is_playlist(size_t i)
 
 void search_for_tracks_at(sp_session *session, char *buf, size_t len, size_t i, bool (*f)(sp_track *))
 {
+	if(search == NULL)
+	{
+		return;
+	}
 	buf[0] = '\0';
 	if(search_is_track(i) && sp_track_is_loaded(sp_search_track(search, i)))
 	{
