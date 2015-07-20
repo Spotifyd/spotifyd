@@ -1,0 +1,4 @@
+[package]
+name = "spotifyd"
+version = "0.1.0"
+authors = ["Pontus Persson <ponpe412@student.liu.se>"]
