@@ -97,7 +97,7 @@ static const char help_str[] = "Usage:\n \
 \t QADDPL n    - Put playlist n in queue.\n \
 \t PLADD n p   - Add track n from queue to playlist p. \n \
 \t LINK s      - Looks up spotify uri s and adds to search list. \n \
-\t vol p      - Sets volume to percentage p (0 to 100). \n \
+\t vol p       - Sets volume to percentage p (0 to 100). \n \
 \t PLRM n p    - Remove track n from playlist p.\n";
 
 void commandq_pop();
