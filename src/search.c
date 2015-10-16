@@ -59,21 +59,21 @@ char *search_str_list()
 	int i;
 	for(i=0; i<tracks; ++i)
 	{
-		num_pre(ret + strlen(ret), size, i, track_to_str,
-				sp_search_track(search, i));
-		strncat(ret + strlen(ret), "\n", size);
+		snprintf(ret + strlen(ret), size - strlen(ret), "%d | ", i);
+		track_to_str(ret + strlen(ret), size - strlen(ret), sp_search_track(search, i));
+		strncat(ret + strlen(ret), "\n", size - strlen(ret));
 	}
 	for(; i<(tracks+albums); ++i)
 	{
-		num_pre(ret + strlen(ret), size, i, album_to_str,
-				sp_search_album(search, i-tracks));
-		strncat(ret + strlen(ret), "\n", size);
+		snprintf(ret + strlen(ret), size - strlen(ret), "%d | ", i);
+		album_to_str(ret + strlen(ret), size - strlen(ret), sp_search_album(search, i-tracks));
+		strncat(ret + strlen(ret), "\n", size - strlen(ret));
 	}
 	for(; i<(tracks+albums+playlists); ++i)
 	{
-		num_pre(ret + strlen(ret), size, i, playlist_to_str,
-				sp_search_playlist(search, i-tracks-albums));
-		strncat(ret + strlen(ret), "\n", size);
+		snprintf(ret + strlen(ret), size - strlen(ret), "%d | ", i);
+		playlist_to_str(ret + strlen(ret), size - strlen(ret), sp_search_playlist(search, i-tracks-albums));
+		strncat(ret + strlen(ret), "\n", size - strlen(ret));
 	}
 
 	return ret;

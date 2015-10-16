@@ -23,10 +23,9 @@
 
 #define LOG_PRINT(...) if(get_logfile() != NULL) { fprintf(get_logfile(), __VA_ARGS__); fflush(get_logfile()); }
 
-void num_pre(char *buf, size_t len, int trackn, void (*f)(char *, size_t, void *), void *p);
-void track_to_str(char *buf, size_t len, void *);
-void album_to_str(char *buf, size_t len, void *);
-void playlist_to_str(char *buf, size_t len, void *);
+void track_to_str(char *buf, size_t len, sp_track *);
+void album_to_str(char *buf, size_t len, sp_album *);
+void playlist_to_str(char *buf, size_t len, sp_playlist *);
 void notify_main_thread();
 struct timespec rel_to_abstime(int msec);
 void debug(const char *debug_msg);

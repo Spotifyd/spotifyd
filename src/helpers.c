@@ -24,12 +24,7 @@
 #include "helpers.h"
 #include "commandq.h"
 
-void num_pre(char *buf, size_t len, int trackn, void (*f)(char *, size_t, void *), void *p)
-{
-	snprintf(buf, len, "%d | ", trackn);
-	f(buf + strlen(buf), len - strlen(buf), p);
-}
-void track_to_str(char *buf, size_t len, void *v)
+void track_to_str(char *buf, size_t len, sp_track *v)
 {
 	sp_track *track = (sp_track *) v;
 	if(track != NULL && sp_track_error(track) == SP_ERROR_OK)
@@ -55,7 +50,7 @@ void track_to_str(char *buf, size_t len, void *v)
 	}
 }
 
-void album_to_str(char *buf, size_t len, void *v)
+void album_to_str(char *buf, size_t len, sp_album *v)
 {
 	sp_album *album = (sp_album *) v;
 	if(sp_album_is_loaded(album))
@@ -74,7 +69,7 @@ void album_to_str(char *buf, size_t len, void *v)
 	}
 }
 
-void playlist_to_str(char *buf, size_t len, void *v)
+void playlist_to_str(char *buf, size_t len, sp_playlist *v)
 {
 	sp_playlist *playlist = (sp_playlist *)v;
 	if(sp_playlist_is_loaded(playlist))

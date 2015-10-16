@@ -120,7 +120,8 @@ void command_listq(sp_session *session, const struct command * const command)
 	while(queue_get(i) != NULL && i < NUM_SEARCH_RESULTS)
 	{
 		char buf[API_MESSAGE_LEN];
-		num_pre(buf, API_MESSAGE_LEN, i, track_to_str, queue_get(i));
+		snprintf(buf, API_MESSAGE_LEN, "%d | ", i);
+		track_to_str(buf + strlen(buf), API_MESSAGE_LEN - strlen(buf), queue_get(i));
 		sock_send_str(command->sockfd, buf);
 		sock_send_str(command->sockfd, "\n");
 		++i;
