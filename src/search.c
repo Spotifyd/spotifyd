@@ -53,7 +53,7 @@ char *search_str_list()
 	size_t tracks = sp_search_num_tracks(search);
 	size_t albums = sp_search_num_albums(search);
 	size_t playlists = sp_search_num_playlists(search);
-	size_t size = API_MESSAGE_LEN*(albums+tracks);
+	size_t size = API_MESSAGE_LEN*(albums+tracks+playlists);
 	char *ret = malloc(size);
 	ret[0] = '\0';
 	int i;
