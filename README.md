@@ -1,12 +1,6 @@
 # spotifyd(8) - A spotify daemon
 A **Spotify** daemon in the spirit of MPD, **Music Player Daemon**.
 
-The current version of spotifyd is considered deprecated. Mostly
-because it's backend, libspotify, is being deprecated. We are currently
-trying to reimplement spotifyd in Rust instead, in a separate branch. If
-that ever works out, the C implementation will be moved to a legacy branch
-and the master branch will contain the new Rust implementation.
-
 ## Features
 Right now, spotifyd can search, add to a queue, play the queue
 (randomly or in order), add playlists, remove playlists, edit playlists.
