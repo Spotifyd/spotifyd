@@ -42,7 +42,7 @@ void command_search(sp_session *session, const struct command * const command)
 			0,
 			NUM_SEARCH_RESULTS,
 			0,
-			0,
+			NUM_SEARCH_RESULTS,
 			SP_SEARCH_STANDARD,
 			&on_search_complete,
 			session
