@@ -40,12 +40,20 @@
 
 pthread_t accept_thread;
 
-int main()
+int main(int argc, char *argv[])
 {
+	bool opt_daemonize = 1;
+
+	int i;
+	for(i=1; i<argc; ++i) {
+		if(!strcmp("--no-daemon", argv[i])) opt_daemonize = 0;
+	}
 	/*
 	 * Fork off and daemonize the program.
 	 */
-	daemonize();
+	if(opt_daemonize) {
+		daemonize();
+	}
 
 	/*
 	 * read username/password and where to listen for socket connections
