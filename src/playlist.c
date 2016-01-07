@@ -55,7 +55,8 @@ unsigned playlist_len()
 void playlist_get_name(char *buf, size_t len, unsigned i)
 {
 	buf[0] = '\0';
-	if(playlist_container != NULL)
+	if(playlist_container != NULL
+	   && sp_playlistcontainer_playlist_type(playlist_container, i) == SP_PLAYLIST_TYPE_PLAYLIST)
 	{
 		playlist_to_str(buf, len, sp_playlistcontainer_playlist(playlist_container, i));
 	}
