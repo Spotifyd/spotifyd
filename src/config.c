@@ -12,6 +12,7 @@
 char *socket_path = NULL;
 char *username = NULL;
 char *password = NULL;
+char *bitrate = NULL;
 char *port = NULL;
 FILE *logfile = NULL;
 
@@ -46,6 +47,13 @@ char *get_password()
 {
 	char *tmp = password;
 	password = NULL;
+	return tmp;
+}
+
+char *get_bitrate()
+{
+	char *tmp = bitrate;
+	bitrate = NULL;
 	return tmp;
 }
 
@@ -130,6 +138,17 @@ bool read_config()
 				exit(1);
 			}
 			strcpy(password, tmp);
+		}
+		else if(!strncasecmp(line, "bitrate", strlen("bitrate")))
+		{
+			char *tmp = trim_whitespace(line + strlen("bitrate"));
+			bitrate = malloc(sizeof(char) * (strlen(tmp) + 1));
+			if(bitrate == NULL)
+			{
+				LOG_PRINT("Can't allocate memory. Quitting.\n");
+				exit(1);
+			}
+			strcpy(bitrate, tmp);
 		}
 		else if(!strncasecmp(line, "unix-socket", strlen("unix-socket")))
 		{

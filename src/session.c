@@ -57,7 +57,31 @@ sp_error session_init(sp_session **session)
 
 	char *username = get_username();
 	char *password = get_password();
+	char *bitrate = get_bitrate();
+	sp_bitrate preferred_bitrate;
+
+	if (bitrate != NULL) {
+		if (strcmp(bitrate, "160") == 0)
+		{
+			preferred_bitrate = SP_BITRATE_160k;
+		} else if (strcmp(bitrate, "320") == 0)
+		{
+			preferred_bitrate = SP_BITRATE_320k;
+		} else if (strcmp(bitrate, "96") == 0)
+		{
+			preferred_bitrate = SP_BITRATE_96k;
+		} else
+		{
+			preferred_bitrate = SP_BITRATE_160k;
+		}
+	} else {
+		preferred_bitrate = SP_BITRATE_160k;
+	}
+
+	sp_session_preferred_bitrate(*session, preferred_bitrate);
+
 	error = sp_session_login(*session, username, password, 0, NULL);
+
 	/*
 	 * Don't keep a copy of the password in memory.
 	 */
