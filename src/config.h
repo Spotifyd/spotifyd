@@ -28,5 +28,6 @@ FILE *get_logfile();
 char *get_port();
 char *get_password();
 char *get_username();
+char *get_bitrate();
 bool have_port();
 bool have_socket_path();
