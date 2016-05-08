@@ -1,3 +1,10 @@
+# THIS PROJECT IS DEPRECATED
+Unfortunately, Spotify closed down the API I was using:
+https://developer.spotify.com/web-api/migration-guide/
+
+Maybe I'll write something new one day to replace spotifyd, but for now it is
+broken.
+
 # spotifyd(8) - A spotify daemon
 A **Spotify** daemon in the spirit of MPD, **Music Player Daemon**.
 
