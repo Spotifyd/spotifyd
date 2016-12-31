@@ -1,4 +1,22 @@
 [package]
 name = "spotifyd"
 version = "0.1.0"
-authors = ["Pontus Persson <ponpe412@student.liu.se>"]
+authors = ["Simon Persson <simon@flaskpost.org>"]
+
+[dependencies]
+env_logger = "*"
+xdg = "^2.0"
+simple-signal = "^1.1.0"
+rust-ini = {directory="/home/simon/rust-ini"}
+getopts = "^0.2.14"
+log = "^0.3.6"
+
+[dependencies.librespot]
+git = "https://github.com/plietar/librespot.git"
+default-features = false
+features = ["with-syntex"]
+
+[features]
+alsa = ["librespot/alsa-backend"]
+facebook = ["librespot/facebook"]
+default = ["alsa"]
