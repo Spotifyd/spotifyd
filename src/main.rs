@@ -57,7 +57,7 @@ fn main() {
     }
 
     let config = config::read_config().unwrap_or_else(|e| {
-        error!("Couldn't read configuration file: {:?}", e);
+        error!("Couldn't read configuration file: {}", e);
         exit(1);
     });
 
