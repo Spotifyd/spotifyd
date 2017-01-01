@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::path::PathBuf;
 use std::convert::From;
+use std::fs::metadata;
 
 use librespot::session::{Bitrate, Config as SessionConfig};
 use librespot::cache::{NoCache, Cache, DefaultCache};
@@ -8,6 +9,8 @@ use librespot::version;
 
 use xdg;
 use ini::Ini;
+
+const CONFIG_FILE: &'static str = "spotifyd.conf";
 
 pub struct SpotifydConfig {
     pub log_path: Option<PathBuf>,
@@ -19,9 +22,19 @@ pub struct SpotifydConfig {
 }
 
 fn get_config_file() -> Result<PathBuf, Box<Error>> {
+    let etc_conf = format!("/etc/{}", CONFIG_FILE);
     let xdg_dirs = try!(xdg::BaseDirectories::with_prefix("spotifyd"));
-    xdg_dirs.find_config_file("spotifyd.conf")
-        .ok_or(From::from("Couldn't find config file in XDG config directory."))
+    xdg_dirs.find_config_file(CONFIG_FILE)
+        .or_else(|| {
+            metadata(&*etc_conf)
+                .ok()
+                .and_then(|meta| if meta.is_file() {
+                    Some(etc_conf.into())
+                } else {
+                    None
+                })
+        })
+        .ok_or(From::from("Couldn't find a config file."))
 }
 
 pub fn read_config() -> Result<SpotifydConfig, Box<Error>> {
