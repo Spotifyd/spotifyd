@@ -19,11 +19,7 @@ use librespot::player::Player;
 use simple_signal::Signal;
 
 mod config;
-
-fn usage(program: &str, opts: &getopts::Options) -> String {
-    let brief = format!("Usage: {} [options]", program);
-    format!("{}", opts.usage(&brief))
-}
+mod cli;
 
 fn main() {
     if env::var("RUST_LOG").is_err() {
@@ -31,35 +27,23 @@ fn main() {
     }
     env_logger::init().unwrap();
 
-    let mut opts = getopts::Options::new();
-    opts.optopt("c", "config", "Path to a config file.", "CONFIG");
-    opts.optopt("", "no-daemon", "Don't detach from console.", "");
-    opts.optopt("u", "username", "Spotify user name.", "USERNAME");
-    opts.optopt("p", "password", "Spotify password.", "PASSWORD");
-    if cfg!(feature = "facebook") {
-        opts.optflag("", "facebook", "Login with a Facebook account");
-    }
-    opts.optflag("", "backends", "Available audio backends.");
-
+    let opts = cli::command_line_argument_options();
     let args: Vec<String> = std::env::args().collect();
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
-            error!("Error: {}\n{}", f.to_string(), usage(&args[0], &opts));
+            error!("Error: {}\n{}", f.to_string(), cli::usage(&args[0], &opts));
             exit(1)
         }
     };
 
     if matches.opt_present("backends") {
-        main_helper::find_backend(Some("?"));
+        cli::print_backends();
         exit(0);
     }
 
-    let config = config::read_config().unwrap_or_else(|e| {
-        error!("Couldn't read configuration file: {}", e);
-        exit(1);
-    });
+    let config = config::get_config();
 
     let cache = config.cache;
     let backend = config.backend;
