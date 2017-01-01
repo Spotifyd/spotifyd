@@ -7,7 +7,7 @@ authors = ["Simon Persson <simon@flaskpost.org>"]
 env_logger = "*"
 xdg = "^2.0"
 simple-signal = "^1.1.0"
-rust-ini = {directory="/home/simon/rust-ini"}
+rust-ini = {git="https://github.com/zonyitoo/rust-ini.git"}
 getopts = "^0.2.14"
 log = "^0.3.6"
 
