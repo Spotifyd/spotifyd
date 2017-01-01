@@ -20,7 +20,7 @@ pub struct SpotifydConfig {
 
 fn get_config_file() -> Result<PathBuf, Box<Error>> {
     let xdg_dirs = try!(xdg::BaseDirectories::with_prefix("spotifyd"));
-    xdg_dirs.find_config_file("spotifyd")
+    xdg_dirs.find_config_file("spotifyd.conf")
         .ok_or(From::from("Couldn't find config file in XDG config directory."))
 }
 
