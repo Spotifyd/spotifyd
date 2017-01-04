@@ -4,12 +4,13 @@ version = "0.1.0"
 authors = ["Simon Persson <simon@flaskpost.org>"]
 
 [dependencies]
-env_logger = "*"
+simplelog = "^0.4.2"
 xdg = "^2.0"
 simple-signal = "^1.1.0"
 rust-ini = {git="https://github.com/zonyitoo/rust-ini.git"}
 getopts = "^0.2.14"
 log = "^0.3.6"
+syslog = "^3.1.0"
 
 [dependencies.librespot]
 git = "https://github.com/plietar/librespot.git"

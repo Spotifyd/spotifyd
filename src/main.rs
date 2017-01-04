@@ -1,15 +1,16 @@
 extern crate getopts;
+extern crate simplelog;
 extern crate librespot;
-extern crate env_logger;
 extern crate ini;
 extern crate xdg;
+extern crate syslog;
 #[macro_use]
 extern crate log;
 extern crate simple_signal;
 
 use std::process::exit;
 use std::thread;
-use std::env;
+use std::panic;
 
 use librespot::spirc::SpircManager;
 use librespot::main_helper;
@@ -22,18 +23,13 @@ mod config;
 mod cli;
 
 fn main() {
-    if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "info,librespot=trace")
-    }
-    env_logger::init().unwrap();
-
     let opts = cli::command_line_argument_options();
     let args: Vec<String> = std::env::args().collect();
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
-            error!("Error: {}\n{}", f.to_string(), cli::usage(&args[0], &opts));
+            println!("Error: {}\n{}", f.to_string(), cli::usage(&args[0], &opts));
             exit(1)
         }
     };
@@ -42,6 +38,35 @@ fn main() {
         cli::print_backends();
         exit(0);
     }
+
+    if matches.opt_present("help") {
+        println!("{}", cli::usage(&args[0], &opts));
+        exit(0);
+    }
+
+    if matches.opt_present("no-daemon") {
+        println!("Continue in no-daemon mode.");
+        let filter = if matches.opt_present("verbose") {
+            simplelog::LogLevelFilter::Off
+        } else {
+            simplelog::LogLevelFilter::Info
+        };
+        simplelog::TermLogger::init(filter, simplelog::Config::default())
+            .expect("Couldn't initialize logger.");
+    } else {
+        let filter = if matches.opt_present("verbose") {
+            log::LogLevelFilter::Off
+        } else {
+            log::LogLevelFilter::Info
+        };
+        syslog::init(syslog::Facility::LOG_DAEMON, filter, Some("Spotifyd"))
+            .expect("Couldn't initialize logger.");
+
+    }
+
+    panic::set_hook(Box::new(|panic_info| {
+        error!("Received panic with payload: {:?}", panic_info.payload())
+    }));
 
     let config = config::get_config();
 

@@ -16,12 +16,14 @@ pub fn print_backends() {
 pub fn command_line_argument_options() -> Options {
     let mut opts = Options::new();
     opts.optopt("c", "config", "Path to a config file.", "CONFIG");
-    opts.optopt("", "no-daemon", "Don't detach from console.", "");
     opts.optopt("u", "username", "Spotify user name.", "USERNAME");
     opts.optopt("p", "password", "Spotify password.", "PASSWORD");
     if cfg!(feature = "facebook") {
         opts.optflag("", "facebook", "Login with a Facebook account");
     }
+    opts.optflag("v", "verbose", "Add debug information to log.");
+    opts.optflag("", "no-daemon", "Don't detach from console.");
     opts.optflag("", "backends", "Available audio backends.");
+    opts.optflag("h", "help", "Print this help text.");
     opts
 }
