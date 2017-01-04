@@ -18,6 +18,7 @@ pub fn command_line_argument_options() -> Options {
     opts.optopt("c", "config", "Path to a config file.", "CONFIG");
     opts.optopt("u", "username", "Spotify user name.", "USERNAME");
     opts.optopt("p", "password", "Spotify password.", "PASSWORD");
+    opts.optopt("", "pid", "Path to PID file.", "PID-FILE");
     if cfg!(feature = "facebook") {
         opts.optflag("", "facebook", "Login with a Facebook account");
     }

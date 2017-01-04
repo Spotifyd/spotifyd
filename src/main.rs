@@ -1,3 +1,4 @@
+extern crate daemonize;
 extern crate getopts;
 extern crate simplelog;
 extern crate librespot;
@@ -18,6 +19,8 @@ use librespot::session::Session;
 use librespot::player::Player;
 
 use simple_signal::Signal;
+
+use daemonize::Daemonize;
 
 mod config;
 mod cli;
@@ -45,9 +48,8 @@ fn main() {
     }
 
     if matches.opt_present("no-daemon") {
-        println!("Continue in no-daemon mode.");
         let filter = if matches.opt_present("verbose") {
-            simplelog::LogLevelFilter::Off
+            simplelog::LogLevelFilter::Trace
         } else {
             simplelog::LogLevelFilter::Info
         };
@@ -55,13 +57,21 @@ fn main() {
             .expect("Couldn't initialize logger.");
     } else {
         let filter = if matches.opt_present("verbose") {
-            log::LogLevelFilter::Off
+            log::LogLevelFilter::Trace
         } else {
             log::LogLevelFilter::Info
         };
         syslog::init(syslog::Facility::LOG_DAEMON, filter, Some("Spotifyd"))
             .expect("Couldn't initialize logger.");
 
+        let mut daemonize = Daemonize::new();
+        if let Some(pid) = matches.opt_str("pid") {
+            daemonize = daemonize.pid_file(pid);
+        }
+        match daemonize.start() {
+            Ok(_) => info!("Detached from shell, now running in background."),
+            Err(e) => error!("Something went wrong while daemonizing: {}", e),
+        };
     }
 
     panic::set_hook(Box::new(|panic_info| {

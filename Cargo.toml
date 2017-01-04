@@ -11,6 +11,7 @@ rust-ini = {git="https://github.com/zonyitoo/rust-ini.git"}
 getopts = "^0.2.14"
 log = "^0.3.6"
 syslog = "^3.1.0"
+daemonize = "^0.2.3"
 
 [dependencies.librespot]
 git = "https://github.com/plietar/librespot.git"
