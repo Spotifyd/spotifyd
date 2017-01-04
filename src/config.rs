@@ -14,7 +14,6 @@ use ini::Ini;
 const CONFIG_FILE: &'static str = "spotifyd.conf";
 
 pub struct SpotifydConfig {
-    pub log_path: Option<PathBuf>,
     pub username: Option<String>,
     pub password: Option<String>,
     pub cache: Box<Cache + Send + Sync>,
@@ -25,7 +24,6 @@ pub struct SpotifydConfig {
 impl Default for SpotifydConfig {
     fn default() -> SpotifydConfig {
         SpotifydConfig {
-            log_path: None,
             username: None,
             password: None,
             cache: Box::new(NoCache),
@@ -106,7 +104,6 @@ pub fn get_config() -> SpotifydConfig {
                .and_then(|p| DefaultCache::new(p).ok())
                .map(|c| Box::new(c) as Box<Cache + Send + Sync>));
 
-    config.log_path = lookup("log_path").map(|p| PathBuf::from(p));
     config.username = lookup("username").map(String::clone);
     config.password = lookup("password").map(String::clone);
     config.backend = lookup("backend").map(String::clone);
