@@ -6,7 +6,7 @@ authors = ["Simon Persson <simon@flaskpost.org>"]
 [dependencies]
 simplelog = "^0.4.2"
 xdg = "^2.0"
-simple-signal = "^1.1.0"
+ctrlc = { version = "2.0", features = ["termination"] }
 rust-ini = {git="https://github.com/zonyitoo/rust-ini.git"}
 getopts = "^0.2.14"
 log = "^0.3.6"

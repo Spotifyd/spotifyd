@@ -7,7 +7,7 @@ extern crate xdg;
 extern crate syslog;
 #[macro_use]
 extern crate log;
-extern crate simple_signal;
+extern crate ctrlc;
 
 use std::process::exit;
 use std::thread;
@@ -17,8 +17,6 @@ use librespot::spirc::SpircManager;
 use librespot::main_helper;
 use librespot::session::Session;
 use librespot::player::Player;
-
-use simple_signal::Signal;
 
 use daemonize::Daemonize;
 
@@ -96,8 +94,8 @@ fn main() {
     let spirc_signal = spirc.clone();
     thread::spawn(move || spirc.run());
 
-    simple_signal::set_handler(&[Signal::Int, Signal::Term], move |signals| {
-        info!("Signal received: {:?}. Say goodbye and exit.", signals);
+    ctrlc::set_handler(move || {
+        info!("Signal received. Say goodbye and exit.");
         spirc_signal.send_goodbye();
         exit(0);
     });
