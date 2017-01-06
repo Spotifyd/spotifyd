@@ -13,7 +13,6 @@ extern crate ctrlc;
 use std::process::exit;
 use std::thread;
 use std::panic;
-use std::io::{Write, stderr};
 
 use librespot::spirc::SpircManager;
 use librespot::session::Session;
