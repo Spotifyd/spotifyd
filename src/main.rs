@@ -19,7 +19,7 @@ use librespot::spirc::SpircManager;
 use librespot::session::Session;
 use librespot::player::Player;
 use librespot::audio_backend::{BACKENDS, Sink};
-use librespot::authentication::{Credentials, discovery_login};
+use librespot::authentication::get_credentials;
 
 use daemonize::Daemonize;
 
@@ -129,37 +129,6 @@ fn find_backend(name: Option<&str>) -> &'static (Fn(Option<&str>) -> Box<Sink> +
             let &(name, back) = BACKENDS.first().expect("No backends were enabled at build time");
             info!("No backend specified, defaulting to: {}.", name);
             back
-        }
-    }
-}
-
-
-// Stolen from librespotify main_helper, with some small modifications.
-fn get_credentials(session: &Session,
-                   username: Option<String>,
-                   password: Option<String>)
-                   -> Credentials {
-    let credentials = session.cache().get_credentials();
-    match (username, password, credentials) {
-
-        (Some(username), Some(password), _) => Credentials::with_password(username, password),
-
-        (Some(ref username), _, Some(ref credentials)) if *username == credentials.username => {
-            credentials.clone()
-        }
-
-        (Some(username), None, _) => {
-            write!(stderr(), "Password for {}: ", username).unwrap();
-            stderr().flush().unwrap();
-            let password = rpassword::read_password().unwrap();
-            Credentials::with_password(username.clone(), password)
-        }
-
-        (None, _, Some(credentials)) => credentials,
-
-        (None, _, None) => {
-            info!("No username provided and no stored credentials, starting discovery ...");
-            discovery_login(&session.config().device_name, session.device_id()).unwrap()
         }
     }
 }
