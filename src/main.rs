@@ -16,7 +16,6 @@ use std::panic;
 use librespot::spirc::SpircManager;
 use librespot::main_helper;
 use librespot::session::Session;
-use librespot::player::Player;
 
 use daemonize::Daemonize;
 
@@ -83,12 +82,9 @@ fn main() {
     let session_config = config.session_config;
     let device_name = session_config.device_name.clone();
     let session = Session::new(session_config, cache);
-    let credentials = main_helper::get_credentials(&session, &matches);
+    let credentials = main_helper::get_credentials(&session, config.username.or(matches.opt_str("username")), config.password.or(matches.opt_str("password")));
     session.login(credentials).unwrap();
-    let player = Player::new(session.clone(), move || {
-        main_helper::find_backend(backend.as_ref()
-            .map(AsRef::as_ref))(Some(device_name.as_ref()))
-    });
+    let player = main_helper::create_player(&session, backend.as_ref().map(String::as_ref), Some(device_name));
 
     let spirc = SpircManager::new(session.clone(), player);
     let spirc_signal = spirc.clone();
