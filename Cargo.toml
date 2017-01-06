@@ -12,14 +12,13 @@ getopts = "^0.2.14"
 log = "^0.3.6"
 syslog = "^3.1.0"
 daemonize = "^0.2.3"
+rpassword = "^0.3"
 
 [dependencies.librespot]
-git = "https://github.com/SimonPersson/librespot.git"
+git = "https://github.com/plietar/librespot.git"
 default-features = false
-branch = "general_main_helper"
 features = ["with-syntex"]
 
 [features]
 alsa = ["librespot/alsa-backend"]
-facebook = ["librespot/facebook"]
 default = ["alsa"]

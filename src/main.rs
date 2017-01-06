@@ -1,6 +1,7 @@
 extern crate daemonize;
 extern crate getopts;
 extern crate simplelog;
+extern crate rpassword;
 extern crate librespot;
 extern crate ini;
 extern crate xdg;
@@ -12,10 +13,13 @@ extern crate ctrlc;
 use std::process::exit;
 use std::thread;
 use std::panic;
+use std::io::{Write, stderr};
 
 use librespot::spirc::SpircManager;
-use librespot::main_helper;
 use librespot::session::Session;
+use librespot::player::Player;
+use librespot::audio_backend::{BACKENDS, Sink};
+use librespot::authentication::{Credentials, discovery_login};
 
 use daemonize::Daemonize;
 
@@ -72,7 +76,13 @@ fn main() {
     }
 
     panic::set_hook(Box::new(|panic_info| {
-        error!("Received panic with payload: {:?}", panic_info.payload())
+        error!("Caught panic with message: {}",
+               match (panic_info.payload().downcast_ref::<String>(),
+                      panic_info.payload().downcast_ref::<&str>()) {
+                   (Some(s), _) => &**s,
+                   (_, Some(&s)) => s,
+                   _ => "Unknown error type, can't produce message.",
+               });
     }));
 
     let config = config::get_config();
@@ -80,11 +90,16 @@ fn main() {
     let cache = config.cache;
     let backend = config.backend;
     let session_config = config.session_config;
-    let device_name = session_config.device_name.clone();
+    let device_name = config.device.clone();
     let session = Session::new(session_config, cache);
-    let credentials = main_helper::get_credentials(&session, config.username.or(matches.opt_str("username")), config.password.or(matches.opt_str("password")));
+    let credentials = get_credentials(&session,
+                                      config.username.or(matches.opt_str("username")),
+                                      config.password.or(matches.opt_str("password")));
     session.login(credentials).unwrap();
-    let player = main_helper::create_player(&session, backend.as_ref().map(String::as_ref), Some(device_name));
+
+    let player = Player::new(session.clone(), move || {
+        find_backend(backend.as_ref().map(String::as_ref))(device_name.as_ref().map(String::as_ref))
+    });
 
     let spirc = SpircManager::new(session.clone(), player);
     let spirc_signal = spirc.clone();
@@ -100,4 +115,51 @@ fn main() {
         session.poll();
     }
 
+}
+
+fn find_backend(name: Option<&str>) -> &'static (Fn(Option<&str>) -> Box<Sink> + Send + Sync) {
+    match name {
+        Some(name) => {
+            BACKENDS.iter()
+                .find(|backend| name == backend.0)
+                .expect(format!("Unknown backend: {}.", name).as_ref())
+                .1
+        }
+        None => {
+            let &(name, back) = BACKENDS.first().expect("No backends were enabled at build time");
+            info!("No backend specified, defaulting to: {}.", name);
+            back
+        }
+    }
+}
+
+
+// Stolen from librespotify main_helper, with some small modifications.
+fn get_credentials(session: &Session,
+                   username: Option<String>,
+                   password: Option<String>)
+                   -> Credentials {
+    let credentials = session.cache().get_credentials();
+    match (username, password, credentials) {
+
+        (Some(username), Some(password), _) => Credentials::with_password(username, password),
+
+        (Some(ref username), _, Some(ref credentials)) if *username == credentials.username => {
+            credentials.clone()
+        }
+
+        (Some(username), None, _) => {
+            write!(stderr(), "Password for {}: ", username).unwrap();
+            stderr().flush().unwrap();
+            let password = rpassword::read_password().unwrap();
+            Credentials::with_password(username.clone(), password)
+        }
+
+        (None, _, Some(credentials)) => credentials,
+
+        (None, _, None) => {
+            info!("No username provided and no stored credentials, starting discovery ...");
+            discovery_login(&session.config().device_name, session.device_id()).unwrap()
+        }
+    }
 }
