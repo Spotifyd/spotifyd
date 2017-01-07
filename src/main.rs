@@ -13,6 +13,8 @@ extern crate ctrlc;
 use std::process::exit;
 use std::thread;
 use std::panic;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 use librespot::spirc::SpircManager;
 use librespot::session::Session;
@@ -104,16 +106,18 @@ fn main() {
     let spirc_signal = spirc.clone();
     thread::spawn(move || spirc.run());
 
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
     ctrlc::set_handler(move || {
-        info!("Signal received. Say goodbye and exit.");
-        spirc_signal.send_goodbye();
-        exit(0);
+        r.store(false, Ordering::SeqCst);
     });
 
-    loop {
+    while running.load(Ordering::SeqCst) {
         session.poll();
     }
 
+    info!("Spotifyd is exiting.");
+    spirc_signal.send_goodbye();
 }
 
 fn find_backend(name: Option<&str>) -> &'static (Fn(Option<&str>) -> Box<Sink> + Send + Sync) {
