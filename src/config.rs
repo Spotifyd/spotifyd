@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::convert::From;
 use std::fs::metadata;
 use std::mem::swap;
+use std::str::FromStr;
 
 use librespot::session::{Bitrate, Config as SessionConfig};
 use librespot::cache::{NoCache, Cache, DefaultCache};
@@ -88,17 +89,6 @@ pub fn get_config() -> SpotifydConfig {
 
     let lookup = |field| spotifyd.and_then(|s| s.get(field)).or(global.and_then(|s| s.get(field)));
 
-    update(&mut config.session_config.bitrate,
-           spotifyd.and_then(|s| s.get("bitrate")).and_then(|b| match b.trim() {
-               "96" => Some(Bitrate::Bitrate96),
-               "160" => Some(Bitrate::Bitrate160),
-               "320" => Some(Bitrate::Bitrate320),
-               _ => {
-                   error!("Invalid bitrate {}!", b.trim());
-                   None
-               }
-           }));
-
     update(&mut config.cache,
            lookup("cache_path")
                .map(String::clone)
@@ -112,6 +102,8 @@ pub fn get_config() -> SpotifydConfig {
     config.device = lookup("device").map(String::clone);
     config.session_config.onstart = lookup("onstart").map(String::clone);
     config.session_config.onstop = lookup("onstop").map(String::clone);
+    update(&mut config.session_config.bitrate,
+           lookup("bitrate").map(String::as_ref).and_then(|s| Bitrate::from_str(s).ok()));
     update(&mut config.session_config.device_name,
            lookup("device_name").map(String::clone));
 
