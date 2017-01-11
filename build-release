@@ -1,0 +1,16 @@
+#!/bin/bash
+#
+# Generates two zip files with releases, one for ARM and one for AMD64. Used
+# by travis to automatically publish a build on each commit.
+
+set -euo pipefail
+
+rust-builder() {
+    docker build -t build_bot .
+    docker run -v "$(pwd)":/home/rust/src -t build_bot /bin/bash -c "$@"
+}
+
+rust-builder "LIBRARY_PATH=/usr/local/musl/lib/ cargo build --release"
+rust-builder "LIBRARY_PATH=/usr/lib/arm-linux-gnueabihf/ cargo build --release --target=armv7-unknown-linux-gnueabihf"
+zip -j spotifyd-`date --iso-8601`-armv7.zip target/armv7-unknown-linux-gnueabihf/release/spotifyd
+zip -j spotifyd-`date --iso-8601`-amd64.zip target/x86_64-unknown-linux-musl/release/spotifyd

@@ -6,13 +6,25 @@ lightweight than the official client, and is available on more platforms.
 Unfortunately, Spotify decided to kill the libspotify library we used, and
 hence we had no choice but to rewrite everything.
 
-# Building
-A rust compiler, with the Cargo package manager is needed, and can be installed
-from [rustup.rs](https://www.rustup.rs/). The project can then be built with:
+# Installing
+Travis CI builds a statically linked binary for systems running Linux on AMD64,
+and a dynamically linked (at least until rustup provides an ARMv7 musl compiler)
+binary for ARMv7, which should run on Raspberry Pi model 2 and 3. The binaries
+can be found [here](https://github.com/Spotifyd/spotifyd/releases/latest).
+Other systems have to build from source for now.
+
+## Build from source
+The [Rust compiler and Cargo package](https://www.rust-lang.org/en-US/)
+ manager are needed:
 ```
 cargo build --release
 ```
 The resulting binary will be placed in `target/release/spotifyd`.
+
+The default is to build spotifyd with an alsa backend, but it is possible
+to build with other audio backends, making Spotifyd availible on platforms
+other than Linux, by adding the `--no-default-features` argument to cargo
+and supplying an alternative backend (see the _Configuration_ section).
 
 # Configuration
 Spotifyd will search for a file name `spotifyd.conf` in the XDG config

@@ -1,0 +1,21 @@
+language: rust
+sudo: required
+os:
+- linux
+rust:
+- stable
+before_install:
+- sudo apt-get -qq update
+- sudo apt-get install -y libasound2-dev
+services:
+- docker
+before_deploy: "./build-release"
+deploy:
+  provider: releases
+  api_key:
+    secure: TwIv65LDHIBOgOsafV/wio+EwoG0pg5sFZZvEgNIV5J++zJoxaI35DH1/frKB6S4J2HhEKDojc7Np4tEgNUCOj+qZ51ma85SYr3SzVOg2n/TUI7lg/Gb13n6qd1AfTA2SsTryuGIvS7p4BaYSRtGXUuOghZg+7qdgl+zKeXiLnY=
+  file_glob: true
+  file: "spotifyd*zip"
+  skip_cleanup: true
+  on:
+    rust: stable
