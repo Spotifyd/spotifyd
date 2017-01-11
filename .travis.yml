@@ -19,3 +19,4 @@ deploy:
   skip_cleanup: true
   on:
     rust: stable
+    branch: master
