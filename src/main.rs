@@ -15,6 +15,8 @@ use std::thread;
 use std::panic;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::convert::From;
+use std::error::Error;
 
 use librespot::spirc::SpircManager;
 use librespot::session::Session;
@@ -55,8 +57,12 @@ fn main() {
         } else {
             simplelog::LogLevelFilter::Info
         };
+
         simplelog::TermLogger::init(filter, simplelog::Config::default())
-            .expect("Couldn't initialize logger.");
+            .map_err(Box::<Error>::from)
+            .or(simplelog::SimpleLogger::init(filter, simplelog::Config::default())
+                .map_err(Box::<Error>::from))
+            .expect("Couldn't initialize logger");
     } else {
         let filter = if matches.opt_present("verbose") {
             log::LogLevelFilter::Trace
@@ -64,7 +70,7 @@ fn main() {
             log::LogLevelFilter::Info
         };
         syslog::init(syslog::Facility::LOG_DAEMON, filter, Some("Spotifyd"))
-            .expect("Couldn't initialize logger.");
+            .expect("Couldn't initialize logger");
 
         let mut daemonize = Daemonize::new();
         if let Some(pid) = matches.opt_str("pid") {
