@@ -4,9 +4,11 @@ os:
 - linux
 rust:
 - stable
+script:
+- cargo build --verbose --features "portaudio pulseaudio"
 before_install:
 - sudo apt-get -qq update
-- sudo apt-get install -y libasound2-dev
+- sudo apt-get install -y libasound2-dev portaudio19-dev build-essential libpulse-dev
 services:
 - docker
 before_deploy: "./build-release"
