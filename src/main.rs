@@ -60,8 +60,10 @@ fn main() {
 
         simplelog::TermLogger::init(filter, simplelog::Config::default())
             .map_err(Box::<Error>::from)
-            .or(simplelog::SimpleLogger::init(filter, simplelog::Config::default())
-                .map_err(Box::<Error>::from))
+            .or_else(|_| {
+                simplelog::SimpleLogger::init(filter, simplelog::Config::default())
+                    .map_err(Box::<Error>::from)
+            })
             .expect("Couldn't initialize logger");
     } else {
         let filter = if matches.opt_present("verbose") {
