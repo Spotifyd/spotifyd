@@ -17,7 +17,7 @@ rpassword = "^0.3"
 [dependencies.librespot]
 git = "https://github.com/plietar/librespot.git"
 default-features = false
-features = ["with-syntex"]
+features = ["with-syntex", "with-tremor"]
 
 [features]
 alsa = ["librespot/alsa-backend"]
