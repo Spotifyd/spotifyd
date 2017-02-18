@@ -17,6 +17,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::convert::From;
 use std::error::Error;
+use std::path::PathBuf;
 
 use librespot::spirc::SpircManager;
 use librespot::session::Session;
@@ -94,7 +95,10 @@ fn main() {
                });
     }));
 
-    let config = config::get_config();
+    let config_file = matches.opt_str("config")
+        .map(|s| PathBuf::from(s))
+        .or_else(|| config::get_config_file().ok());
+    let config = config::get_config(config_file);
 
     let cache = config.cache;
     let backend = config.backend;

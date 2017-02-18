@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use std::convert::From;
 use std::fs::metadata;
 use std::mem::swap;
@@ -42,7 +42,7 @@ impl Default for SpotifydConfig {
     }
 }
 
-fn get_config_file() -> Result<PathBuf, Box<Error>> {
+pub fn get_config_file() -> Result<PathBuf, Box<Error>> {
     let etc_conf = format!("/etc/{}", CONFIG_FILE);
     let xdg_dirs = try!(xdg::BaseDirectories::with_prefix("spotifyd"));
     xdg_dirs.find_config_file(CONFIG_FILE)
@@ -64,12 +64,12 @@ fn update<T>(r: &mut T, val: Option<T>) {
     }
 }
 
-pub fn get_config() -> SpotifydConfig {
+pub fn get_config<P: AsRef<Path>>(config_path: Option<P>) -> SpotifydConfig {
     let mut config = SpotifydConfig::default();
 
-    let config_path = match get_config_file() {
-        Ok(c) => c,
-        Err(_) => {
+    let config_path = match config_path {
+        Some(c) => c,
+        None => {
             info!("Couldn't find config file, continuing with default configuration.");
             return config;
         }
