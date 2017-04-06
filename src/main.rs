@@ -8,27 +8,68 @@ extern crate xdg;
 extern crate syslog;
 #[macro_use]
 extern crate log;
-extern crate ctrlc;
+extern crate futures;
+extern crate tokio_core;
 
 use std::process::exit;
-use std::thread;
 use std::panic;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::convert::From;
 use std::error::Error;
 use std::path::PathBuf;
+use std::io;
 
-use librespot::spirc::SpircManager;
+use librespot::spirc::{Spirc, SpircTask};
 use librespot::session::Session;
 use librespot::player::Player;
 use librespot::audio_backend::{BACKENDS, Sink};
 use librespot::authentication::get_credentials;
+use librespot::mixer;
+use librespot::cache::Cache;
 
 use daemonize::Daemonize;
+use futures::{Future, Async, Poll};
+use tokio_core::reactor::Core;
 
 mod config;
 mod cli;
+
+struct MainLoopState {
+    connection: Box<Future<Item=Session, Error=io::Error>>,
+    mixer: fn() -> Box<mixer::Mixer>,
+    backend: fn(Option<String>) -> Box<Sink>,
+    device_name: Option<String>,
+    spirc_task: Option<SpircTask>,
+    spirc: Option<Spirc>,
+}
+
+impl Future for MainLoopState {
+    type Item = ();
+    type Error = ();
+
+    fn poll(&mut self) -> Poll<(), ()> {
+        if let Async::Ready(session) = self.connection.poll().unwrap() {
+            let audio_filter = (self.mixer)().get_audio_filter();
+            self.connection = Box::new(futures::future::empty());
+            let backend = self.backend;
+            let device_name = self.device_name.clone();
+            let player = Player::new(session.clone(), audio_filter, move || {
+                (backend)(device_name)
+            });
+
+            let (spirc, spirc_task) = Spirc::new(session, player, (self.mixer)());
+            self.spirc_task = Some(spirc_task);
+            self.spirc = Some(spirc);
+        }
+        if let Some(ref mut spirc_task) = self.spirc_task {
+            if let Ok(Async::Ready(())) = spirc_task.poll() {
+                // TODO: Shutdown.
+            }
+        }
+        Ok(Async::NotReady)
+    }
+}
 
 fn main() {
     let opts = cli::command_line_argument_options();
@@ -100,39 +141,30 @@ fn main() {
         .or_else(|| config::get_config_file().ok());
     let config = config::get_config(config_file);
 
+    let mut core = Core::new().unwrap();
+    let handle = core.handle();
+
     let cache = config.cache;
-    let backend = config.backend;
     let session_config = config.session_config;
+    let backend = config.backend.clone();
     let device_name = config.device.clone();
-    let session = Session::new(session_config, cache);
-    let credentials = get_credentials(&session,
-                                      config.username.or(matches.opt_str("username")),
-                                      config.password.or(matches.opt_str("password")));
-    session.login(credentials).unwrap();
-
-    let player = Player::new(session.clone(), move || {
-        find_backend(backend.as_ref().map(String::as_ref))(device_name.as_ref().map(String::as_ref))
-    });
-
-    let spirc = SpircManager::new(session.clone(), player);
-    let spirc_signal = spirc.clone();
-    thread::spawn(move || spirc.run());
-
-    let running = Arc::new(AtomicBool::new(true));
-    let r = running.clone();
-    ctrlc::set_handler(move || {
-        r.store(false, Ordering::SeqCst);
-    });
-
-    while running.load(Ordering::SeqCst) {
-        session.poll();
+    let mut connection =
+        Box::new(futures::future::empty()) as Box<futures::Future<Item = Session,
+                                                                  Error = io::Error>>;
+    if let Some(credentials) =
+        get_credentials(config.username.or(matches.opt_str("username")),
+                        config.password.or(matches.opt_str("password")),
+                        cache.as_ref().and_then(Cache::credentials)) {
+        connection = Session::connect(session_config, credentials, cache, handle);
     }
 
-    info!("Spotifyd is exiting.");
-    spirc_signal.send_goodbye();
+    let mixer = mixer::find(None as Option<String>).unwrap();
+    let backend = find_backend(backend.as_ref().map(String::as_ref));
+    let initial_state = MainLoopState { connection, mixer, backend, device_name, spirc_task: None, spirc: None };
+    core.run(initial_state).unwrap();
 }
 
-fn find_backend(name: Option<&str>) -> &'static (Fn(Option<&str>) -> Box<Sink> + Send + Sync) {
+fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<Sink> {
     match name {
         Some(name) => {
             BACKENDS.iter()
