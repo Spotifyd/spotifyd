@@ -13,11 +13,13 @@ log = "^0.3.6"
 syslog = "^3.1.0"
 daemonize = "^0.2.3"
 rpassword = "^0.3"
+futures = "*"
+tokio-core = "0.1.6"
 
 [dependencies.librespot]
 git = "https://github.com/plietar/librespot.git"
 default-features = false
-features = ["with-syntex", "with-tremor"]
+features = ["with-tremor"]
 
 [features]
 alsa = ["librespot/alsa-backend"]
