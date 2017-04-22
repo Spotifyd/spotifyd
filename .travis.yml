@@ -5,7 +5,7 @@ os:
 rust:
 - stable
 script:
-- cargo build --verbose --features "portaudio pulseaudio"
+- cargo build --verbose --features "pulseaudio"
 before_install:
 - sudo apt-get -qq update
 - sudo apt-get install -y libasound2-dev portaudio19-dev build-essential libpulse-dev
