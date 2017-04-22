@@ -7,11 +7,10 @@ Unfortunately, Spotify decided to kill the libspotify library we used, and
 hence we had no choice but to rewrite everything.
 
 # Installing
-Travis CI builds a statically linked binary for systems running Linux on AMD64,
-and a dynamically linked (at least until rustup provides an ARMv7 musl compiler)
-binary for ARMv7, which should run on Raspberry Pi model 2 and 3. The binaries
-can be found [here](https://github.com/Spotifyd/spotifyd/releases/latest).
-Other systems have to build from source for now.
+Travis CI builds binary for systems running Linux on AMD64 and ARMv7, which
+should run on Raspberry Pi model 2 and 3. The binaries can be found
+[here](https://github.com/Spotifyd/spotifyd/releases/latest). Other systems
+have to build from source for now.
 
 ## Build from source
 The [Rust compiler and Cargo package](https://www.rust-lang.org/en-US/)
