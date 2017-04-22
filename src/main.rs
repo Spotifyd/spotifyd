@@ -10,64 +10,123 @@ extern crate syslog;
 extern crate log;
 extern crate futures;
 extern crate tokio_core;
+extern crate tokio_io;
+extern crate tokio_signal;
 
 use std::process::exit;
 use std::panic;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 use std::convert::From;
 use std::error::Error;
 use std::path::PathBuf;
 use std::io;
 
 use librespot::spirc::{Spirc, SpircTask};
-use librespot::session::Session;
+use librespot::session::{Session, Config as SessionConfig};
 use librespot::player::Player;
 use librespot::audio_backend::{BACKENDS, Sink};
 use librespot::authentication::get_credentials;
+use librespot::authentication::discovery::{discovery, DiscoveryStream};
 use librespot::mixer;
 use librespot::cache::Cache;
 
 use daemonize::Daemonize;
-use futures::{Future, Async, Poll};
-use tokio_core::reactor::Core;
+use futures::{Future, Async, Poll, Stream};
+use tokio_core::reactor::{Handle, Core};
+use tokio_io::IoStream;
+use tokio_signal::ctrl_c;
 
 mod config;
 mod cli;
 
 struct MainLoopState {
-    connection: Box<Future<Item=Session, Error=io::Error>>,
+    connection: Box<Future<Item = Session, Error = io::Error>>,
     mixer: fn() -> Box<mixer::Mixer>,
     backend: fn(Option<String>) -> Box<Sink>,
     device_name: Option<String>,
     spirc_task: Option<SpircTask>,
     spirc: Option<Spirc>,
+    ctrl_c_stream: IoStream<()>,
+    shutting_down: bool,
+    cache: Option<Cache>,
+    config: SessionConfig,
+    handle: Handle,
+    discovery_stream: DiscoveryStream,
 }
+
+impl MainLoopState {
+    fn new(connection: Box<Future<Item = Session, Error = io::Error>>,
+           mixer: fn() -> Box<mixer::Mixer>,
+           backend: fn(Option<String>) -> Box<Sink>,
+           device_name: Option<String>,
+           ctrl_c_stream: IoStream<()>,
+           discovery_stream: DiscoveryStream,
+           cache: Option<Cache>,
+           config: SessionConfig,
+           handle: Handle)
+           -> MainLoopState {
+        MainLoopState {
+            connection: connection,
+            mixer: mixer,
+            backend: backend,
+            device_name: device_name,
+            spirc_task: None,
+            spirc: None,
+            ctrl_c_stream: ctrl_c_stream,
+            shutting_down: false,
+            cache: cache,
+            config: config,
+            handle: handle,
+            discovery_stream: discovery_stream,
+        }
+    }
+}
+
 
 impl Future for MainLoopState {
     type Item = ();
     type Error = ();
 
     fn poll(&mut self) -> Poll<(), ()> {
-        if let Async::Ready(session) = self.connection.poll().unwrap() {
-            let audio_filter = (self.mixer)().get_audio_filter();
-            self.connection = Box::new(futures::future::empty());
-            let backend = self.backend;
-            let device_name = self.device_name.clone();
-            let player = Player::new(session.clone(), audio_filter, move || {
-                (backend)(device_name)
-            });
+        loop {
+            if let Async::Ready(Some(creds)) = self.discovery_stream.poll().unwrap() {
+                if let Some(ref mut spirc) = self.spirc {
+                    spirc.shutdown();
+                }
+                let config = self.config.clone();
+                let cache = self.cache.clone();
+                let handle = self.handle.clone();
+                self.connection = Session::connect(config, creds, cache, handle);
+            }
 
-            let (spirc, spirc_task) = Spirc::new(session, player, (self.mixer)());
-            self.spirc_task = Some(spirc_task);
-            self.spirc = Some(spirc);
-        }
-        if let Some(ref mut spirc_task) = self.spirc_task {
-            if let Ok(Async::Ready(())) = spirc_task.poll() {
-                // TODO: Shutdown.
+            if let Async::Ready(session) = self.connection.poll().unwrap() {
+                let audio_filter = (self.mixer)().get_audio_filter();
+                self.connection = Box::new(futures::future::empty());
+                let backend = self.backend;
+                let device_name = self.device_name.clone();
+                let player = Player::new(session.clone(),
+                                         audio_filter,
+                                         move || (backend)(device_name));
+
+                let (spirc, spirc_task) = Spirc::new(session, player, (self.mixer)());
+                self.spirc_task = Some(spirc_task);
+                self.spirc = Some(spirc);
+            } else if let Async::Ready(_) = self.ctrl_c_stream.poll().unwrap() {
+                if !self.shutting_down {
+                    if let Some(ref spirc) = self.spirc {
+                        spirc.shutdown();
+                        self.shutting_down = true;
+                    } else {
+                        return Ok(Async::Ready(()));
+                    }
+                }
+            } else if let Some(Async::Ready(_)) = self.spirc_task
+                .as_mut()
+                .map(|ref mut st| st.poll().unwrap()) {
+                return Ok(Async::Ready(()));
+            } else {
+                return Ok(Async::NotReady);
             }
         }
-        Ok(Async::NotReady)
     }
 }
 
@@ -136,6 +195,8 @@ fn main() {
                });
     }));
 
+
+
     let config_file = matches.opt_str("config")
         .map(|s| PathBuf::from(s))
         .or_else(|| config::get_config_file().ok());
@@ -148,19 +209,32 @@ fn main() {
     let session_config = config.session_config;
     let backend = config.backend.clone();
     let device_name = config.device.clone();
-    let mut connection =
+    let device_id = session_config.device_id.clone();
+    let discovery_stream = discovery(&handle, session_config.name.clone(), device_id).unwrap();
+    let connection = if let Some(credentials) =
+                            get_credentials(config.username.or(matches.opt_str("username")),
+                                            config.password.or(matches.opt_str("password")),
+                                            cache.as_ref().and_then(Cache::credentials)) {
+        Session::connect(session_config.clone(),
+                         credentials,
+                         cache.clone(),
+                         handle.clone())
+    } else {
         Box::new(futures::future::empty()) as Box<futures::Future<Item = Session,
-                                                                  Error = io::Error>>;
-    if let Some(credentials) =
-        get_credentials(config.username.or(matches.opt_str("username")),
-                        config.password.or(matches.opt_str("password")),
-                        cache.as_ref().and_then(Cache::credentials)) {
-        connection = Session::connect(session_config, credentials, cache, handle);
-    }
+                                                                  Error = io::Error>>
+    };
 
     let mixer = mixer::find(None as Option<String>).unwrap();
     let backend = find_backend(backend.as_ref().map(String::as_ref));
-    let initial_state = MainLoopState { connection, mixer, backend, device_name, spirc_task: None, spirc: None };
+    let initial_state = MainLoopState::new(connection,
+                                           mixer,
+                                           backend,
+                                           device_name,
+                                           ctrl_c(&handle).flatten_stream().boxed(),
+                                           discovery_stream,
+                                           cache,
+                                           session_config,
+                                           handle);
     core.run(initial_state).unwrap();
 }
 
