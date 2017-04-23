@@ -119,9 +119,10 @@ impl Future for MainLoopState {
                         return Ok(Async::Ready(()));
                     }
                 }
-            } else if let Some(Async::Ready(_)) = self.spirc_task
-                .as_mut()
-                .map(|ref mut st| st.poll().unwrap()) {
+            } else if let Some(Async::Ready(_)) =
+                self.spirc_task
+                    .as_mut()
+                    .map(|ref mut st| st.poll().unwrap()) {
                 return Ok(Async::Ready(()));
             } else {
                 return Ok(Async::NotReady);
@@ -212,9 +213,9 @@ fn main() {
     let device_id = session_config.device_id.clone();
     let discovery_stream = discovery(&handle, session_config.name.clone(), device_id).unwrap();
     let connection = if let Some(credentials) =
-                            get_credentials(config.username.or(matches.opt_str("username")),
-                                            config.password.or(matches.opt_str("password")),
-                                            cache.as_ref().and_then(Cache::credentials)) {
+        get_credentials(config.username.or(matches.opt_str("username")),
+                        config.password.or(matches.opt_str("password")),
+                        cache.as_ref().and_then(Cache::credentials)) {
         Session::connect(session_config.clone(),
                          credentials,
                          cache.clone(),
