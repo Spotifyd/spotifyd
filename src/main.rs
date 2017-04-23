@@ -200,7 +200,7 @@ fn main() {
     let config_file = matches.opt_str("config")
         .map(|s| PathBuf::from(s))
         .or_else(|| config::get_config_file().ok());
-    let config = config::get_config(config_file);
+    let config = config::get_config(config_file, &matches);
 
     let mut core = Core::new().unwrap();
     let handle = core.handle();

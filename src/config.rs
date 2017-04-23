@@ -11,6 +11,7 @@ use librespot::version;
 
 use xdg;
 use ini::Ini;
+use getopts::Matches;
 
 const CONFIG_FILE: &'static str = "spotifyd.conf";
 
@@ -65,7 +66,7 @@ fn update<T>(r: &mut T, val: Option<T>) {
     }
 }
 
-pub fn get_config<P: AsRef<Path>>(config_path: Option<P>) -> SpotifydConfig {
+pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> SpotifydConfig {
     let mut config = SpotifydConfig::default();
 
     let config_path = match config_path {
@@ -88,25 +89,27 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>) -> SpotifydConfig {
     let global = config_file.section(Some("global".to_owned()));
     let spotifyd = config_file.section(Some("spotifyd".to_owned()));
 
-    let lookup = |field| spotifyd.and_then(|s| s.get(field)).or(global.and_then(|s| s.get(field)));
+    let lookup = |field| {
+        matches.opt_str(field)
+            .or(spotifyd.and_then(|s| s.get(field).map(String::clone))
+                .or(global.and_then(|s| s.get(field).map(String::clone))))
+    };
 
     update(&mut config.cache,
            lookup("cache_path")
-               .map(String::clone)
                .map(PathBuf::from)
                .and_then(|p| Some(Cache::new(p)))
                .map(|c| Some(c)));
 
-    config.username = lookup("username").map(String::clone);
-    config.password = lookup("password").map(String::clone);
-    config.backend = lookup("backend").map(String::clone);
-    config.device = lookup("device").map(String::clone);
-    config.session_config.onstart = lookup("onstart").map(String::clone);
-    config.session_config.onstop = lookup("onstop").map(String::clone);
+    config.username = lookup("username");
+    config.password = lookup("password");
+    config.backend = lookup("backend");
+    config.device = lookup("device");
+    config.session_config.onstart = lookup("onstart");
+    config.session_config.onstop = lookup("onstop");
     update(&mut config.session_config.bitrate,
-           lookup("bitrate").map(String::as_ref).and_then(|s| Bitrate::from_str(s).ok()));
-    update(&mut config.session_config.device_id,
-           lookup("device_name").map(String::clone));
+           lookup("bitrate").and_then(|s| Bitrate::from_str(&*s).ok()));
+    update(&mut config.session_config.device_id, lookup("device_name"));
 
     return config;
 }
