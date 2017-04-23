@@ -34,7 +34,7 @@ directories (meaning, a users local config is placed in
 username = USER
 password = PASS
 backend = alsa
-device = alsa_audio_device
+device = alsa_audio_device # Given by `aplay -L`
 onstart = command_run_on_playback_start
 onstop = command_run_on_playback_stop
 device_name = name_in_spotify_connect
@@ -45,6 +45,9 @@ Every field is optional, `Spotifyd` can even run without a configuration file.
 Options can also be placed in a `[spotifyd]` section, which takes priority over
 the `[global]` section, which is useful when you run applications related to
 `Spotifyd`, which shares some but not all options with `Spotifyd`.
+
+Values can be surrounded by double quotes ("), which is useful if it contains
+the comment character (#).
 
 ## Command Line Arguments
 `spotifyd --help` gives an up to date list of available arguments. The command
