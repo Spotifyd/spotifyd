@@ -42,7 +42,7 @@ struct MainLoopState {
     connection: Box<Future<Item = Session, Error = io::Error>>,
     mixer: fn() -> Box<mixer::Mixer>,
     backend: fn(Option<String>) -> Box<Sink>,
-    device_name: Option<String>,
+    audio_device: Option<String>,
     spirc_task: Option<SpircTask>,
     spirc: Option<Spirc>,
     ctrl_c_stream: IoStream<()>,
@@ -57,7 +57,7 @@ impl MainLoopState {
     fn new(connection: Box<Future<Item = Session, Error = io::Error>>,
            mixer: fn() -> Box<mixer::Mixer>,
            backend: fn(Option<String>) -> Box<Sink>,
-           device_name: Option<String>,
+           audio_device: Option<String>,
            ctrl_c_stream: IoStream<()>,
            discovery_stream: DiscoveryStream,
            cache: Option<Cache>,
@@ -68,7 +68,7 @@ impl MainLoopState {
             connection: connection,
             mixer: mixer,
             backend: backend,
-            device_name: device_name,
+            audio_device: audio_device,
             spirc_task: None,
             spirc: None,
             ctrl_c_stream: ctrl_c_stream,
@@ -102,10 +102,10 @@ impl Future for MainLoopState {
                 let audio_filter = (self.mixer)().get_audio_filter();
                 self.connection = Box::new(futures::future::empty());
                 let backend = self.backend;
-                let device_name = self.device_name.clone();
+                let audio_device = self.audio_device.clone();
                 let player = Player::new(session.clone(),
                                          audio_filter,
-                                         move || (backend)(device_name));
+                                         move || (backend)(audio_device));
 
                 let (spirc, spirc_task) = Spirc::new(session, player, (self.mixer)());
                 self.spirc_task = Some(spirc_task);
@@ -209,7 +209,7 @@ fn main() {
     let cache = config.cache;
     let session_config = config.session_config;
     let backend = config.backend.clone();
-    let device_name = config.device.clone();
+    let audio_device = config.audio_device.clone();
     let device_id = session_config.device_id.clone();
     let discovery_stream = discovery(&handle, session_config.name.clone(), device_id).unwrap();
     let connection = if let Some(credentials) =
@@ -230,7 +230,7 @@ fn main() {
     let initial_state = MainLoopState::new(connection,
                                            mixer,
                                            backend,
-                                           device_name,
+                                           audio_device,
                                            ctrl_c(&handle).flatten_stream().boxed(),
                                            discovery_stream,
                                            cache,
