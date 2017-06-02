@@ -107,7 +107,7 @@ impl Future for MainLoopState {
                                          audio_filter,
                                          move || (backend)(audio_device));
 
-                let (spirc, spirc_task) = Spirc::new(session, player, (self.mixer)());
+                let (spirc, spirc_task) = Spirc::new("Spotifyd".to_string(), session, player, (self.mixer)());
                 self.spirc_task = Some(spirc_task);
                 self.spirc = Some(spirc);
             } else if let Async::Ready(_) = self.ctrl_c_stream.poll().unwrap() {
@@ -211,7 +211,7 @@ fn main() {
     let backend = config.backend.clone();
     let audio_device = config.audio_device.clone();
     let device_id = session_config.device_id.clone();
-    let discovery_stream = discovery(&handle, session_config.name.clone(), device_id).unwrap();
+    let discovery_stream = discovery(&handle, "Spotifyd".to_string(), device_id).unwrap();
     let connection = if let Some(credentials) =
         get_credentials(config.username.or(matches.opt_str("username")),
                         config.password.or(matches.opt_str("password")),
