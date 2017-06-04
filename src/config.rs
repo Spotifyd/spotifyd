@@ -21,6 +21,7 @@ pub struct SpotifydConfig {
     pub cache: Option<Cache>,
     pub backend: Option<String>,
     pub audio_device: Option<String>,
+    pub device_name: String,
     pub session_config: SessionConfig,
 }
 
@@ -32,12 +33,12 @@ impl Default for SpotifydConfig {
             cache: None,
             backend: None,
             audio_device: None,
+            device_name: "Spotifyd".to_string(),
             session_config: SessionConfig {
                 bitrate: Bitrate::Bitrate160,
                 user_agent: version::version_string(),
                 onstart: None,
                 onstop: None,
-                name: "Spotifyd".to_owned(),
                 device_id: device_id("Spotifyd"),
             },
         }
@@ -105,6 +106,7 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     config.password = lookup("password");
     config.backend = lookup("backend");
     config.audio_device = lookup("device");
+    config.device_name = lookup("device_name").unwrap_or("Spotifyd".to_string());
     config.session_config.onstart = lookup("onstart");
     config.session_config.onstop = lookup("onstop");
     update(&mut config.session_config.bitrate,

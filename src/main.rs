@@ -49,11 +49,12 @@ struct MainLoopState {
     shutting_down: bool,
     cache: Option<Cache>,
     config: SessionConfig,
+    device_name: String,
     handle: Handle,
     discovery_stream: DiscoveryStream,
 }
 
-impl MainLoopState {
+impl MainLoopState {   
     fn new(connection: Box<Future<Item = Session, Error = io::Error>>,
            mixer: fn() -> Box<mixer::Mixer>,
            backend: fn(Option<String>) -> Box<Sink>,
@@ -62,6 +63,7 @@ impl MainLoopState {
            discovery_stream: DiscoveryStream,
            cache: Option<Cache>,
            config: SessionConfig,
+           device_name: String,
            handle: Handle)
            -> MainLoopState {
         MainLoopState {
@@ -75,6 +77,7 @@ impl MainLoopState {
             shutting_down: false,
             cache: cache,
             config: config,
+            device_name: device_name,
             handle: handle,
             discovery_stream: discovery_stream,
         }
@@ -107,7 +110,7 @@ impl Future for MainLoopState {
                                          audio_filter,
                                          move || (backend)(audio_device));
 
-                let (spirc, spirc_task) = Spirc::new(session, player, (self.mixer)());
+                let (spirc, spirc_task) = Spirc::new(self.device_name.clone(), session, player, (self.mixer)());
                 self.spirc_task = Some(spirc_task);
                 self.spirc = Some(spirc);
             } else if let Async::Ready(_) = self.ctrl_c_stream.poll().unwrap() {
@@ -211,7 +214,7 @@ fn main() {
     let backend = config.backend.clone();
     let audio_device = config.audio_device.clone();
     let device_id = session_config.device_id.clone();
-    let discovery_stream = discovery(&handle, session_config.name.clone(), device_id).unwrap();
+    let discovery_stream = discovery(&handle, config.device_name.clone(), device_id).unwrap();
     let connection = if let Some(credentials) =
         get_credentials(config.username.or(matches.opt_str("username")),
                         config.password.or(matches.opt_str("password")),
@@ -235,6 +238,7 @@ fn main() {
                                            discovery_stream,
                                            cache,
                                            session_config,
+                                           config.device_name.clone(),
                                            handle);
     core.run(initial_state).unwrap();
 }
