@@ -73,6 +73,25 @@ For a more lightweight, and scriptable alternative, there is
 [spotifyd-http](https://github.com/Spotifyd/spotifyd-http), which is a work in
 progress but already supports basic tasks.
 
+## Running as a systemd service
+
+A systemd.service unit file is provided to help run spotifyd as a service on
+systemd-based systems. The file `contrib/spotifyd.service` should be copied to
+either:
+
+    cd /etc/systemd/user/
+    cd ~/.config/systemd/user/
+
+Packagers of systemd-based distributions are encouraged to include the file in
+the former location. End-user should prefer the latter.
+
+Control of the daemon is then done via systemd. The following example commands
+will run the service once, and enable the service to always run on login in the
+future, respectively:
+
+    systemctl --user start spotify.service
+    systemctl --user enable spotify.service
+
 # Logging
 In `--no-daemon` mode, the log is written to standard output, otherwise it is
 written to syslog, and where it's written can be configured in your system
