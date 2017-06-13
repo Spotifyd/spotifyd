@@ -6,6 +6,7 @@ extern crate librespot;
 extern crate ini;
 extern crate xdg;
 extern crate syslog;
+extern crate hostname;
 #[macro_use]
 extern crate log;
 extern crate futures;

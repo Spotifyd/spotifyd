@@ -13,6 +13,8 @@ use xdg;
 use ini::Ini;
 use getopts::Matches;
 
+use hostname;
+
 const CONFIG_FILE: &'static str = "spotifyd.conf";
 
 pub struct SpotifydConfig {
@@ -106,7 +108,12 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     config.password = lookup("password");
     config.backend = lookup("backend");
     config.audio_device = lookup("device");
-    config.device_name = lookup("device_name").unwrap_or("Spotifyd".to_string());
+    config.device_name = lookup("device_name").unwrap_or_else(||
+        if let Some(h) = hostname::get_hostname() {
+            format!("Spotifyd@{}", h)
+        } else {
+            "Spotifyd".to_string()
+        });
     config.session_config.onstart = lookup("onstart");
     config.session_config.onstop = lookup("onstop");
     update(&mut config.session_config.bitrate,
