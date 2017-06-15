@@ -7,7 +7,7 @@ Unfortunately, Spotify decided to kill the libspotify library we used, and
 hence we had no choice but to rewrite everything.
 
 # Installing
-Travis CI builds binary for systems running Linux on AMD64 and ARMv7, which
+Travis CI builds binaries for systems running Linux on AMD64 and ARMv7, which
 should run on Raspberry Pi model 2 and 3. The binaries can be found
 [here](https://github.com/Spotifyd/spotifyd/releases/latest). Other systems
 have to build from source for now.
@@ -60,9 +60,9 @@ of machines, and requires no extra dependencies. There is also support for
 `pulseaudio` and `portaudio`. They require you to recompile with flags enabling
 them:
 ```
-cargo build --release --features "portaudio pulseaudio"
+cargo build --release --features "pulseaudio"
 ```
-You will need the development packages for portaudio and/or pulseaudio, as well
+You will need the development package for portaudio, as well
 as "build-essentials" or the equivalent in your distribution.
 
 # Usage
