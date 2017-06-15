@@ -103,7 +103,8 @@ impl Future for MainLoopState {
             }
 
             if let Async::Ready(session) = self.connection.poll().unwrap() {
-                let audio_filter = (self.mixer)().get_audio_filter();
+                let mixer = (self.mixer)();
+                let audio_filter = mixer.get_audio_filter();
                 self.connection = Box::new(futures::future::empty());
                 let backend = self.backend;
                 let audio_device = self.audio_device.clone();
@@ -111,7 +112,7 @@ impl Future for MainLoopState {
                                          audio_filter,
                                          move || (backend)(audio_device));
 
-                let (spirc, spirc_task) = Spirc::new(self.device_name.clone(), session, player, (self.mixer)());
+                let (spirc, spirc_task) = Spirc::new(self.device_name.clone(), session, player, mixer);
                 self.spirc_task = Some(spirc_task);
                 self.spirc = Some(spirc);
             } else if let Async::Ready(_) = self.ctrl_c_stream.poll().unwrap() {
