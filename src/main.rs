@@ -55,18 +55,19 @@ struct MainLoopState {
     discovery_stream: DiscoveryStream,
 }
 
-impl MainLoopState {   
-    fn new(connection: Box<Future<Item = Session, Error = io::Error>>,
-           mixer: fn() -> Box<mixer::Mixer>,
-           backend: fn(Option<String>) -> Box<Sink>,
-           audio_device: Option<String>,
-           ctrl_c_stream: IoStream<()>,
-           discovery_stream: DiscoveryStream,
-           cache: Option<Cache>,
-           config: SessionConfig,
-           device_name: String,
-           handle: Handle)
-           -> MainLoopState {
+impl MainLoopState {
+    fn new(
+        connection: Box<Future<Item = Session, Error = io::Error>>,
+        mixer: fn() -> Box<mixer::Mixer>,
+        backend: fn(Option<String>) -> Box<Sink>,
+        audio_device: Option<String>,
+        ctrl_c_stream: IoStream<()>,
+        discovery_stream: DiscoveryStream,
+        cache: Option<Cache>,
+        config: SessionConfig,
+        device_name: String,
+        handle: Handle,
+    ) -> MainLoopState {
         MainLoopState {
             connection: connection,
             mixer: mixer,
@@ -108,11 +109,14 @@ impl Future for MainLoopState {
                 self.connection = Box::new(futures::future::empty());
                 let backend = self.backend;
                 let audio_device = self.audio_device.clone();
-                let player = Player::new(session.clone(),
-                                         audio_filter,
-                                         move || (backend)(audio_device));
+                let player = Player::new(
+                    session.clone(),
+                    audio_filter,
+                    move || (backend)(audio_device),
+                );
 
-                let (spirc, spirc_task) = Spirc::new(self.device_name.clone(), session, player, mixer);
+                let (spirc, spirc_task) =
+                    Spirc::new(self.device_name.clone(), session, player, mixer);
                 self.spirc_task = Some(spirc_task);
                 self.spirc = Some(spirc);
             } else if let Async::Ready(_) = self.ctrl_c_stream.poll().unwrap() {
@@ -125,9 +129,10 @@ impl Future for MainLoopState {
                     }
                 }
             } else if let Some(Async::Ready(_)) =
-                self.spirc_task
-                    .as_mut()
-                    .map(|ref mut st| st.poll().unwrap()) {
+                self.spirc_task.as_mut().map(
+                    |ref mut st| st.poll().unwrap(),
+                )
+            {
                 return Ok(Async::Ready(()));
             } else {
                 return Ok(Async::NotReady);
@@ -192,18 +197,23 @@ fn main() {
     }
 
     panic::set_hook(Box::new(|panic_info| {
-        error!("Caught panic with message: {}",
-               match (panic_info.payload().downcast_ref::<String>(),
-                      panic_info.payload().downcast_ref::<&str>()) {
-                   (Some(s), _) => &**s,
-                   (_, Some(&s)) => s,
-                   _ => "Unknown error type, can't produce message.",
-               });
+        error!(
+            "Caught panic with message: {}",
+            match (
+                panic_info.payload().downcast_ref::<String>(),
+                panic_info.payload().downcast_ref::<&str>(),
+            ) {
+                (Some(s), _) => &**s,
+                (_, Some(&s)) => s,
+                _ => "Unknown error type, can't produce message.",
+            }
+        );
     }));
 
 
 
-    let config_file = matches.opt_str("config")
+    let config_file = matches
+        .opt_str("config")
         .map(|s| PathBuf::from(s))
         .or_else(|| config::get_config_file().ok());
     let config = config::get_config(config_file, &matches);
@@ -218,43 +228,53 @@ fn main() {
     let device_id = session_config.device_id.clone();
     let discovery_stream = discovery(&handle, config.device_name.clone(), device_id).unwrap();
     let connection = if let Some(credentials) =
-        get_credentials(config.username.or(matches.opt_str("username")),
-                        config.password.or(matches.opt_str("password")),
-                        cache.as_ref().and_then(Cache::credentials)) {
-        Session::connect(session_config.clone(),
-                         credentials,
-                         cache.clone(),
-                         handle.clone())
+        get_credentials(
+            config.username.or(matches.opt_str("username")),
+            config.password.or(matches.opt_str("password")),
+            cache.as_ref().and_then(Cache::credentials),
+        )
+    {
+        Session::connect(
+            session_config.clone(),
+            credentials,
+            cache.clone(),
+            handle.clone(),
+        )
     } else {
-        Box::new(futures::future::empty()) as Box<futures::Future<Item = Session,
-                                                                  Error = io::Error>>
+        Box::new(futures::future::empty()) as
+            Box<futures::Future<Item = Session, Error = io::Error>>
     };
 
     let mixer = mixer::find(None as Option<String>).unwrap();
     let backend = find_backend(backend.as_ref().map(String::as_ref));
-    let initial_state = MainLoopState::new(connection,
-                                           mixer,
-                                           backend,
-                                           audio_device,
-                                           ctrl_c(&handle).flatten_stream().boxed(),
-                                           discovery_stream,
-                                           cache,
-                                           session_config,
-                                           config.device_name.clone(),
-                                           handle);
+    let initial_state = MainLoopState::new(
+        connection,
+        mixer,
+        backend,
+        audio_device,
+        ctrl_c(&handle).flatten_stream().boxed(),
+        discovery_stream,
+        cache,
+        session_config,
+        config.device_name.clone(),
+        handle,
+    );
     core.run(initial_state).unwrap();
 }
 
 fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<Sink> {
     match name {
         Some(name) => {
-            BACKENDS.iter()
+            BACKENDS
+                .iter()
                 .find(|backend| name == backend.0)
                 .expect(format!("Unknown backend: {}.", name).as_ref())
                 .1
         }
         None => {
-            let &(name, back) = BACKENDS.first().expect("No backends were enabled at build time");
+            let &(name, back) = BACKENDS.first().expect(
+                "No backends were enabled at build time",
+            );
             info!("No backend specified, defaulting to: {}.", name);
             back
         }

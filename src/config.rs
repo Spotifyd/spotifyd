@@ -50,15 +50,16 @@ impl Default for SpotifydConfig {
 pub fn get_config_file() -> Result<PathBuf, Box<Error>> {
     let etc_conf = format!("/etc/{}", CONFIG_FILE);
     let xdg_dirs = try!(xdg::BaseDirectories::with_prefix("spotifyd"));
-    xdg_dirs.find_config_file(CONFIG_FILE)
+    xdg_dirs
+        .find_config_file(CONFIG_FILE)
         .or_else(|| {
-            metadata(&*etc_conf)
-                .ok()
-                .and_then(|meta| if meta.is_file() {
+            metadata(&*etc_conf).ok().and_then(
+                |meta| if meta.is_file() {
                     Some(etc_conf.into())
                 } else {
                     None
-                })
+                },
+            )
         })
         .ok_or(From::from("Couldn't find a config file."))
 }
@@ -83,8 +84,10 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     let config_file = match Ini::load_from_file(config_path) {
         Ok(c) => c,
         Err(e) => {
-            info!("Couldn't read configuration file, continuing with default configuration: {}",
-                  e);
+            info!(
+                "Couldn't read configuration file, continuing with default configuration: {}",
+                e
+            );
             return config;
         }
     };
@@ -93,31 +96,37 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     let spotifyd = config_file.section(Some("spotifyd".to_owned()));
 
     let lookup = |field| {
-        matches.opt_str(field)
-            .or(spotifyd.and_then(|s| s.get(field).map(String::clone))
-                .or(global.and_then(|s| s.get(field).map(String::clone))))
+        matches.opt_str(field).or(
+            spotifyd.and_then(|s| s.get(field).map(String::clone)).or(
+                global.and_then(|s| s.get(field).map(String::clone)),
+            ),
+        )
     };
 
-    update(&mut config.cache,
-           lookup("cache_path")
-               .map(PathBuf::from)
-               .and_then(|p| Some(Cache::new(p)))
-               .map(|c| Some(c)));
+    update(
+        &mut config.cache,
+        lookup("cache_path")
+            .map(PathBuf::from)
+            .and_then(|p| Some(Cache::new(p)))
+            .map(|c| Some(c)),
+    );
 
     config.username = lookup("username");
     config.password = lookup("password");
     config.backend = lookup("backend");
     config.audio_device = lookup("device");
-    config.device_name = lookup("device_name").unwrap_or_else(||
-        if let Some(h) = hostname::get_hostname() {
+    config.device_name =
+        lookup("device_name").unwrap_or_else(|| if let Some(h) = hostname::get_hostname() {
             format!("Spotifyd@{}", h)
         } else {
             "Spotifyd".to_string()
         });
     config.session_config.onstart = lookup("onstart");
     config.session_config.onstop = lookup("onstop");
-    update(&mut config.session_config.bitrate,
-           lookup("bitrate").and_then(|s| Bitrate::from_str(&*s).ok()));
+    update(
+        &mut config.session_config.bitrate,
+        lookup("bitrate").and_then(|s| Bitrate::from_str(&*s).ok()),
+    );
     update(&mut config.session_config.device_id, lookup("device_name"));
 
     return config;
