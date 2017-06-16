@@ -13,6 +13,7 @@ extern crate futures;
 extern crate tokio_core;
 extern crate tokio_io;
 extern crate tokio_signal;
+extern crate alsa;
 
 use std::process::exit;
 use std::panic;
@@ -38,10 +39,12 @@ use tokio_signal::ctrl_c;
 
 mod config;
 mod cli;
+mod alsa_mixer;
 
-struct MainLoopState {
+
+struct MainLoopState<F: FnMut() -> Box<mixer::Mixer>> {
     connection: Box<Future<Item = Session, Error = io::Error>>,
-    mixer: fn() -> Box<mixer::Mixer>,
+    mixer: F,
     backend: fn(Option<String>) -> Box<Sink>,
     audio_device: Option<String>,
     spirc_task: Option<SpircTask>,
@@ -55,10 +58,10 @@ struct MainLoopState {
     discovery_stream: DiscoveryStream,
 }
 
-impl MainLoopState {
+impl<F: FnMut() -> Box<mixer::Mixer>> MainLoopState<F> {
     fn new(
         connection: Box<Future<Item = Session, Error = io::Error>>,
-        mixer: fn() -> Box<mixer::Mixer>,
+        mixer: F,
         backend: fn(Option<String>) -> Box<Sink>,
         audio_device: Option<String>,
         ctrl_c_stream: IoStream<()>,
@@ -67,7 +70,7 @@ impl MainLoopState {
         config: SessionConfig,
         device_name: String,
         handle: Handle,
-    ) -> MainLoopState {
+    ) -> MainLoopState<F> {
         MainLoopState {
             connection: connection,
             mixer: mixer,
@@ -87,7 +90,7 @@ impl MainLoopState {
 }
 
 
-impl Future for MainLoopState {
+impl<F: FnMut() -> Box<mixer::Mixer>> Future for MainLoopState<F> {
     type Item = ();
     type Error = ();
 
@@ -245,7 +248,13 @@ fn main() {
             Box<futures::Future<Item = Session, Error = io::Error>>
     };
 
-    let mixer = mixer::find(None as Option<String>).unwrap();
+    let local_audio_device = audio_device.clone();
+    let mixer = || {
+        Box::new(alsa_mixer::AlsaMixer(
+            local_audio_device.clone().unwrap_or("default".to_string()),
+        )) as Box<mixer::Mixer>
+    };
+
     let backend = find_backend(backend.as_ref().map(String::as_ref));
     let initial_state = MainLoopState::new(
         connection,
