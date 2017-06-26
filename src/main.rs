@@ -29,6 +29,7 @@ use librespot::audio_backend::{BACKENDS, Sink};
 use librespot::authentication::get_credentials;
 use librespot::authentication::discovery::{discovery, DiscoveryStream};
 use librespot::mixer;
+use librespot::mixer::Mixer;
 use librespot::cache::Cache;
 
 use daemonize::Daemonize;
@@ -42,9 +43,9 @@ mod cli;
 mod alsa_mixer;
 
 
-struct MainLoopState<F: FnMut() -> Box<mixer::Mixer>> {
+struct MainLoopState {
     connection: Box<Future<Item = Session, Error = io::Error>>,
-    mixer: F,
+    mixer: Box<FnMut() -> Box<mixer::Mixer>>,
     backend: fn(Option<String>) -> Box<Sink>,
     audio_device: Option<String>,
     spirc_task: Option<SpircTask>,
@@ -58,10 +59,10 @@ struct MainLoopState<F: FnMut() -> Box<mixer::Mixer>> {
     discovery_stream: DiscoveryStream,
 }
 
-impl<F: FnMut() -> Box<mixer::Mixer>> MainLoopState<F> {
+impl MainLoopState {
     fn new(
         connection: Box<Future<Item = Session, Error = io::Error>>,
-        mixer: F,
+        mixer: Box<FnMut() -> Box<mixer::Mixer>>,
         backend: fn(Option<String>) -> Box<Sink>,
         audio_device: Option<String>,
         ctrl_c_stream: IoStream<()>,
@@ -70,7 +71,7 @@ impl<F: FnMut() -> Box<mixer::Mixer>> MainLoopState<F> {
         config: SessionConfig,
         device_name: String,
         handle: Handle,
-    ) -> MainLoopState<F> {
+    ) -> MainLoopState {
         MainLoopState {
             connection: connection,
             mixer: mixer,
@@ -90,7 +91,7 @@ impl<F: FnMut() -> Box<mixer::Mixer>> MainLoopState<F> {
 }
 
 
-impl<F: FnMut() -> Box<mixer::Mixer>> Future for MainLoopState<F> {
+impl Future for MainLoopState {
     type Item = ();
     type Error = ();
 
@@ -249,10 +250,21 @@ fn main() {
     };
 
     let local_audio_device = audio_device.clone();
-    let mixer = || {
-        Box::new(alsa_mixer::AlsaMixer(
-            local_audio_device.clone().unwrap_or("default".to_string()),
-        )) as Box<mixer::Mixer>
+    let mixer = match config.volume_controller {
+        config::VolumeController::Alsa => {
+            info!("Using alsa volume controller.");
+            Box::new(move || {
+                Box::new(alsa_mixer::AlsaMixer(
+                    local_audio_device.clone().unwrap_or("default".to_string()),
+                )) as Box<Mixer>
+            }) as Box<FnMut() -> Box<Mixer>>
+        }
+        config::VolumeController::SoftVol => {
+            info!("Using software volume controller.");
+            Box::new(|| {
+                Box::new(mixer::softmixer::SoftMixer::open()) as Box<Mixer>
+            }) as Box<FnMut() -> Box<Mixer>>
+        }
     };
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));

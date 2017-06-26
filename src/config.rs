@@ -17,12 +17,29 @@ use hostname;
 
 const CONFIG_FILE: &'static str = "spotifyd.conf";
 
+pub enum VolumeController {
+    Alsa,
+    SoftVol,
+}
+
+impl FromStr for VolumeController {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match &*s.to_uppercase() {
+            "ALSA" => Ok(VolumeController::Alsa),
+            "SOFTVOL" => Ok(VolumeController::SoftVol),
+            _ => Err(()),
+        }
+    }
+}
+
 pub struct SpotifydConfig {
     pub username: Option<String>,
     pub password: Option<String>,
     pub cache: Option<Cache>,
     pub backend: Option<String>,
     pub audio_device: Option<String>,
+    pub volume_controller: VolumeController,
     pub device_name: String,
     pub session_config: SessionConfig,
 }
@@ -35,6 +52,7 @@ impl Default for SpotifydConfig {
             cache: None,
             backend: None,
             audio_device: None,
+            volume_controller: VolumeController::SoftVol,
             device_name: "Spotifyd".to_string(),
             session_config: SessionConfig {
                 bitrate: Bitrate::Bitrate160,
@@ -115,6 +133,10 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     config.password = lookup("password");
     config.backend = lookup("backend");
     config.audio_device = lookup("device");
+    update(
+        &mut config.volume_controller,
+        lookup("volume-control").and_then(|s| VolumeController::from_str(&*s).ok()),
+    );
     config.device_name =
         lookup("device_name").unwrap_or_else(|| if let Some(h) = hostname::get_hostname() {
             format!("Spotifyd@{}", h)

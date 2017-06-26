@@ -26,6 +26,12 @@ pub fn command_line_argument_options() -> Options {
     opts.optopt("", "cache_path", "Path to cache location.", "PATH");
     opts.optopt("", "onstart", "Command to run on song start.", "COMMAND");
     opts.optopt("", "onstop", "Command to run on song stop.", "COMMAND");
+    opts.optopt(
+        "",
+        "volume-control",
+        "Possible values are alsa or softvol.",
+        "CONTROLLER",
+    );
     opts.optflag("v", "verbose", "Add debug information to log.");
     opts.optflag("", "no-daemon", "Don't detach from console.");
     opts.optflag("", "backends", "List available audio backends.");
