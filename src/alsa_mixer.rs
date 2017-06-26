@@ -25,10 +25,7 @@ impl Mixer for AlsaMixer {
                         ((volume - min) * (0xFFFF / volume_steps)) as u16
                     })
             }) {
-            Some(vol) => {
-                println!("Volume={}", vol);
-                vol
-            }
+            Some(vol) => vol,
             _ => {
                 error!(
                     "Couldn't read volume from alsa device with name \"{}\".",
@@ -57,12 +54,6 @@ impl Mixer for AlsaMixer {
                     if ((volume as i64 - previous_volume) as f64).abs() / (0xffff as f64) < 0.2 {
                         elem.set_playback_volume_all(normalised_volume).ok()
                     } else {
-                        println!(
-                            "New: {}, old: {}, percentage: {}",
-                            volume,
-                            previous_volume,
-                            ((volume as i64 - previous_volume) as f64).abs() / (0xFFFF as f64)
-                        );
                         None
                     }
                 })
