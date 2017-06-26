@@ -58,12 +58,12 @@ no-daemon mode, among othre things.
 ## Audio Backend
 By default, the audio backend is alsa, as that is available by default on a lot
 of machines, and requires no extra dependencies. There is also support for
-`pulseaudio` and `portaudio`. They require you to recompile with flags enabling
-them:
+`pulseaudio`. To use pulseaudio, compile with the `--features` flag to enable
+it:
 ```
-cargo build --release --features "pulseaudio"
+cargo build --release --features pulseaudio_backend
 ```
-You will need the development package for portaudio, as well
+You will need the development package for pulseaudio, as well
 as "build-essentials" or the equivalent in your distribution.
 
 # Usage
