@@ -89,8 +89,8 @@ Control of the daemon is then done via systemd. The following example commands
 will run the service once, and enable the service to always run on login in the
 future, respectively:
 
-    systemctl --user start spotify.service
-    systemctl --user enable spotify.service
+    systemctl --user start spotifyd.service
+    systemctl --user enable spotifyd.service
 
 # Logging
 In `--no-daemon` mode, the log is written to standard output, otherwise it is
