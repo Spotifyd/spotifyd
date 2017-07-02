@@ -125,7 +125,7 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
         &mut config.cache,
         lookup("cache_path")
             .map(PathBuf::from)
-            .and_then(|p| Some(Cache::new(p)))
+            .and_then(|p| Some(Cache::new(p, true)))
             .map(|c| Some(c)),
     );
 
