@@ -2,6 +2,8 @@
 An open source Spotify client running as a UNIX daemon. Spotifyd is more
 lightweight than the official client, and is available on more platforms.
 
+Spotifyd requires a Spotify Premium account.
+
 ### What happened to the old spotifyd, written in C?
 Unfortunately, Spotify decided to kill the libspotify library we used, and
 hence we had no choice but to rewrite everything.
