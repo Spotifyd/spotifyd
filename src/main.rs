@@ -23,14 +23,16 @@ use std::path::PathBuf;
 use std::io;
 
 use librespot::spirc::{Spirc, SpircTask};
-use librespot::session::{Session, Config as SessionConfig};
+use librespot::core::session::Session;
+use librespot::core::config::{SessionConfig, PlayerConfig};
 use librespot::player::Player;
 use librespot::audio_backend::{BACKENDS, Sink};
-use librespot::authentication::get_credentials;
-use librespot::authentication::discovery::{discovery, DiscoveryStream};
+use librespot::core::authentication::get_credentials;
+use librespot::discovery::{discovery, DiscoveryStream};
 use librespot::mixer;
 use librespot::mixer::Mixer;
-use librespot::cache::Cache;
+use librespot::core::cache::Cache;
+use librespot::core::config::{ConnectConfig, DeviceType};
 
 use daemonize::Daemonize;
 use futures::{Future, Async, Poll, Stream};
@@ -53,7 +55,8 @@ struct MainLoopState {
     ctrl_c_stream: IoStream<()>,
     shutting_down: bool,
     cache: Option<Cache>,
-    config: SessionConfig,
+    player_config: PlayerConfig,
+    session_config: SessionConfig,
     device_name: String,
     handle: Handle,
     discovery_stream: DiscoveryStream,
@@ -68,7 +71,8 @@ impl MainLoopState {
         ctrl_c_stream: IoStream<()>,
         discovery_stream: DiscoveryStream,
         cache: Option<Cache>,
-        config: SessionConfig,
+        player_config: PlayerConfig,
+        session_config: SessionConfig,
         device_name: String,
         handle: Handle,
     ) -> MainLoopState {
@@ -82,7 +86,8 @@ impl MainLoopState {
             ctrl_c_stream: ctrl_c_stream,
             shutting_down: false,
             cache: cache,
-            config: config,
+            player_config: player_config,
+            session_config: session_config,
             device_name: device_name,
             handle: handle,
             discovery_stream: discovery_stream,
@@ -101,10 +106,10 @@ impl Future for MainLoopState {
                 if let Some(ref mut spirc) = self.spirc {
                     spirc.shutdown();
                 }
-                let config = self.config.clone();
+                let session_config = self.session_config.clone();
                 let cache = self.cache.clone();
                 let handle = self.handle.clone();
-                self.connection = Session::connect(config, creds, cache, handle);
+                self.connection = Session::connect(session_config, creds, cache, handle);
             }
 
             if let Async::Ready(session) = self.connection.poll().unwrap() {
@@ -114,13 +119,21 @@ impl Future for MainLoopState {
                 let backend = self.backend;
                 let audio_device = self.audio_device.clone();
                 let player = Player::new(
+                    self.player_config.clone(),
                     session.clone(),
                     audio_filter,
                     move || (backend)(audio_device),
                 );
 
-                let (spirc, spirc_task) =
-                    Spirc::new(self.device_name.clone(), session, player, mixer);
+                let (spirc, spirc_task) = Spirc::new(
+                    ConnectConfig {
+                        name: self.device_name.clone(),
+                        device_type: DeviceType::default(),
+                    },
+                    session,
+                    player,
+                    mixer,
+                );
                 self.spirc_task = Some(spirc_task);
                 self.spirc = Some(spirc);
             } else if let Async::Ready(_) = self.ctrl_c_stream.poll().unwrap() {
@@ -226,11 +239,19 @@ fn main() {
     let handle = core.handle();
 
     let cache = config.cache;
+    let player_config = config.player_config;
     let session_config = config.session_config;
     let backend = config.backend.clone();
     let audio_device = config.audio_device.clone();
     let device_id = session_config.device_id.clone();
-    let discovery_stream = discovery(&handle, config.device_name.clone(), device_id).unwrap();
+    let discovery_stream = discovery(
+        &handle,
+        ConnectConfig {
+            name: config.device_name.clone(),
+            device_type: DeviceType::default(),
+        },
+        device_id,
+    ).unwrap();
     let connection = if let Some(credentials) =
         get_credentials(
             config.username.or(matches.opt_str("username")),
@@ -276,6 +297,7 @@ fn main() {
         ctrl_c(&handle).flatten_stream().boxed(),
         discovery_stream,
         cache,
+        player_config,
         session_config,
         config.device_name.clone(),
         handle,

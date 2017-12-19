@@ -5,9 +5,10 @@ use std::fs::metadata;
 use std::mem::swap;
 use std::str::FromStr;
 
-use librespot::session::{Bitrate, Config as SessionConfig, device_id};
-use librespot::cache::Cache;
-use librespot::version;
+use librespot::core::config::{Bitrate, SessionConfig, PlayerConfig};
+use librespot::core::session::device_id;
+use librespot::core::cache::Cache;
+use librespot::core::version;
 
 use xdg;
 use ini::Ini;
@@ -41,6 +42,7 @@ pub struct SpotifydConfig {
     pub audio_device: Option<String>,
     pub volume_controller: VolumeController,
     pub device_name: String,
+    pub player_config: PlayerConfig,
     pub session_config: SessionConfig,
 }
 
@@ -54,11 +56,13 @@ impl Default for SpotifydConfig {
             audio_device: None,
             volume_controller: VolumeController::SoftVol,
             device_name: "Spotifyd".to_string(),
-            session_config: SessionConfig {
+            player_config: PlayerConfig {
                 bitrate: Bitrate::Bitrate160,
-                user_agent: version::version_string(),
                 onstart: None,
                 onstop: None,
+            },
+            session_config: SessionConfig {
+                user_agent: version::version_string(),
                 device_id: device_id("Spotifyd"),
             },
         }
@@ -143,10 +147,10 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
         } else {
             "Spotifyd".to_string()
         });
-    config.session_config.onstart = lookup("onstart");
-    config.session_config.onstop = lookup("onstop");
+    config.player_config.onstart = lookup("onstart");
+    config.player_config.onstop = lookup("onstop");
     update(
-        &mut config.session_config.bitrate,
+        &mut config.player_config.bitrate,
         lookup("bitrate").and_then(|s| Bitrate::from_str(&*s).ok()),
     );
     update(&mut config.session_config.device_id, lookup("device_name"));
