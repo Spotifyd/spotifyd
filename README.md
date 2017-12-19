@@ -12,7 +12,8 @@ hence we had no choice but to rewrite everything.
 Travis CI builds binaries for systems running Linux on AMD64 and ARMv7, which
 should run on Raspberry Pi model 2 and 3. The binaries can be found
 [here](https://github.com/Spotifyd/spotifyd/releases/latest). Other systems
-have to build from source for now.
+have to build from source for now. You will need the ALSA package for your
+distribution, e.g. libasound2-dev on Ubuntu.
 
 ## Build from source
 The [Rust compiler and Cargo package](https://www.rust-lang.org/en-US/)
