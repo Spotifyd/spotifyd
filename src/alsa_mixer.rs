@@ -1,18 +1,18 @@
 use librespot::mixer::{Mixer, AudioFilter};
 use alsa;
 
-pub struct AlsaMixer(pub String);
+pub struct AlsaMixer {pub device: String, pub mixer: String}
 
 impl Mixer for AlsaMixer {
     fn open() -> AlsaMixer {
-        AlsaMixer("default".to_string())
+        AlsaMixer { device: "default".to_string(), mixer: "Master".to_string() }
     }
     fn start(&self) {}
     fn stop(&self) {}
 
     fn volume(&self) -> u16 {
-        let selem_id = alsa::mixer::SelemId::new("Master", 0);
-        match alsa::mixer::Mixer::new(&self.0, false)
+        let selem_id = alsa::mixer::SelemId::new(&*self.mixer, 0);
+        match alsa::mixer::Mixer::new(&self.device, false)
             .ok()
             .as_ref()
             .and_then(|ref mixer| mixer.find_selem(&selem_id))
@@ -29,7 +29,7 @@ impl Mixer for AlsaMixer {
             _ => {
                 error!(
                     "Couldn't read volume from alsa device with name \"{}\".",
-                    self.0
+                    self.device
                 );
                 0
             }
@@ -37,9 +37,9 @@ impl Mixer for AlsaMixer {
     }
 
     fn set_volume(&self, volume: u16) {
-        match alsa::mixer::Mixer::new(&self.0, false).ok().and_then(
+        match alsa::mixer::Mixer::new(&self.device, false).ok().and_then(
             |mixer| {
-                let selem_id = alsa::mixer::SelemId::new("Master", 0);
+                let selem_id = alsa::mixer::SelemId::new(&*self.mixer, 0);
                 mixer.find_selem(&selem_id).and_then(|elem| {
                     let (min, max) = elem.get_playback_volume_range();
 

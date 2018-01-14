@@ -242,7 +242,6 @@ fn main() {
     let player_config = config.player_config;
     let session_config = config.session_config;
     let backend = config.backend.clone();
-    let audio_device = config.audio_device.clone();
     let device_id = session_config.device_id.clone();
     let discovery_stream = discovery(
         &handle,
@@ -270,14 +269,16 @@ fn main() {
             Box<futures::Future<Item = Session, Error = io::Error>>
     };
 
-    let local_audio_device = audio_device.clone();
+    let local_audio_device = config.audio_device.clone();
+    let local_mixer  = config.mixer.clone();
     let mixer = match config.volume_controller {
         config::VolumeController::Alsa => {
             info!("Using alsa volume controller.");
             Box::new(move || {
-                Box::new(alsa_mixer::AlsaMixer(
-                    local_audio_device.clone().unwrap_or("default".to_string()),
-                )) as Box<Mixer>
+                Box::new( alsa_mixer::AlsaMixer{ 
+                    device : local_audio_device.clone().unwrap_or("default".to_string()),
+                    mixer : local_mixer.clone().unwrap_or("Master".to_string()),
+                }) as Box<Mixer>
             }) as Box<FnMut() -> Box<Mixer>>
         }
         config::VolumeController::SoftVol => {
@@ -293,7 +294,7 @@ fn main() {
         connection,
         mixer,
         backend,
-        audio_device,
+        config.audio_device.clone(),
         ctrl_c(&handle).flatten_stream().boxed(),
         discovery_stream,
         cache,

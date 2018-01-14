@@ -38,6 +38,7 @@ username = USER
 password = PASS
 backend = alsa
 device = alsa_audio_device # Given by `aplay -L`
+mixer = PCM
 volume-control = alsa # or softvol
 onstart = command_run_on_playback_start
 onstop = command_run_on_playback_stop
