@@ -1,4 +1,4 @@
-use librespot::audio_backend::BACKENDS;
+use librespot::playback::audio_backend::BACKENDS;
 use getopts::Options;
 
 pub fn usage(program: &str, opts: &Options) -> String {

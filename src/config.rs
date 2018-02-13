@@ -1,11 +1,12 @@
 use std::error::Error;
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 use std::convert::From;
 use std::fs::metadata;
 use std::mem::swap;
 use std::str::FromStr;
 
-use librespot::core::config::{Bitrate, SessionConfig, PlayerConfig};
+use librespot::playback::config::{Bitrate, PlayerConfig};
+use librespot::core::config::SessionConfig;
 use librespot::core::session::device_id;
 use librespot::core::cache::Cache;
 use librespot::core::version;
@@ -77,13 +78,13 @@ pub fn get_config_file() -> Result<PathBuf, Box<Error>> {
     xdg_dirs
         .find_config_file(CONFIG_FILE)
         .or_else(|| {
-            metadata(&*etc_conf).ok().and_then(
-                |meta| if meta.is_file() {
+            metadata(&*etc_conf).ok().and_then(|meta| {
+                if meta.is_file() {
                     Some(etc_conf.into())
                 } else {
                     None
-                },
-            )
+                }
+            })
         })
         .ok_or(From::from("Couldn't find a config file."))
 }
@@ -120,11 +121,9 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     let spotifyd = config_file.section(Some("spotifyd".to_owned()));
 
     let lookup = |field| {
-        matches.opt_str(field).or(
-            spotifyd.and_then(|s| s.get(field).map(String::clone)).or(
-                global.and_then(|s| s.get(field).map(String::clone)),
-            ),
-        )
+        matches.opt_str(field).or(spotifyd
+            .and_then(|s| s.get(field).map(String::clone))
+            .or(global.and_then(|s| s.get(field).map(String::clone))))
     };
 
     update(
@@ -144,12 +143,13 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
         &mut config.volume_controller,
         lookup("volume-control").and_then(|s| VolumeController::from_str(&*s).ok()),
     );
-    config.device_name =
-        lookup("device_name").unwrap_or_else(|| if let Some(h) = hostname::get_hostname() {
+    config.device_name = lookup("device_name").unwrap_or_else(|| {
+        if let Some(h) = hostname::get_hostname() {
             format!("Spotifyd@{}", h)
         } else {
             "Spotifyd".to_string()
-        });
+        }
+    });
     config.player_config.onstart = lookup("onstart");
     config.player_config.onstop = lookup("onstop");
     update(

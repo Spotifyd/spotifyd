@@ -1,19 +1,19 @@
+extern crate alsa;
 extern crate daemonize;
+extern crate futures;
 extern crate getopts;
-extern crate simplelog;
-extern crate rpassword;
-extern crate librespot;
-extern crate ini;
-extern crate xdg;
-extern crate syslog;
 extern crate hostname;
+extern crate ini;
+extern crate librespot;
 #[macro_use]
 extern crate log;
-extern crate futures;
+extern crate rpassword;
+extern crate simplelog;
+extern crate syslog;
 extern crate tokio_core;
 extern crate tokio_io;
 extern crate tokio_signal;
-extern crate alsa;
+extern crate xdg;
 
 use std::process::exit;
 use std::panic;
@@ -22,28 +22,28 @@ use std::error::Error;
 use std::path::PathBuf;
 use std::io;
 
-use librespot::spirc::{Spirc, SpircTask};
+use librespot::connect::spirc::{Spirc, SpircTask};
 use librespot::core::session::Session;
-use librespot::core::config::{SessionConfig, PlayerConfig};
-use librespot::player::Player;
-use librespot::audio_backend::{BACKENDS, Sink};
+use librespot::core::config::SessionConfig;
+use librespot::playback::player::Player;
+use librespot::playback::audio_backend::{Sink, BACKENDS};
 use librespot::core::authentication::get_credentials;
-use librespot::discovery::{discovery, DiscoveryStream};
-use librespot::mixer;
-use librespot::mixer::Mixer;
+use librespot::connect::discovery::{discovery, DiscoveryStream};
+use librespot::playback::mixer;
+use librespot::playback::config::PlayerConfig;
+use librespot::playback::mixer::Mixer;
 use librespot::core::cache::Cache;
 use librespot::core::config::{ConnectConfig, DeviceType};
 
 use daemonize::Daemonize;
-use futures::{Future, Async, Poll, Stream};
-use tokio_core::reactor::{Handle, Core};
+use futures::{Async, Future, Poll, Stream};
+use tokio_core::reactor::{Core, Handle};
 use tokio_io::IoStream;
 use tokio_signal::ctrl_c;
 
 mod config;
 mod cli;
 mod alsa_mixer;
-
 
 struct MainLoopState {
     connection: Box<Future<Item = Session, Error = io::Error>>,
@@ -95,7 +95,6 @@ impl MainLoopState {
     }
 }
 
-
 impl Future for MainLoopState {
     type Item = ();
     type Error = ();
@@ -129,6 +128,7 @@ impl Future for MainLoopState {
                     ConnectConfig {
                         name: self.device_name.clone(),
                         device_type: DeviceType::default(),
+                        volume: mixer.volume() as i32,
                     },
                     session,
                     player,
@@ -145,10 +145,9 @@ impl Future for MainLoopState {
                         return Ok(Async::Ready(()));
                     }
                 }
-            } else if let Some(Async::Ready(_)) =
-                self.spirc_task.as_mut().map(
-                    |ref mut st| st.poll().unwrap(),
-                )
+            } else if let Some(Async::Ready(_)) = self.spirc_task
+                .as_mut()
+                .map(|ref mut st| st.poll().unwrap())
             {
                 return Ok(Async::Ready(()));
             } else {
@@ -227,13 +226,30 @@ fn main() {
         );
     }));
 
-
-
     let config_file = matches
         .opt_str("config")
         .map(|s| PathBuf::from(s))
         .or_else(|| config::get_config_file().ok());
     let config = config::get_config(config_file, &matches);
+
+    let local_audio_device = config.audio_device.clone();
+    let local_mixer = config.mixer.clone();
+    let mut mixer = match config.volume_controller {
+        config::VolumeController::Alsa => {
+            info!("Using alsa volume controller.");
+            Box::new(move || {
+                Box::new(alsa_mixer::AlsaMixer {
+                    device: local_audio_device.clone().unwrap_or("default".to_string()),
+                    mixer: local_mixer.clone().unwrap_or("Master".to_string()),
+                }) as Box<Mixer>
+            }) as Box<FnMut() -> Box<Mixer>>
+        }
+        config::VolumeController::SoftVol => {
+            info!("Using software volume controller.");
+            Box::new(|| Box::new(mixer::softmixer::SoftMixer::open()) as Box<Mixer>)
+                as Box<FnMut() -> Box<Mixer>>
+        }
+    };
 
     let mut core = Core::new().unwrap();
     let handle = core.handle();
@@ -248,16 +264,16 @@ fn main() {
         ConnectConfig {
             name: config.device_name.clone(),
             device_type: DeviceType::default(),
+            volume: (mixer()).volume() as i32,
         },
         device_id,
+        0,
     ).unwrap();
-    let connection = if let Some(credentials) =
-        get_credentials(
-            config.username.or(matches.opt_str("username")),
-            config.password.or(matches.opt_str("password")),
-            cache.as_ref().and_then(Cache::credentials),
-        )
-    {
+    let connection = if let Some(credentials) = get_credentials(
+        config.username.or(matches.opt_str("username")),
+        config.password.or(matches.opt_str("password")),
+        cache.as_ref().and_then(Cache::credentials),
+    ) {
         Session::connect(
             session_config.clone(),
             credentials,
@@ -265,28 +281,8 @@ fn main() {
             handle.clone(),
         )
     } else {
-        Box::new(futures::future::empty()) as
-            Box<futures::Future<Item = Session, Error = io::Error>>
-    };
-
-    let local_audio_device = config.audio_device.clone();
-    let local_mixer  = config.mixer.clone();
-    let mixer = match config.volume_controller {
-        config::VolumeController::Alsa => {
-            info!("Using alsa volume controller.");
-            Box::new(move || {
-                Box::new( alsa_mixer::AlsaMixer{ 
-                    device : local_audio_device.clone().unwrap_or("default".to_string()),
-                    mixer : local_mixer.clone().unwrap_or("Master".to_string()),
-                }) as Box<Mixer>
-            }) as Box<FnMut() -> Box<Mixer>>
-        }
-        config::VolumeController::SoftVol => {
-            info!("Using software volume controller.");
-            Box::new(|| {
-                Box::new(mixer::softmixer::SoftMixer::open()) as Box<Mixer>
-            }) as Box<FnMut() -> Box<Mixer>>
-        }
+        Box::new(futures::future::empty())
+            as Box<futures::Future<Item = Session, Error = io::Error>>
     };
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
@@ -316,9 +312,9 @@ fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<Sink> {
                 .1
         }
         None => {
-            let &(name, back) = BACKENDS.first().expect(
-                "No backends were enabled at build time",
-            );
+            let &(name, back) = BACKENDS
+                .first()
+                .expect("No backends were enabled at build time");
             info!("No backend specified, defaulting to: {}.", name);
             back
         }

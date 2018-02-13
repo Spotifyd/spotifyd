@@ -21,7 +21,7 @@ hostname = "0.1.3"
 alsa = "0.1.8"
 
 [dependencies.librespot]
-git = "https://github.com/plietar/librespot.git"
+git = "https://github.com/librespot-org/librespot.git"
 default-features = false
 features = ["with-tremor"]
 
