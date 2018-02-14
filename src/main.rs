@@ -291,7 +291,7 @@ fn main() {
         mixer,
         backend,
         config.audio_device.clone(),
-        ctrl_c(&handle).flatten_stream().boxed(),
+        Box::new(ctrl_c(&handle).flatten_stream()),
         discovery_stream,
         cache,
         player_config,
