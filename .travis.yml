@@ -1,16 +1,25 @@
 language: rust
 sudo: required
 os:
-- linux
-rust:
-- stable
+  - linux
+
+rust: 
+  - nightly
+  - stable
+
+before_script:
+  - cargo +nightly install clippy
 script:
-- cargo build --verbose --features "pulseaudio_backend"
+  - cargo +nightly clippy -- -D clippy
+  - cargo build --verbose --features "pulseaudio_backend"
+
 before_install:
-- sudo apt-get -qq update
-- sudo apt-get install -y libasound2-dev portaudio19-dev build-essential libpulse-dev
+  - sudo apt-get -qq update
+  - sudo apt-get install -y libasound2-dev portaudio19-dev build-essential libpulse-dev
+
 services:
-- docker
+  - docker
+
 before_deploy: "./build-release"
 deploy:
   provider: releases
