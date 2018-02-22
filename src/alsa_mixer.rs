@@ -17,7 +17,8 @@ impl AlsaMixer {
         let (min, max) = elem.get_playback_volume_range();
 
         let volume_steps = (max - min) as f64;
-        let normalised_volume = (f64::from(volume).log(65535.0) * volume_steps).floor() as i64 + min;
+        let normalised_volume =
+            (f64::from(volume).log(65535.0) * volume_steps).floor() as i64 + min;
 
         elem.set_playback_volume_all(normalised_volume)?;
         Ok(())

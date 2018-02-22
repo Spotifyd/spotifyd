@@ -5,8 +5,8 @@ use tokio_signal::ctrl_c;
 use librespot::core::session::Session;
 use librespot::core::authentication::get_credentials;
 use librespot::connect::discovery::discovery;
-use librespot::playback::mixer::Mixer; 
-use librespot::playback::mixer; 
+use librespot::playback::mixer::Mixer;
+use librespot::playback::mixer;
 use librespot::core::config::{ConnectConfig, DeviceType};
 use librespot::core::cache::Cache;
 use librespot::playback::audio_backend::{Sink, BACKENDS};
@@ -31,7 +31,9 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
             info!("Using alsa volume controller.");
             Box::new(move || {
                 Box::new(alsa_mixer::AlsaMixer {
-                    device: local_audio_device.clone().unwrap_or_else(|| "default".to_string()),
+                    device: local_audio_device
+                        .clone()
+                        .unwrap_or_else(|| "default".to_string()),
                     mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
                 }) as Box<mixer::Mixer>
             }) as Box<FnMut() -> Box<Mixer>>
@@ -76,10 +78,11 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
     main_loop::MainLoopState {
-        librespot_connection: 
-            main_loop::LibreSpotConnection::new(connection, discovery_stream),
+        librespot_connection: main_loop::LibreSpotConnection::new(connection, discovery_stream),
         audio_setup: main_loop::AudioSetup {
-            mixer: mixer, backend: backend, audio_device: config.audio_device.clone()
+            mixer: mixer,
+            backend: backend,
+            audio_device: config.audio_device.clone(),
         },
         spotifyd_state: main_loop::SpotifydState {
             ctrl_c_stream: Box::new(ctrl_c(&handle).flatten_stream()),
@@ -89,7 +92,7 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
         },
         player_config: player_config,
         session_config: session_config,
-        handle: handle
+        handle: handle,
     }
 }
 

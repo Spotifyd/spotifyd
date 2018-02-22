@@ -121,10 +121,11 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     let spotifyd = config_file.section(Some("spotifyd".to_owned()));
 
     let lookup = |field| {
-        matches
-            .opt_str(field)
-            .or_else(|| spotifyd.and_then(|s| s.get(field).map(String::clone))
-                                .or_else(|| global.and_then(|s| s.get(field).map(String::clone))))
+        matches.opt_str(field).or_else(|| {
+            spotifyd
+                .and_then(|s| s.get(field).map(String::clone))
+                .or_else(|| global.and_then(|s| s.get(field).map(String::clone)))
+        })
     };
 
     update(

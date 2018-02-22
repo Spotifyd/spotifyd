@@ -21,7 +21,7 @@ use std::convert::From;
 use std::error::Error;
 
 use daemonize::Daemonize;
-use tokio_core::reactor::Core; 
+use tokio_core::reactor::Core;
 
 mod config;
 mod cli;
