@@ -17,7 +17,7 @@ impl AlsaMixer {
         let (min, max) = elem.get_playback_volume_range();
 
         let volume_steps = (max - min) as f64;
-        let normalised_volume = ((volume as f64).log(65535.0) * volume_steps).floor() as i64 + min;
+        let normalised_volume = (f64::from(volume).log(65535.0) * volume_steps).floor() as i64 + min;
 
         elem.set_playback_volume_all(normalised_volume)?;
         Ok(())
@@ -39,7 +39,7 @@ impl Mixer for AlsaMixer {
         match alsa::mixer::Mixer::new(&self.device, false)
             .ok()
             .as_ref()
-            .and_then(|ref mixer| mixer.find_selem(&selem_id))
+            .and_then(|mixer| mixer.find_selem(&selem_id))
             .and_then(|elem| {
                 let (min, max) = elem.get_playback_volume_range();
                 elem.get_playback_volume(alsa::mixer::SelemChannelId::mono())

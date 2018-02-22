@@ -17,7 +17,7 @@ use getopts::Matches;
 
 use hostname;
 
-const CONFIG_FILE: &'static str = "spotifyd.conf";
+const CONFIG_FILE: &str = "spotifyd.conf";
 
 pub enum VolumeController {
     Alsa,
@@ -86,7 +86,7 @@ pub fn get_config_file() -> Result<PathBuf, Box<Error>> {
                 }
             })
         })
-        .ok_or(From::from("Couldn't find a config file."))
+        .ok_or_else(|| From::from("Couldn't find a config file."))
 }
 
 fn update<T>(r: &mut T, val: Option<T>) {
@@ -121,9 +121,10 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     let spotifyd = config_file.section(Some("spotifyd".to_owned()));
 
     let lookup = |field| {
-        matches.opt_str(field).or(spotifyd
-            .and_then(|s| s.get(field).map(String::clone))
-            .or(global.and_then(|s| s.get(field).map(String::clone))))
+        matches
+            .opt_str(field)
+            .or_else(|| spotifyd.and_then(|s| s.get(field).map(String::clone))
+                                .or_else(|| global.and_then(|s| s.get(field).map(String::clone))))
     };
 
     update(
@@ -131,7 +132,7 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
         lookup("cache_path")
             .map(PathBuf::from)
             .and_then(|p| Some(Cache::new(p, true)))
-            .map(|c| Some(c)),
+            .map(Some),
     );
 
     config.username = lookup("username");
@@ -158,5 +159,5 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     );
     update(&mut config.session_config.device_id, lookup("device_name"));
 
-    return config;
+    config
 }

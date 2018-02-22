@@ -16,54 +16,42 @@ use librespot::core::config::{ConnectConfig, DeviceType};
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
 
-pub struct MainLoopState {
+pub struct LibreSpotConnection {
     connection: Box<Future<Item = Session, Error = io::Error>>,
-    mixer: Box<FnMut() -> Box<Mixer>>,
-    backend: fn(Option<String>) -> Box<Sink>,
-    audio_device: Option<String>,
     spirc_task: Option<SpircTask>,
     spirc: Option<Spirc>,
-    ctrl_c_stream: IoStream<()>,
-    shutting_down: bool,
-    cache: Option<Cache>,
-    player_config: PlayerConfig,
-    session_config: SessionConfig,
-    device_name: String,
-    handle: Handle,
     discovery_stream: DiscoveryStream,
 }
 
-impl MainLoopState {
-    pub fn new(
-        connection: Box<Future<Item = Session, Error = io::Error>>,
-        mixer: Box<FnMut() -> Box<Mixer>>,
-        backend: fn(Option<String>) -> Box<Sink>,
-        audio_device: Option<String>,
-        ctrl_c_stream: IoStream<()>,
-        discovery_stream: DiscoveryStream,
-        cache: Option<Cache>,
-        player_config: PlayerConfig,
-        session_config: SessionConfig,
-        device_name: String,
-        handle: Handle,
-    ) -> MainLoopState {
-        MainLoopState {
-            connection: connection,
-            mixer: mixer,
-            backend: backend,
-            audio_device: audio_device,
-            spirc_task: None,
-            spirc: None,
-            ctrl_c_stream: ctrl_c_stream,
-            shutting_down: false,
-            cache: cache,
-            player_config: player_config,
-            session_config: session_config,
-            device_name: device_name,
-            handle: handle,
-            discovery_stream: discovery_stream,
-        }
+impl LibreSpotConnection {
+    pub fn new(connection: Box<Future<Item = Session, Error = io::Error>>,
+               discovery_stream: DiscoveryStream) -> LibreSpotConnection {
+        LibreSpotConnection { connection: connection, spirc_task: None, 
+            spirc: None, discovery_stream: discovery_stream }
     }
+}
+
+pub struct AudioSetup {
+    pub mixer: Box<FnMut() -> Box<Mixer>>,
+    pub backend: fn(Option<String>) -> Box<Sink>,
+    pub audio_device: Option<String>,
+}
+
+pub struct SpotifydState {
+    pub ctrl_c_stream: IoStream<()>,
+    pub shutting_down: bool,
+    pub cache: Option<Cache>,
+    pub device_name: String,
+}
+
+
+pub struct MainLoopState {
+    pub librespot_connection: LibreSpotConnection,
+    pub audio_setup: AudioSetup,
+    pub spotifyd_state: SpotifydState,
+    pub player_config: PlayerConfig,
+    pub session_config: SessionConfig,
+    pub handle: Handle,
 }
 
 impl Future for MainLoopState {
@@ -72,22 +60,22 @@ impl Future for MainLoopState {
 
     fn poll(&mut self) -> Poll<(), ()> {
         loop {
-            if let Async::Ready(Some(creds)) = self.discovery_stream.poll().unwrap() {
-                if let Some(ref mut spirc) = self.spirc {
+            if let Async::Ready(Some(creds)) = self.librespot_connection.discovery_stream.poll().unwrap() {
+                if let Some(ref mut spirc) = self.librespot_connection.spirc {
                     spirc.shutdown();
                 }
                 let session_config = self.session_config.clone();
-                let cache = self.cache.clone();
+                let cache = self.spotifyd_state.cache.clone();
                 let handle = self.handle.clone();
-                self.connection = Session::connect(session_config, creds, cache, handle);
+                self.librespot_connection.connection = Session::connect(session_config, creds, cache, handle);
             }
 
-            if let Async::Ready(session) = self.connection.poll().unwrap() {
-                let mixer = (self.mixer)();
+            if let Async::Ready(session) = self.librespot_connection.connection.poll().unwrap() {
+                let mixer = (self.audio_setup.mixer)();
                 let audio_filter = mixer.get_audio_filter();
-                self.connection = Box::new(futures::future::empty());
-                let backend = self.backend;
-                let audio_device = self.audio_device.clone();
+                self.librespot_connection.connection = Box::new(futures::future::empty());
+                let backend = self.audio_setup.backend;
+                let audio_device = self.audio_setup.audio_device.clone();
                 let player = Player::new(
                     self.player_config.clone(),
                     session.clone(),
@@ -97,26 +85,26 @@ impl Future for MainLoopState {
 
                 let (spirc, spirc_task) = Spirc::new(
                     ConnectConfig {
-                        name: self.device_name.clone(),
+                        name: self.spotifyd_state.device_name.clone(),
                         device_type: DeviceType::default(),
-                        volume: mixer.volume() as i32,
+                        volume: i32::from(mixer.volume()),
                     },
                     session,
                     player,
                     mixer,
                 );
-                self.spirc_task = Some(spirc_task);
-                self.spirc = Some(spirc);
-            } else if let Async::Ready(_) = self.ctrl_c_stream.poll().unwrap() {
-                if !self.shutting_down {
-                    if let Some(ref spirc) = self.spirc {
+                self.librespot_connection.spirc_task = Some(spirc_task);
+                self.librespot_connection.spirc = Some(spirc);
+            } else if let Async::Ready(_) = self.spotifyd_state.ctrl_c_stream.poll().unwrap() {
+                if !self.spotifyd_state.shutting_down {
+                    if let Some(ref spirc) = self.librespot_connection.spirc {
                         spirc.shutdown();
-                        self.shutting_down = true;
+                        self.spotifyd_state.shutting_down = true;
                     } else {
                         return Ok(Async::Ready(()));
                     }
                 }
-            } else if let Some(Async::Ready(_)) = self.spirc_task
+            } else if let Some(Async::Ready(_)) = self.librespot_connection.spirc_task
                 .as_mut()
                 .map(|ref mut st| st.poll().unwrap())
             {

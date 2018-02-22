@@ -17,12 +17,12 @@ use alsa_mixer;
 use futures;
 use main_loop;
 
-pub fn initial_state(handle: Handle, matches: Matches) -> main_loop::MainLoopState {
+pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopState {
     let config_file = matches
         .opt_str("config")
-        .map(|s| PathBuf::from(s))
+        .map(PathBuf::from)
         .or_else(|| config::get_config_file().ok());
-    let config = config::get_config(config_file, &matches);
+    let config = config::get_config(config_file, matches);
 
     let local_audio_device = config.audio_device.clone();
     let local_mixer = config.mixer.clone();
@@ -31,8 +31,8 @@ pub fn initial_state(handle: Handle, matches: Matches) -> main_loop::MainLoopSta
             info!("Using alsa volume controller.");
             Box::new(move || {
                 Box::new(alsa_mixer::AlsaMixer {
-                    device: local_audio_device.clone().unwrap_or("default".to_string()),
-                    mixer: local_mixer.clone().unwrap_or("Master".to_string()),
+                    device: local_audio_device.clone().unwrap_or_else(|| "default".to_string()),
+                    mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
                 }) as Box<mixer::Mixer>
             }) as Box<FnMut() -> Box<Mixer>>
         }
@@ -53,14 +53,14 @@ pub fn initial_state(handle: Handle, matches: Matches) -> main_loop::MainLoopSta
         ConnectConfig {
             name: config.device_name.clone(),
             device_type: DeviceType::default(),
-            volume: (mixer()).volume() as i32,
+            volume: i32::from((mixer()).volume()),
         },
         device_id,
         0,
     ).unwrap();
     let connection = if let Some(credentials) = get_credentials(
-        config.username.or(matches.opt_str("username")),
-        config.password.or(matches.opt_str("password")),
+        config.username.or_else(|| matches.opt_str("username")),
+        config.password.or_else(|| matches.opt_str("password")),
         cache.as_ref().and_then(Cache::credentials),
     ) {
         Session::connect(
@@ -75,19 +75,22 @@ pub fn initial_state(handle: Handle, matches: Matches) -> main_loop::MainLoopSta
     };
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
-    main_loop::MainLoopState::new(
-        connection,
-        mixer,
-        backend,
-        config.audio_device.clone(),
-        Box::new(ctrl_c(&handle).flatten_stream()),
-        discovery_stream,
-        cache,
-        player_config,
-        session_config,
-        config.device_name.clone(),
-        handle,
-    )
+    main_loop::MainLoopState {
+        librespot_connection: 
+            main_loop::LibreSpotConnection::new(connection, discovery_stream),
+        audio_setup: main_loop::AudioSetup {
+            mixer: mixer, backend: backend, audio_device: config.audio_device.clone()
+        },
+        spotifyd_state: main_loop::SpotifydState {
+            ctrl_c_stream: Box::new(ctrl_c(&handle).flatten_stream()),
+            shutting_down: false,
+            cache: cache,
+            device_name: config.device_name.clone(),
+        },
+        player_config: player_config,
+        session_config: session_config,
+        handle: handle
+    }
 }
 
 fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<Sink> {

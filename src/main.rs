@@ -101,7 +101,7 @@ fn main() {
     let mut core = Core::new().unwrap();
     let handle = core.handle();
 
-    let initial_state = setup::initial_state(handle, matches);
+    let initial_state = setup::initial_state(handle, &matches);
 
     core.run(initial_state).unwrap();
 }
