@@ -19,5 +19,5 @@ rust-builder-amd64() {
 
 rust-builder-amd64 "cargo build --release"
 rust-builder-arm "cargo build --release"
-zip -j spotifyd-`date --iso-8601`-armv7.zip target/arm-unknown-linux-gnueabihf/release/spotifyd
+zip -j spotifyd-`date --iso-8601`-armv6.zip target/arm-unknown-linux-gnueabihf/release/spotifyd
 zip -j spotifyd-`date --iso-8601`-amd64.zip target/release/spotifyd
