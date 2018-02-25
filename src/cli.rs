@@ -25,8 +25,13 @@ pub fn command_line_argument_options() -> Options {
     opts.optopt("", "device_name", "Name of this Spotify device.", "DEVICE");
     opts.optopt("", "backend", "Audio backend.", "BACKEND");
     opts.optopt("", "cache_path", "Path to cache location.", "PATH");
-    opts.optopt("", "onstart", "Command to run on song start.", "COMMAND");
-    opts.optopt("", "onstop", "Command to run on song stop.", "COMMAND");
+    opts.optopt(
+        "",
+        "onevent",
+        "Run a command on events. Environment variables PLAYER_EVENT, TRACK_ID,\
+         OLD_TRACK_ID are passed to the command.",
+        "COMMAND",
+    );
     opts.optopt(
         "",
         "volume-control",

@@ -5,7 +5,7 @@ use std::io;
 use librespot::connect::spirc::{Spirc, SpircTask};
 use librespot::core::session::Session;
 use librespot::core::config::SessionConfig;
-use librespot::playback::player::Player;
+use librespot::playback::player::{Player, PlayerEvent};
 use librespot::playback::audio_backend::Sink;
 use librespot::connect::discovery::DiscoveryStream;
 use librespot::playback::mixer::Mixer;
@@ -15,6 +15,8 @@ use librespot::core::config::{ConnectConfig, DeviceType};
 
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
+
+use player_event_handler::run_program_on_events;
 
 pub struct LibreSpotConnection {
     connection: Box<Future<Item = Session, Error = io::Error>>,
@@ -48,6 +50,8 @@ pub struct SpotifydState {
     pub shutting_down: bool,
     pub cache: Option<Cache>,
     pub device_name: String,
+    pub player_event_channel: Option<futures::sync::mpsc::UnboundedReceiver<PlayerEvent>>,
+    pub player_event_program: Option<String>,
 }
 
 pub struct MainLoopState {
@@ -78,18 +82,28 @@ impl Future for MainLoopState {
                     Session::connect(session_config, creds, cache, handle);
             }
 
+            if let Some(ref mut player_event_channel) = self.spotifyd_state.player_event_channel {
+                if let Async::Ready(Some(event)) = player_event_channel.poll().unwrap() {
+                    if let Some(ref program) = self.spotifyd_state.player_event_program {
+                        run_program_on_events(event, program);
+                    }
+                }
+            }
+
             if let Async::Ready(session) = self.librespot_connection.connection.poll().unwrap() {
                 let mixer = (self.audio_setup.mixer)();
                 let audio_filter = mixer.get_audio_filter();
                 self.librespot_connection.connection = Box::new(futures::future::empty());
                 let backend = self.audio_setup.backend;
                 let audio_device = self.audio_setup.audio_device.clone();
-                let player = Player::new(
+                let (player, event_channel) = Player::new(
                     self.player_config.clone(),
                     session.clone(),
                     audio_filter,
                     move || (backend)(audio_device),
                 );
+
+                self.spotifyd_state.player_event_channel = Some(event_channel);
 
                 let (spirc, spirc_task) = Spirc::new(
                     ConnectConfig {

@@ -5,9 +5,11 @@ use std::fs::metadata;
 use std::mem::swap;
 use std::str::FromStr;
 
+use crypto::sha1::Sha1;
+use crypto::digest::Digest;
+
 use librespot::playback::config::{Bitrate, PlayerConfig};
 use librespot::core::config::SessionConfig;
-use librespot::core::session::device_id;
 use librespot::core::cache::Cache;
 use librespot::core::version;
 
@@ -22,6 +24,12 @@ const CONFIG_FILE: &str = "spotifyd.conf";
 pub enum VolumeController {
     Alsa,
     SoftVol,
+}
+
+fn device_id(name: &str) -> String {
+    let mut h = Sha1::new();
+    h.input_str(name);
+    h.result_str()
 }
 
 impl FromStr for VolumeController {
@@ -46,6 +54,7 @@ pub struct SpotifydConfig {
     pub device_name: String,
     pub player_config: PlayerConfig,
     pub session_config: SessionConfig,
+    pub onevent: Option<String>,
 }
 
 impl Default for SpotifydConfig {
@@ -61,13 +70,14 @@ impl Default for SpotifydConfig {
             device_name: "Spotifyd".to_string(),
             player_config: PlayerConfig {
                 bitrate: Bitrate::Bitrate160,
-                onstart: None,
-                onstop: None,
+                normalisation: false,
+                normalisation_pregain: 0.0,
             },
             session_config: SessionConfig {
                 user_agent: version::version_string(),
                 device_id: device_id("Spotifyd"),
             },
+            onevent: None,
         }
     }
 }
@@ -152,8 +162,7 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
             "Spotifyd".to_string()
         }
     });
-    config.player_config.onstart = lookup("onstart");
-    config.player_config.onstop = lookup("onstop");
+    config.onevent = lookup("onevent");
     update(
         &mut config.player_config.bitrate,
         lookup("bitrate").and_then(|s| Bitrate::from_str(&*s).ok()),

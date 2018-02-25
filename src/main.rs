@@ -1,4 +1,5 @@
 extern crate alsa;
+extern crate crypto;
 extern crate daemonize;
 extern crate futures;
 extern crate getopts;
@@ -28,6 +29,7 @@ mod cli;
 mod alsa_mixer;
 mod main_loop;
 mod setup;
+mod player_event_handler;
 
 fn main() {
     let opts = cli::command_line_argument_options();

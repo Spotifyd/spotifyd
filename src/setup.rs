@@ -89,6 +89,8 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
             shutting_down: false,
             cache: cache,
             device_name: config.device_name.clone(),
+            player_event_channel: None,
+            player_event_program: config.onevent,
         },
         player_config: player_config,
         session_config: session_config,
