@@ -44,6 +44,8 @@ onevent = command_run_on_playback_events
 device_name = name_in_spotify_connect
 bitrate = 96|160|320
 cache = cache_directory
+volume-normalisation = true
+normalisation-pregain = -10
 ```
 Every field is optional, `Spotifyd` can even run without a configuration file.
 Options can also be placed in a `[spotifyd]` section, which takes priority over

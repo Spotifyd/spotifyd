@@ -163,6 +163,19 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
         }
     });
     config.onevent = lookup("onevent");
+    config.player_config.normalisation = matches.opt_present("volume-normalisation")
+        || spotifyd
+            .and_then(|s| s.get("volume-normalisation").map(String::clone))
+            .or_else(|| global.and_then(|g| g.get("volume-normalisation").map(String::clone)))
+            .unwrap_or("false".to_string()) == "true";
+
+    config.player_config.normalisation_pregain = lookup("normalisation-pregain")
+        .map(|db| {
+            db.parse::<f32>()
+                .expect("volume-normalisation must be a floating point number.")
+        })
+        .unwrap_or(PlayerConfig::default().normalisation_pregain);
+
     update(
         &mut config.player_config.bitrate,
         lookup("bitrate").and_then(|s| Bitrate::from_str(&*s).ok()),

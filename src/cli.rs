@@ -25,6 +25,17 @@ pub fn command_line_argument_options() -> Options {
     opts.optopt("", "device_name", "Name of this Spotify device.", "DEVICE");
     opts.optopt("", "backend", "Audio backend.", "BACKEND");
     opts.optopt("", "cache_path", "Path to cache location.", "PATH");
+    opts.optflag(
+        "",
+        "volume-normalisation",
+        "Apply volume normalisation per track.",
+    );
+    opts.optopt(
+        "",
+        "normalisation-pregain",
+        "dB of pregain for volume normalisation",
+        "PREGAIN",
+    );
     opts.optopt(
         "",
         "onevent",
