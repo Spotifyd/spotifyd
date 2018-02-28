@@ -8,7 +8,6 @@ extern crate ini;
 extern crate librespot;
 #[macro_use]
 extern crate log;
-extern crate rpassword;
 extern crate simplelog;
 extern crate syslog;
 extern crate tokio_core;

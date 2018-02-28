@@ -1,5 +1,6 @@
 use std::io;
 use std::path::PathBuf;
+use std::process::exit;
 use tokio_core::reactor::Handle;
 use tokio_signal::ctrl_c;
 use librespot::core::session::Session;
@@ -64,6 +65,10 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
         config.username.or_else(|| matches.opt_str("username")),
         config.password.or_else(|| matches.opt_str("password")),
         cache.as_ref().and_then(Cache::credentials),
+        |_| {
+            error!("No password found.");
+            exit(1);
+        },
     ) {
         Session::connect(
             session_config.clone(),
