@@ -1,6 +1,7 @@
 use futures::{Async, Future, Poll, Stream};
 use futures;
 use std::io;
+use std::rc::Rc;
 
 use librespot::connect::spirc::{Spirc, SpircTask};
 use librespot::core::session::Session;
@@ -12,6 +13,7 @@ use librespot::playback::mixer::Mixer;
 use librespot::playback::config::PlayerConfig;
 use librespot::core::cache::Cache;
 use librespot::core::config::{ConnectConfig, DeviceType};
+use dbus_mpris;
 
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
@@ -21,7 +23,7 @@ use player_event_handler::run_program_on_events;
 pub struct LibreSpotConnection {
     connection: Box<Future<Item = Session, Error = io::Error>>,
     spirc_task: Option<SpircTask>,
-    spirc: Option<Spirc>,
+    spirc: Option<Rc<Spirc>>,
     discovery_stream: DiscoveryStream,
 }
 
@@ -52,6 +54,7 @@ pub struct SpotifydState {
     pub device_name: String,
     pub player_event_channel: Option<futures::sync::mpsc::UnboundedReceiver<PlayerEvent>>,
     pub player_event_program: Option<String>,
+    pub dbus_mpris_server: Option<Box<Future<Item = (), Error = ()>>>,
 }
 
 pub struct MainLoopState {
@@ -90,6 +93,8 @@ impl Future for MainLoopState {
                 }
             }
 
+            let _ = self.spotifyd_state.dbus_mpris_server.poll();
+
             if let Async::Ready(session) = self.librespot_connection.connection.poll().unwrap() {
                 let mixer = (self.audio_setup.mixer)();
                 let audio_filter = mixer.get_audio_filter();
@@ -116,7 +121,10 @@ impl Future for MainLoopState {
                     mixer,
                 );
                 self.librespot_connection.spirc_task = Some(spirc_task);
-                self.librespot_connection.spirc = Some(spirc);
+                let shared_spirc = Rc::new(spirc);
+                self.librespot_connection.spirc = Some(shared_spirc.clone());
+                self.spotifyd_state.dbus_mpris_server =
+                    Some(dbus_mpris::create_server(self.handle.clone(), shared_spirc));
             } else if let Async::Ready(_) = self.spotifyd_state.ctrl_c_stream.poll().unwrap() {
                 if !self.spotifyd_state.shutting_down {
                     if let Some(ref spirc) = self.librespot_connection.spirc {
