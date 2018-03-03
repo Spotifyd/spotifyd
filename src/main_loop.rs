@@ -123,8 +123,12 @@ impl Future for MainLoopState {
                 self.librespot_connection.spirc_task = Some(spirc_task);
                 let shared_spirc = Rc::new(spirc);
                 self.librespot_connection.spirc = Some(shared_spirc.clone());
-                self.spotifyd_state.dbus_mpris_server =
-                    Some(DbusServer::new(session, self.handle.clone(), shared_spirc));
+                self.spotifyd_state.dbus_mpris_server = Some(DbusServer::new(
+                    session,
+                    self.handle.clone(),
+                    shared_spirc,
+                    self.spotifyd_state.device_name.clone(),
+                ));
             } else if let Async::Ready(_) = self.spotifyd_state.ctrl_c_stream.poll().unwrap() {
                 if !self.spotifyd_state.shutting_down {
                     if let Some(ref spirc) = self.librespot_connection.spirc {

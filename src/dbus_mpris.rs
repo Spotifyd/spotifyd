@@ -16,6 +16,7 @@ use chrono::prelude::*;
 
 use rspotify::spotify::oauth2::TokenInfo as RspotifyToken;
 use rspotify::spotify::util::datetime_to_timestamp;
+use rspotify::spotify::client::Spotify;
 use futures::{Async, Future, Poll, Stream};
 
 pub struct DbusServer {
@@ -25,16 +26,22 @@ pub struct DbusServer {
     api_token: RspotifyToken,
     token_request: Option<Box<Future<Item = LibrespotToken, Error = MercuryError>>>,
     dbus_future: Option<Box<Future<Item = (), Error = ()>>>,
+    device_name: String,
 }
 
 const CLIENT_ID: &str = "2c1ea588dfbc4a989e2426f8385297c3";
 const SCOPE: &str = "user-read-private,playlist-read-private,playlist-read-collaborative,\
                      playlist-modify-public,playlist-modify-private,user-follow-modify,\
                      user-follow-read,user-library-read,user-library-modify,user-top-read,\
-                     user-read-recently-played";
+                     user-read-recently-played,user-modify-playback-state";
 
 impl DbusServer {
-    pub fn new(session: Session, handle: Handle, spirc: Rc<Spirc>) -> DbusServer {
+    pub fn new(
+        session: Session,
+        handle: Handle,
+        spirc: Rc<Spirc>,
+        device_name: String,
+    ) -> DbusServer {
         DbusServer {
             session,
             handle,
@@ -42,6 +49,7 @@ impl DbusServer {
             api_token: RspotifyToken::default(),
             token_request: None,
             dbus_future: None,
+            device_name,
         }
     }
 
@@ -69,8 +77,9 @@ impl Future for DbusServer {
                         .expires_at(datetime_to_timestamp(token.expires_in));
                     self.dbus_future = Some(create_dbus_server(
                         self.handle.clone(),
+                        self.api_token.clone(),
                         self.spirc.clone(),
-                        self.api_token.access_token.clone(),
+                        self.device_name.clone(),
                     ));
                     got_new_token = true;
                 }
@@ -91,10 +100,15 @@ impl Future for DbusServer {
     }
 }
 
+fn create_spotify_api(token: &RspotifyToken) -> Spotify {
+    Spotify::default().access_token(&token.access_token).build()
+}
+
 fn create_dbus_server(
     handle: Handle,
+    api_token: RspotifyToken,
     spirc: Rc<Spirc>,
-    api_token: String,
+    device_name: String,
 ) -> Box<Future<Item = (), Error = ()>> {
     let c = Rc::new(Connection::get_private(BusType::Session).unwrap());
 
@@ -103,12 +117,17 @@ fn create_dbus_server(
         NameFlag::ReplaceExisting as u32,
     ).unwrap();
 
-    let spirc_next = spirc.clone();
-    let spirc_prev = spirc.clone();
-    let spirc_pause = spirc.clone();
-    let spirc_play_pause = spirc.clone();
-    let spirc_play = spirc.clone();
     let spirc_quit = spirc.clone();
+    let spirc_play_pause = spirc.clone();
+    let token_next = api_token.clone();
+    let device_name_next = device_name.clone();
+    let token_prev = api_token.clone();
+    let device_name_prev = device_name.clone();
+    let token_pause = api_token.clone();
+    let device_name_pause = device_name.clone();
+    let token_play = api_token.clone();
+    let device_name_play = device_name.clone();
+
     let f = AFactory::new_afn::<()>();
     let tree = f.tree(ATree::new()).add(
         f.object_path("/org/mpris/MediaPlayer2", ())
@@ -116,17 +135,20 @@ fn create_dbus_server(
             .add(
                 f.interface("org.mpris.MediaPlayer2.Player", ())
                     .add_m(f.amethod("Next", (), move |m| {
-                        spirc_next.next();
+                        let _ = create_spotify_api(&token_next)
+                            .next_track(Some(device_name_next.clone()));
                         let mret = m.msg.method_return();
                         Ok(vec![mret])
                     }))
                     .add_m(f.amethod("Previous", (), move |m| {
-                        spirc_prev.prev();
+                        let _ = create_spotify_api(&token_prev)
+                            .previous_track(Some(device_name_prev.clone()));
                         let mret = m.msg.method_return();
                         Ok(vec![mret])
                     }))
                     .add_m(f.amethod("Pause", (), move |m| {
-                        spirc_pause.pause();
+                        let _ = create_spotify_api(&token_pause)
+                            .pause_playback(Some(device_name_pause.clone()));
                         let mret = m.msg.method_return();
                         Ok(vec![mret])
                     }))
@@ -136,7 +158,12 @@ fn create_dbus_server(
                         Ok(vec![mret])
                     }))
                     .add_m(f.amethod("Play", (), move |m| {
-                        spirc_play.play();
+                        let _ = create_spotify_api(&token_play).start_playback(
+                            Some(device_name_play.clone()),
+                            None,
+                            None,
+                            None,
+                        );
                         let mret = m.msg.method_return();
                         Ok(vec![mret])
                     })),
