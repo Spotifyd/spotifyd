@@ -13,7 +13,7 @@ use librespot::playback::mixer::Mixer;
 use librespot::playback::config::PlayerConfig;
 use librespot::core::cache::Cache;
 use librespot::core::config::{ConnectConfig, DeviceType};
-use dbus_mpris;
+use dbus_mpris::DbusServer;
 
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
@@ -54,7 +54,7 @@ pub struct SpotifydState {
     pub device_name: String,
     pub player_event_channel: Option<futures::sync::mpsc::UnboundedReceiver<PlayerEvent>>,
     pub player_event_program: Option<String>,
-    pub dbus_mpris_server: Option<Box<Future<Item = (), Error = ()>>>,
+    pub dbus_mpris_server: Option<DbusServer>,
 }
 
 pub struct MainLoopState {
@@ -116,7 +116,7 @@ impl Future for MainLoopState {
                         device_type: DeviceType::default(),
                         volume: i32::from(mixer.volume()),
                     },
-                    session,
+                    session.clone(),
                     player,
                     mixer,
                 );
@@ -124,7 +124,7 @@ impl Future for MainLoopState {
                 let shared_spirc = Rc::new(spirc);
                 self.librespot_connection.spirc = Some(shared_spirc.clone());
                 self.spotifyd_state.dbus_mpris_server =
-                    Some(dbus_mpris::create_server(self.handle.clone(), shared_spirc));
+                    Some(DbusServer::new(session, self.handle.clone(), shared_spirc));
             } else if let Async::Ready(_) = self.spotifyd_state.ctrl_c_stream.poll().unwrap() {
                 if !self.spotifyd_state.shutting_down {
                     if let Some(ref spirc) = self.librespot_connection.spirc {

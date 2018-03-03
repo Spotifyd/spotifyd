@@ -1,4 +1,5 @@
 extern crate alsa;
+extern crate chrono;
 extern crate crypto;
 extern crate daemonize;
 extern crate dbus;
@@ -10,6 +11,7 @@ extern crate ini;
 extern crate librespot;
 #[macro_use]
 extern crate log;
+extern crate rspotify;
 extern crate simplelog;
 extern crate syslog;
 extern crate tokio_core;

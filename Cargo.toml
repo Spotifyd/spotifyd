@@ -21,6 +21,8 @@ alsa = "0.2"
 rust-crypto = "0.2.36"
 dbus = "0.6"
 dbus-tokio = "0.2"
+rspotify = "0.1"
+chrono = "0.4"
 
 [replace]
 "rust-crypto:0.2.36" = { git = "https://github.com/awmath/rust-crypto.git", branch = "avx2" }
