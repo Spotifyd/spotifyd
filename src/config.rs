@@ -22,7 +22,7 @@ use hostname;
 const CONFIG_FILE: &str = "spotifyd.conf";
 
 pub enum VolumeController {
-    Alsa,
+    Alsa { linear: bool },
     SoftVol,
 }
 
@@ -36,7 +36,8 @@ impl FromStr for VolumeController {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match &*s.to_uppercase() {
-            "ALSA" => Ok(VolumeController::Alsa),
+            "ALSA" => Ok(VolumeController::Alsa { linear: false }),
+            "ALSA_LINEAR" => Ok(VolumeController::Alsa { linear: true }),
             "SOFTVOL" => Ok(VolumeController::SoftVol),
             _ => Err(()),
         }

@@ -5,6 +5,7 @@ use alsa;
 pub struct AlsaMixer {
     pub device: String,
     pub mixer: String,
+    pub linear_scaling: bool,
 }
 
 impl AlsaMixer {
@@ -17,8 +18,12 @@ impl AlsaMixer {
         let (min, max) = elem.get_playback_volume_range();
 
         let volume_steps = (max - min) as f64;
-        let normalised_volume =
-            (f64::from(volume).log(65535.0) * volume_steps).floor() as i64 + min;
+        let normalised_volume = if self.linear_scaling {
+            ((f64::from(volume) / f64::from(u16::max_value())) * f64::from(volume_steps)) as i64
+                + min
+        } else {
+            (f64::from(volume).log(f64::from(u16::max_value())) * volume_steps).floor() as i64 + min
+        };
 
         elem.set_playback_volume_all(normalised_volume)?;
         Ok(())
@@ -30,6 +35,7 @@ impl Mixer for AlsaMixer {
         AlsaMixer {
             device: "default".to_string(),
             mixer: "Master".to_string(),
+            linear_scaling: false,
         }
     }
     fn start(&self) {}

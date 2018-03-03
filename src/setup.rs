@@ -28,7 +28,7 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
     let local_audio_device = config.audio_device.clone();
     let local_mixer = config.mixer.clone();
     let mut mixer = match config.volume_controller {
-        config::VolumeController::Alsa => {
+        config::VolumeController::Alsa { linear } => {
             info!("Using alsa volume controller.");
             Box::new(move || {
                 Box::new(alsa_mixer::AlsaMixer {
@@ -36,6 +36,7 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
                         .clone()
                         .unwrap_or_else(|| "default".to_string()),
                     mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
+                    linear_scaling: linear,
                 }) as Box<mixer::Mixer>
             }) as Box<FnMut() -> Box<Mixer>>
         }

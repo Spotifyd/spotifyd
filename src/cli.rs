@@ -46,7 +46,7 @@ pub fn command_line_argument_options() -> Options {
     opts.optopt(
         "",
         "volume-control",
-        "Possible values are alsa or softvol.",
+        "Possible values are alsa, alsa_linear, and softvol.",
         "CONTROLLER",
     );
     opts.optflag("v", "verbose", "Add debug information to log.");
