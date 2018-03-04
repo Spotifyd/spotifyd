@@ -6,7 +6,7 @@ extern crate tokio_core;
 use std::rc::Rc;
 use std::thread;
 use dbus::{BusType, Connection, NameFlag};
-use dbus::tree::MethodErr;
+use dbus::tree::{Access, MethodErr};
 use dbus_tokio::tree::{AFactory, ATree, ATreeServer};
 use dbus_tokio::AConnection;
 use tokio_core::reactor::Handle;
@@ -116,7 +116,7 @@ fn create_dbus_server(
     let c = Rc::new(Connection::get_private(BusType::Session).unwrap());
 
     macro_rules! spotify_api_call {
-        ($f:expr $(, $a:expr)*) => {
+        ([ $sp:ident, $device:ident $(, $m:ident: $t:ty)*] $f:expr) => {
             {
                 let device_name = device_name.clone();
                 let token = api_token.clone();
@@ -124,9 +124,11 @@ fn create_dbus_server(
                     let (p, c) = oneshot::channel();
                     let token = token.clone();
                     let device_name = device_name.clone();
+                    $(let $m: Result<$t,_> = m.msg.read1();)*
                     thread::spawn(move || {
-                        let sp = create_spotify_api(&token);
-                        let _ = $f(&sp, Some(device_name), $($a),*);
+                        let $sp = create_spotify_api(&token);
+                        let $device = Some(device_name);
+                        let _ = $f;
                         let _ = p.send(());
                     });
                     let mret = m.msg.method_return();
@@ -150,9 +152,21 @@ fn create_dbus_server(
             .introspectable()
             .add(
                 f.interface("org.mpris.MediaPlayer2.Player", ())
-                    .add_m(f.amethod("Next", (), spotify_api_call!(Spotify::next_track)))
-                    .add_m(f.amethod("Previous", (), spotify_api_call!(Spotify::previous_track)))
-                    .add_m(f.amethod("Pause", (), spotify_api_call!(Spotify::pause_playback)))
+                    .add_m(f.amethod(
+                        "Next",
+                        (),
+                        spotify_api_call!([sp, device] sp.next_track(device)),
+                    ))
+                    .add_m(f.amethod(
+                        "Previous",
+                        (),
+                        spotify_api_call!([sp, device] sp.previous_track(device)),
+                    ))
+                    .add_m(f.amethod(
+                        "Pause",
+                        (),
+                        spotify_api_call!([sp, device] sp.pause_playback(device)),
+                    ))
                     .add_m(f.amethod("PlayPause", (), move |m| {
                         spirc_play_pause.play_pause();
                         let mret = m.msg.method_return();
@@ -161,18 +175,92 @@ fn create_dbus_server(
                     .add_m(f.amethod(
                         "Play",
                         (),
-                        spotify_api_call!(Spotify::start_playback, None, None, None),
-                    )),
+                        spotify_api_call!([sp, device] sp.start_playback(device, None, None, None)),
+                    ))
+                    .add_m(f.amethod(
+                        "Stop",
+                        (),
+                        spotify_api_call!([sp, device]{
+                            let _ = sp.seek_track(0, device.clone());
+                            let _ = sp.pause_playback(device);
+                        }),
+                    ))
+                    .add_m(f.amethod(
+                        "Seek",
+                        (),
+                        spotify_api_call!([sp, device, pos: u32]{
+                            match pos {
+                                Ok(p) => { 
+                                    if let Ok(Some(playing)) = sp.current_user_playing_track() {
+                                        let _ = sp.seek_track(playing.progress_ms.unwrap_or(0) + p, device); 
+                                    }
+                                },
+                                _ => (),
+                            };
+                        }),
+                    ))
+                    .add_m(f.amethod(
+                        "SetPosition",
+                        (),
+                        spotify_api_call!([sp, device, pos: u32]
+                            match pos {
+                                Ok(p) => { let _ = sp.seek_track(p, device); },
+                                _ => (),
+                            }),
+                    ))
+                    .add_m(f.amethod(
+                        "OpenUri",
+                        (),
+                        spotify_api_call!([sp, device, uri: String] match uri {
+                            Ok(uri) => { let _ = sp.start_playback(device, None, Some(vec![uri]), None); },
+                            _ => ()
+                        }),
+                    ))
+                    .add_p(
+                        f.property::<bool, _>("CanPlay", ())
+                            .access(Access::Read)
+                            .on_get(|i, _| {
+                                i.append(true);
+                                Ok(())
+                            }),
+                    )
+                    .add_p(
+                        f.property::<bool, _>("CanPause", ())
+                            .access(Access::Read)
+                            .on_get(|i, _| {
+                                i.append(true);
+                                Ok(())
+                            }),
+                    )
+                    .add_p(
+                        f.property::<bool, _>("CanSeek", ())
+                            .access(Access::Read)
+                            .on_get(|i, _| {
+                                i.append(true);
+                                Ok(())
+                            }),
+                    )
+                    .add_p(
+                        f.property::<bool, _>("CanControl", ())
+                            .access(Access::Read)
+                            .on_get(|i, _| {
+                                i.append(true);
+                                Ok(())
+                            }),
+                    ),
             )
-            .add(f.interface("org.mpris.MediaPlayer2", ()).add_m(f.amethod(
-                "Quit",
-                (),
-                move |m| {
-                    spirc_quit.shutdown();
-                    let mret = m.msg.method_return();
-                    Ok(vec![mret])
-                },
-            ))),
+            .add(
+                f.interface("org.mpris.MediaPlayer2", ())
+                    .add_m(f.amethod("Quit", (), move |m| {
+                        spirc_quit.shutdown();
+                        let mret = m.msg.method_return();
+                        Ok(vec![mret])
+                    }))
+                    .add_m(f.amethod("Raise", (), move |m| {
+                        let mret = m.msg.method_return();
+                        Ok(vec![mret])
+                    })),
+            ),
     );
 
     tree.set_registered(&c, true).unwrap();
