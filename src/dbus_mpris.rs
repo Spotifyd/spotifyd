@@ -4,7 +4,9 @@ extern crate futures;
 extern crate tokio_core;
 
 use std::rc::Rc;
+use std::thread;
 use dbus::{BusType, Connection, NameFlag};
+use dbus::tree::MethodErr;
 use dbus_tokio::tree::{AFactory, ATree, ATreeServer};
 use dbus_tokio::AConnection;
 use tokio_core::reactor::Handle;
@@ -18,6 +20,7 @@ use rspotify::spotify::oauth2::TokenInfo as RspotifyToken;
 use rspotify::spotify::util::datetime_to_timestamp;
 use rspotify::spotify::client::Spotify;
 use futures::{Async, Future, Poll, Stream};
+use futures::sync::oneshot;
 
 pub struct DbusServer {
     session: Session,
@@ -112,6 +115,27 @@ fn create_dbus_server(
 ) -> Box<Future<Item = (), Error = ()>> {
     let c = Rc::new(Connection::get_private(BusType::Session).unwrap());
 
+    macro_rules! spotify_api_call {
+        ($f:expr $(, $a:expr)*) => {
+            {
+                let device_name = device_name.clone();
+                let token = api_token.clone();
+                move |m| {
+                    let (p, c) = oneshot::channel();
+                    let token = token.clone();
+                    let device_name = device_name.clone();
+                    thread::spawn(move || {
+                        let sp = create_spotify_api(&token);
+                        let _ = $f(&sp, Some(device_name), $($a),*);
+                        let _ = p.send(());
+                    });
+                    let mret = m.msg.method_return();
+                    c.map_err(|e| MethodErr::failed(&e)).map(|_| vec![mret])
+                }
+            }
+        }
+    }
+
     c.register_name(
         "org.mpris.MediaPlayer2.spotifyd",
         NameFlag::ReplaceExisting as u32,
@@ -119,14 +143,6 @@ fn create_dbus_server(
 
     let spirc_quit = spirc.clone();
     let spirc_play_pause = spirc.clone();
-    let token_next = api_token.clone();
-    let device_name_next = device_name.clone();
-    let token_prev = api_token.clone();
-    let device_name_prev = device_name.clone();
-    let token_pause = api_token.clone();
-    let device_name_pause = device_name.clone();
-    let token_play = api_token.clone();
-    let device_name_play = device_name.clone();
 
     let f = AFactory::new_afn::<()>();
     let tree = f.tree(ATree::new()).add(
@@ -134,39 +150,19 @@ fn create_dbus_server(
             .introspectable()
             .add(
                 f.interface("org.mpris.MediaPlayer2.Player", ())
-                    .add_m(f.amethod("Next", (), move |m| {
-                        let _ = create_spotify_api(&token_next)
-                            .next_track(Some(device_name_next.clone()));
-                        let mret = m.msg.method_return();
-                        Ok(vec![mret])
-                    }))
-                    .add_m(f.amethod("Previous", (), move |m| {
-                        let _ = create_spotify_api(&token_prev)
-                            .previous_track(Some(device_name_prev.clone()));
-                        let mret = m.msg.method_return();
-                        Ok(vec![mret])
-                    }))
-                    .add_m(f.amethod("Pause", (), move |m| {
-                        let _ = create_spotify_api(&token_pause)
-                            .pause_playback(Some(device_name_pause.clone()));
-                        let mret = m.msg.method_return();
-                        Ok(vec![mret])
-                    }))
+                    .add_m(f.amethod("Next", (), spotify_api_call!(Spotify::next_track)))
+                    .add_m(f.amethod("Previous", (), spotify_api_call!(Spotify::previous_track)))
+                    .add_m(f.amethod("Pause", (), spotify_api_call!(Spotify::pause_playback)))
                     .add_m(f.amethod("PlayPause", (), move |m| {
                         spirc_play_pause.play_pause();
                         let mret = m.msg.method_return();
                         Ok(vec![mret])
                     }))
-                    .add_m(f.amethod("Play", (), move |m| {
-                        let _ = create_spotify_api(&token_play).start_playback(
-                            Some(device_name_play.clone()),
-                            None,
-                            None,
-                            None,
-                        );
-                        let mret = m.msg.method_return();
-                        Ok(vec![mret])
-                    })),
+                    .add_m(f.amethod(
+                        "Play",
+                        (),
+                        spotify_api_call!(Spotify::start_playback, None, None, None),
+                    )),
             )
             .add(f.interface("org.mpris.MediaPlayer2", ()).add_m(f.amethod(
                 "Quit",
