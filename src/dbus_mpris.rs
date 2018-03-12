@@ -1,8 +1,3 @@
-extern crate dbus;
-extern crate dbus_tokio;
-extern crate futures;
-extern crate tokio_core;
-
 use std::rc::Rc;
 use std::thread;
 use std::collections::HashMap;
