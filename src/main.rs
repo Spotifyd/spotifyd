@@ -1,6 +1,11 @@
 extern crate alsa;
+extern crate chrono;
 extern crate crypto;
 extern crate daemonize;
+#[cfg(feature = "dbus_mpris")]
+extern crate dbus;
+#[cfg(feature = "dbus_mpris")]
+extern crate dbus_tokio;
 extern crate futures;
 extern crate getopts;
 extern crate hostname;
@@ -8,6 +13,8 @@ extern crate ini;
 extern crate librespot;
 #[macro_use]
 extern crate log;
+#[cfg(feature = "dbus_mpris")]
+extern crate rspotify;
 extern crate simplelog;
 extern crate syslog;
 extern crate tokio_core;
@@ -29,6 +36,8 @@ mod alsa_mixer;
 mod main_loop;
 mod setup;
 mod player_event_handler;
+#[cfg(feature = "dbus_mpris")]
+mod dbus_mpris;
 
 fn main() {
     let opts = cli::command_line_argument_options();

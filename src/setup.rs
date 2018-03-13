@@ -97,6 +97,7 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
             device_name: config.device_name.clone(),
             player_event_channel: None,
             player_event_program: config.onevent,
+            dbus_mpris_server: None,
         },
         player_config: player_config,
         session_config: session_config,
