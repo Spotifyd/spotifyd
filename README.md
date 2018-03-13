@@ -79,6 +79,18 @@ For a more lightweight, and scriptable alternative, there is
 [spotifyd-http](https://github.com/Spotifyd/spotifyd-http), which is a work in
 progress but already supports basic tasks.
 
+## D-Bus MPRIS
+Spotifyd implements [D-Bus
+MPRIS](https://specifications.freedesktop.org/mpris-spec/latest/) which means
+that it can be controlled by some generic media playback controllers such as
+[playerctl](https://github.com/acrisci/playerctl/tree/4cf5ba8ad00f47c8db8af0fd20286b050921a6e1)
+as well as some tools specifically designed for use with the official Spotify
+client such as [sp](https://gist.github.com/wandernauta/6800547) (requires
+changing the DBus service name to spotifyd instead of spotify).
+
+The D-Bus server is by default and currently requires a nightly rust compiler.
+Disable the `dbus_mpris` feature when compiling to disable it.
+
 ## Running as a systemd service
 
 A systemd.service unit file is provided to help run spotifyd as a service on

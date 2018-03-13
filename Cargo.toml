@@ -19,9 +19,9 @@ tokio-io = "0.1"
 hostname = "0.1"
 alsa = "0.2"
 rust-crypto = "0.2.36"
-dbus = "0.6"
-dbus-tokio = "0.2"
-rspotify = "0.1"
+dbus = { version = "0.6", optional = true }
+dbus-tokio = { version = "0.2", optional = true }
+rspotify = "0.1.2"
 chrono = "0.4"
 
 [replace]
@@ -35,4 +35,5 @@ features = ["with-tremor"]
 [features]
 alsa_backend = ["librespot/alsa-backend"]
 pulseaudio_backend = ["librespot/pulseaudio-backend"]
-default = ["alsa_backend"]
+dbus_mpris = ["dbus", "dbus-tokio"]
+default = ["alsa_backend", "dbus_mpris"]

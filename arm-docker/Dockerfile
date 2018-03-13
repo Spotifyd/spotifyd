@@ -1,4 +1,4 @@
-FROM dlecan/rust-crosscompiler-arm:stable
+FROM dlecan/rust-crosscompiler-arm:nightly
 
 RUN apt-get update
 RUN apt-get install -qq -y libasound2-dev:armhf pkg-config
