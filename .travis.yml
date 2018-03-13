@@ -1,4 +1,6 @@
 language: rust
+rust:
+- nightly
 sudo: required
 os:
 - linux
@@ -6,6 +8,8 @@ rust:
 - nightly
 script:
 - cargo build --verbose --features "pulseaudio_backend"
+- cargo build --release
+- zip -j spotifyd-`date --iso-8601`-amd64.zip target/release/spotifyd
 before_install:
 - sudo apt-get -qq update
 - sudo apt-get install -y libasound2-dev portaudio19-dev build-essential libpulse-dev libdbus-1-dev

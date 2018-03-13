@@ -1,7 +1,4 @@
 #!/bin/bash
-#
-# Generates two zip files with releases, one for ARM and one for AMD64. Used
-# by travis to automatically publish a build on each commit.
 
 set -euo pipefail
 
@@ -11,13 +8,5 @@ rust-builder-arm() {
 	       -v "$(pwd)":/source -t build_bot_arm /bin/bash -c "$@"
 }
 
-rust-builder-amd64() {
-    docker build -t build_bot_amd64 amd64-docker
-    docker run -v "$HOME/.cargo/git":/root/.cargo/git -v "$HOME/cargo/registry":/root/.cargo/registry \
-	       -v "$(pwd)":/source -t build_bot_amd64 /bin/bash -c "$@"
-}
-
-rust-builder-amd64 "cargo build --release"
 rust-builder-arm "cargo build --release"
-zip -j spotifyd-`date --iso-8601`-armv6.zip target/arm-unknown-linux-gnueabihf/release/spotifyd
-zip -j spotifyd-`date --iso-8601`-amd64.zip target/release/spotifyd
+zip -j spotifyd-`date --iso-8601`-armv7.zip target/arm-unknown-linux-gnueabihf/release/spotifyd
