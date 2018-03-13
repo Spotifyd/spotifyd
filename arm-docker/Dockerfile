@@ -1,7 +1,8 @@
-FROM dlecan/rust-crosscompiler-arm:nightly
+FROM dlecan/rust-crosscompiler-arm:stable
 
 RUN apt-get update
 RUN apt-get install -qq -y libasound2-dev:armhf pkg-config
+RUN rustup override set nightly-arm-unknown-linux-gnueabihf
 
 VOLUME ["/source"]
 WORKDIR /source
