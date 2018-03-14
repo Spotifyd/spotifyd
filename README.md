@@ -43,7 +43,7 @@ volume-control = alsa # or alsa_linear, or softvol
 onevent = command_run_on_playback_events
 device_name = name_in_spotify_connect
 bitrate = 96|160|320
-cache = cache_directory
+cache_path = cache_directory
 volume-normalisation = true
 normalisation-pregain = -10
 ```
