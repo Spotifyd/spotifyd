@@ -1,9 +1,7 @@
 FROM dlecan/rust-crosscompiler-arm:stable
 
 RUN apt-get update
-RUN apt-get install -qq -y libasound2-dev:armhf pkg-config libdbus-1-dev:armhf
-RUN rustup default nightly
-RUN rustup target add arm-unknown-linux-gnueabihf
+RUN apt-get install -qq -y libasound2-dev:armhf pkg-config
 
 VOLUME ["/source"]
 WORKDIR /source

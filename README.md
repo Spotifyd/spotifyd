@@ -88,8 +88,8 @@ as well as some tools specifically designed for use with the official Spotify
 client such as [sp](https://gist.github.com/wandernauta/6800547) (requires
 changing the DBus service name to spotifyd instead of spotify).
 
-The D-Bus server is by default and currently requires a nightly rust compiler.
-Disable the `dbus_mpris` feature when compiling to disable it.
+The D-Bus server is currently experimental and requires a nightly rust compiler.
+Enable the `dbus_mpris` feature when compiling to try it out.
 
 ## Running as a systemd service
 
