@@ -9,4 +9,4 @@ rust-builder-arm() {
 }
 
 rust-builder-arm "cargo build --release"
-zip -j spotifyd-`date --iso-8601`-armv7.zip target/arm-unknown-linux-gnueabihf/release/spotifyd
+zip -j spotifyd-`date --iso-8601`-armv6.zip target/arm-unknown-linux-gnueabihf/release/spotifyd
