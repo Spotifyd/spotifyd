@@ -1,6 +1,8 @@
 # Spotifyd
-An open source Spotify client running as a UNIX daemon. Spotifyd is more
-lightweight than the official client, and is available on more platforms.
+An open source Spotify client running as a UNIX daemon. Spotifyd streams music
+just like the official client, but is more lightweight, and supports more
+platforms. Spotifyd also supports the Spotify Connect protocol, which makes it
+show up as a device that can be controlled from the official clients.
 
 Spotifyd requires a Spotify Premium account.
 
@@ -76,8 +78,8 @@ Spotifyd communicates over the Spotify Connect protocol, meaning that it can be
 controlled from the official Spotify client on Android/iOS/Desktop.
 
 For a more lightweight, and scriptable alternative, there is
-[spotifyd-http](https://github.com/Spotifyd/spotifyd-http), which is a work in
-progress but already supports basic tasks.
+the [Spotify Connect
+API](https://developer.spotify.com/web-api/web-api-connect-endpoint-reference/).
 
 ## D-Bus MPRIS
 Spotifyd implements [D-Bus
@@ -97,8 +99,8 @@ A systemd.service unit file is provided to help run spotifyd as a service on
 systemd-based systems. The file `contrib/spotifyd.service` should be copied to
 either:
 
-    cd /etc/systemd/user/
-    cd ~/.config/systemd/user/
+    /etc/systemd/user/
+    ~/.config/systemd/user/
 
 Packagers of systemd-based distributions are encouraged to include the file in
 the former location. End-user should prefer the latter.
