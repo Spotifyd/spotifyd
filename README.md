@@ -1,7 +1,7 @@
 # Spotifyd
 An open source Spotify client running as a UNIX daemon. Spotifyd streams music
-just like the official client, but is more lightweight, and supports more
-platforms. Spotifyd also supports the Spotify Connect protocol, which makes it
+just like the official client, but is more lightweight and supports more
+platforms. Spotifyd also supports the Spotify Connect protocol which makes it
 show up as a device that can be controlled from the official clients.
 
 Spotifyd requires a Spotify Premium account.
@@ -11,7 +11,7 @@ Unfortunately, Spotify decided to kill the libspotify library we used, and
 hence we had no choice but to rewrite everything.
 
 # Installing
-Travis CI builds binaries for systems running Linux on AMD64 and ARMv6, which
+Travis CI builds binaries for systems running Linux on AMD64 and ARMv6 which
 should run on any Raspberry Pi model. The binaries can be found
 [here](https://github.com/Spotifyd/spotifyd/releases/latest). Other systems
 have to build from source for now. You will need the ALSA package for your
@@ -33,7 +33,7 @@ and supplying an alternative backend (see the _Configuration_ section).
 # Configuration
 Spotifyd will search for a file name `spotifyd.conf` in the XDG config
 directories (meaning, a users local config is placed in
-`~/.config/spotifyd/spotifyd.conf`), and has the following format:
+`~/.config/spotifyd/spotifyd.conf`) and has the following format:
 ```
 [global]
 username = USER
@@ -42,19 +42,19 @@ backend = alsa
 device = alsa_audio_device # Given by `aplay -L`
 mixer = PCM
 volume-control = alsa # or alsa_linear, or softvol
-onevent = command_run_on_playback_events
+onevent = /usr/bin/echo Playback event! #command_run_on_playback_event
 device_name = name_in_spotify_connect
 bitrate = 96|160|320
 cache_path = cache_directory
 volume-normalisation = true
 normalisation-pregain = -10
 ```
-Every field is optional, `Spotifyd` can even run without a configuration file.
-Options can also be placed in a `[spotifyd]` section, which takes priority over
-the `[global]` section, which is useful when you run applications related to
-`Spotifyd`, which shares some but not all options with `Spotifyd`.
+Every field is optional; `Spotifyd` can even run without a configuration file.
+Options can also be placed in a `[spotifyd]` section which takes priority over
+the `[global]` section. This is useful when you run applications related to
+`Spotifyd` which shares some, but not all, options with `Spotifyd`.
 
-Values can be surrounded by double quotes ("), which is useful if it contains
+Values can be surrounded by double quotes (") which is useful if the value contains
 the comment character (#).
 
 ## Command Line Arguments
@@ -63,8 +63,8 @@ line arguments allows for specifying a PID file, setting a verbose mode, run in
 no-daemon mode, among other things.
 
 ## Audio Backend
-By default, the audio backend is ALSA, as that is available by default on a lot
-of machines, and requires no extra dependencies. There is also support for
+By default, the audio backend is ALSA, as ALSA is available by default on a lot
+of machines and requires no extra dependencies. There is also support for
 `pulseaudio`. To use PulseAudio, compile with the `--features` flag to enable
 it:
 ```
@@ -77,14 +77,14 @@ as `build-essential` or the equivalent in your distribution.
 Spotifyd communicates over the Spotify Connect protocol, meaning that it can be
 controlled from the official Spotify client on Android/iOS/Desktop.
 
-For a more lightweight, and scriptable alternative, there is
+For a more lightweight and scriptable alternative, there is
 the [Spotify Connect
 API](https://developer.spotify.com/web-api/web-api-connect-endpoint-reference/).
 
 ## D-Bus MPRIS
 Spotifyd implements [D-Bus
 MPRIS](https://specifications.freedesktop.org/mpris-spec/latest/) which means
-that it can be controlled by some generic media playback controllers such as
+it can be controlled by some generic media playback controllers such as
 [playerctl](https://github.com/acrisci/playerctl/tree/4cf5ba8ad00f47c8db8af0fd20286b050921a6e1)
 as well as some tools specifically designed for use with the official Spotify
 client such as [sp](https://gist.github.com/wandernauta/6800547) (requires
@@ -106,8 +106,8 @@ Packagers of systemd-based distributions are encouraged to include the file in
 the former location. End-user should prefer the latter.
 
 Control of the daemon is then done via systemd. The following example commands
-will run the service once, and enable the service to always run on login in the
-future, respectively:
+will run the service once and enable the service to always run on login in the
+future respectively:
 
     systemctl --user start spotifyd.service
     systemctl --user enable spotifyd.service
@@ -117,7 +117,7 @@ In `--no-daemon` mode, the log is written to standard output, otherwise it is
 written to syslog, and where it's written can be configured in your system
 logger.
 
-The verbose mode adds more information, please enable this mode when submitting
+The verbose mode adds more information; please enable this mode when submitting
 a bug report.
 
 # Credits
