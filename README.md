@@ -34,7 +34,7 @@ and supplying an alternative backend (see the _Configuration_ section).
 Spotifyd will search for a file name `spotifyd.conf` in the XDG config
 directories (meaning, a users local config is placed in
 `~/.config/spotifyd/spotifyd.conf`, a system wide config is in
-`/etc/xdg/spotifyd/spotifyd.conf`) and has the following format:
+`/etc/spotifyd.conf` or in `/etc/xdg/spotifyd/spotifyd.conf`) and has the following format:
 ```
 [global]
 username = USER
