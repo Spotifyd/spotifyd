@@ -120,6 +120,11 @@ logger.
 The verbose mode adds more information; please enable this mode when submitting
 a bug report.
 
+# Common Issues
+
+* Spotifyd will not work without Spotify Premium
+* The device name cannot contain spaces
+
 # Credits
 This project would not have been possible without the amazing reverse
 engineering work done in [librespot](https://github.com/plietar/librespot),
