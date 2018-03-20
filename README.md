@@ -25,7 +25,7 @@ cargo build --release
 ```
 The resulting binary will be placed in `target/release/spotifyd`.
 
-The default is to build spotifyd with an alsa backend, but it is possible
+The default is to build spotifyd with an ALSA backend, but it is possible
 to build with other audio backends, making Spotifyd availible on platforms
 other than Linux, by adding the `--no-default-features` argument to cargo
 and supplying an alternative backend (see the _Configuration_ section).
@@ -58,20 +58,20 @@ Values can be surrounded by double quotes (") which is useful if the value conta
 the comment character (#).
 
 ## Command Line Arguments
-`spotifyd --help` gives an up to date list of available arguments. The command
+`spotifyd --help` gives an up-to-date list of available arguments. The command
 line arguments allows for specifying a PID file, setting a verbose mode, run in
 no-daemon mode, among other things.
 
 ## Audio Backend
-By default, the audio backend is alsa, as alsa is available by default on a lot
+By default, the audio backend is ALSA, as ALSA is available by default on a lot
 of machines and requires no extra dependencies. There is also support for
-`pulseaudio`. To use pulseaudio, compile with the `--features` flag to enable
+`pulseaudio`. To use PulseAudio, compile with the `--features` flag to enable
 it:
 ```
 cargo build --release --features pulseaudio_backend
 ```
-You will need the development package for pulseaudio, as well
-as "build-essentials" or the equivalent in your distribution.
+You will need the development package for PulseAudio, as well
+as `build-essential` or the equivalent in your distribution.
 
 # Usage
 Spotifyd communicates over the Spotify Connect protocol, meaning that it can be
