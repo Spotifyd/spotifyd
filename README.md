@@ -17,6 +17,8 @@ should run on any Raspberry Pi model. The binaries can be found
 have to build from source for now. You will need the ALSA package for your
 distribution, e.g. libasound2-dev on Ubuntu.
 
+Detailed install instructions can be found on the [wiki](https://github.com/Spotifyd/spotifyd/wiki).
+
 ## Build from source
 The [Rust compiler and Cargo package](https://www.rust-lang.org/en-US/)
  manager are needed:
