@@ -191,7 +191,9 @@ fn create_dbus_server(
                     .add_m(f.amethod(
                         "Play",
                         (),
-                        spotify_api_method!([sp, device] sp.start_playback(device, None, None, None)),
+                        spotify_api_method!([sp, device]
+                            sp.start_playback(device, None, None, None)
+                        ),
                     ))
                     .add_m(f.amethod(
                         "Stop",
@@ -206,9 +208,10 @@ fn create_dbus_server(
                         (),
                         spotify_api_method!([sp, device, pos: u32]{
                             match pos {
-                                Ok(p) => { 
+                                Ok(p) => {
                                     if let Ok(Some(playing)) = sp.current_user_playing_track() {
-                                        let _ = sp.seek_track(playing.progress_ms.unwrap_or(0) + p, device); 
+                                        let _ = sp.seek_track(playing.progress_ms.unwrap_or(0) + p,
+                                                              device);
                                     }
                                 },
                                 _ => (),
@@ -228,14 +231,18 @@ fn create_dbus_server(
                         "OpenUri",
                         (),
                         spotify_api_method!([sp, device, uri: String] match uri {
-                            Ok(uri) => { let _ = sp.start_playback(device, None, Some(vec![uri]), None); },
+                            Ok(uri) => {
+                                let _ = sp.start_playback(device,
+                                                          None,
+                                                          Some(vec![uri]), None);
+                            },
                             _ => ()
                         }),
                     ))
                     .add_p(
                         f.property::<String, _>("PlayBackStatus", ())
                             .access(Access::Read)
-                            .on_get(spotify_api_property!([sp, _device] 
+                            .on_get(spotify_api_property!([sp, _device]
                               if let Ok(Some(track)) = sp.current_user_playing_track() {
                                   if track.is_playing {
                                       "Playing"
@@ -273,7 +280,7 @@ fn create_dbus_server(
                     .add_p(
                         f.property::<String, _>("LoopStatus", ())
                             .access(Access::Read)
-                            .on_get(spotify_api_property!([sp, _device] 
+                            .on_get(spotify_api_property!([sp, _device]
                                 if let Ok(Some(player)) = sp.current_playback(None) {
                                     match player.repeat_state {
                                         RepeatState::Off => "None",
@@ -286,18 +293,16 @@ fn create_dbus_server(
                             )),
                     )
                     .add_p(
-                        f.property::<String, _>("LoopStatus", ())
+                        f.property::<i64, _>("Position", ())
                             .access(Access::Read)
-                            .on_get(spotify_api_property!([sp, _device] 
-                                if let Ok(Some(player)) = sp.current_playback(None) {
-                                    match player.repeat_state {
-                                        RepeatState::Off => "None",
-                                        RepeatState::Track => "Track",
-                                        RepeatState::Context => "Playlist",
-                                    }
+                            .on_get(spotify_api_property!([sp, _device]
+                                if let Ok(Some(pos)) =
+                                    sp.current_playback(None)
+                                    .map(|maybe_player| maybe_player.and_then(|p| p.progress_ms)) {
+                                    pos as i64
                                 } else {
-                                    "None"
-                                }.to_string()
+                                    0
+                                }
                             )),
                     )
                     .add_p(
@@ -308,13 +313,27 @@ fn create_dbus_server(
                                 let v = sp.current_user_playing_track();
                                 if let Ok(Some(playing)) = v {
                                     if let Some(track) = playing.item {
-                                        m.insert("xesam:title".to_string(), Variant(Box::new(MessageItem::Str(track.name)) as Box<RefArg>));
-                                        m.insert("xesam:album".to_string(), Variant(Box::new(MessageItem::Str(track.album.name)) as Box<RefArg>));
-                                        m.insert("xesam:artists".to_string(), 
+                                        m.insert("xesam:title".to_string(),
+                                                 Variant(
+                                                     Box::new(
+                                                         MessageItem::Str(track.name)
+                                                         ) as Box<RefArg>));
+                                        m.insert("xesam:album".to_string(),
+                                                 Variant(Box::new(
+                                                         MessageItem::Str(track.album.name))
+                                                         as Box<RefArg>));
+                                        m.insert("xesam:artists".to_string(),
                                                  Variant(Box::new(track.artists
                                                                   .iter()
-                                                                  .map(|a| Box::new(MessageItem::Str(a.name.to_string())) as Box<RefArg>)
+                                                                  .map(|a|
+                                                                       Box::new(
+                                                                           MessageItem::Str(
+                                                                               a.name.to_string())
+                                                                           ) as Box<RefArg>)
                                                                   .collect::<Vec<Box<RefArg>>>())));
+                                        m.insert("mpris:length".to_string(), Variant(Box::new(
+                                                    MessageItem::Int64(track.duration_ms as i64))
+                                                as Box<RefArg>));
                                     }
                                 } else {
                                     info!("Couldn't fetch metadata from spotify: {:?}", v);
