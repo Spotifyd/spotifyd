@@ -32,6 +32,28 @@ to build with other audio backends, making Spotifyd availible on platforms
 other than Linux, by adding the `--no-default-features` argument to cargo
 and supplying an alternative backend (see the _Configuration_ section).
 
+### Notes on cross compiling for armhf on Ubuntu
+In order to cross-compile, you will do:
+- Activate the cross compilation in dpkg
+- Install dependency libraries
+- Replace standard rust with rustup and activate the target architecture
+- Build
+```
+dpkg --add-architecture armhf
+sed 's/deb http/deb \[arch=amd64,i386\] http/' -i /etc/apt/sources.list
+echo >/etc/apt/sources.list <<EOF
+deb [arch=armhf] http://ports.ubuntu.com/ $(lsb_release -cs) main universe restricted multiverse
+deb [arch=armhf] http://ports.ubuntu.com/ $(lsb_release -cs)-updates main universe restricted multiverse
+deb [arch=armhf] http://ports.ubuntu.com/ $(lsb_release -cs)-security main universe restricted multiverse
+EOF
+apt update
+apt install libssl-dev:armhf libasound2-dev:armhf
+apt remove rustc
+curl https://sh.rustup.rs -sSf | sh
+rustup target add arm-unknown-linux-gnueabihf
+PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabihf/pkgconfig PKG_CONFIG_ALLOW_CROSS=1 cargo build --target=arm-unknown-linux-gnueabihf --release
+```
+
 # Configuration
 Spotifyd will search for a file name `spotifyd.conf` in the XDG config
 directories (meaning, a users local config is placed in
