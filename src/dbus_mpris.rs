@@ -240,7 +240,7 @@ fn create_dbus_server(
                         }),
                     ))
                     .add_p(
-                        f.property::<String, _>("PlayBackStatus", ())
+                        f.property::<String, _>("PlaybackStatus", ())
                             .access(Access::Read)
                             .on_get(spotify_api_property!([sp, _device]
                               if let Ok(Some(track)) = sp.current_user_playing_track() {
