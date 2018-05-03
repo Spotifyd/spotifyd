@@ -52,12 +52,17 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
     let session_config = config.session_config;
     let backend = config.backend.clone();
     let device_id = session_config.device_id.clone();
+    let linear_volume = match config.volume_controller {
+        config::VolumeController::Alsa { linear } => linear,
+        _ => false,
+    };
     let discovery_stream = discovery(
         &handle,
         ConnectConfig {
             name: config.device_name.clone(),
             device_type: DeviceType::default(),
             volume: i32::from((mixer()).volume()),
+            linear_volume: linear_volume,
         },
         device_id,
         0,
@@ -102,6 +107,7 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
         player_config: player_config,
         session_config: session_config,
         handle: handle,
+        linear_volume: linear_volume,
     }
 }
 

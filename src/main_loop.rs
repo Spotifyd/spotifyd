@@ -91,6 +91,7 @@ pub struct MainLoopState {
     pub player_config: PlayerConfig,
     pub session_config: SessionConfig,
     pub handle: Handle,
+    pub linear_volume: bool,
 }
 
 impl Future for MainLoopState {
@@ -144,6 +145,7 @@ impl Future for MainLoopState {
                         name: self.spotifyd_state.device_name.clone(),
                         device_type: DeviceType::default(),
                         volume: i32::from(mixer.volume()),
+                        linear_volume: self.linear_volume,
                     },
                     session.clone(),
                     player,

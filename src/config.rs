@@ -77,6 +77,7 @@ impl Default for SpotifydConfig {
             session_config: SessionConfig {
                 user_agent: version::version_string(),
                 device_id: device_id("Spotifyd"),
+                proxy: None,
             },
             onevent: None,
         }
