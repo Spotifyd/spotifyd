@@ -23,7 +23,7 @@ extern crate tokio_signal;
 extern crate xdg;
 
 use std::process::exit;
-// use std::panic;
+use std::panic;
 use std::convert::From;
 use std::error::Error;
 
@@ -94,7 +94,6 @@ fn main() {
         };
     }
 
-    /*
     panic::set_hook(Box::new(|panic_info| {
         error!(
             "Caught panic with message: {}",
@@ -107,7 +106,7 @@ fn main() {
                 _ => "Unknown error type, can't produce message.",
             }
         );
-    }));*/
+    }));
 
     let mut core = Core::new().unwrap();
     let handle = core.handle();
