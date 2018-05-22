@@ -144,7 +144,7 @@ impl Future for MainLoopState {
                     ConnectConfig {
                         name: self.spotifyd_state.device_name.clone(),
                         device_type: DeviceType::default(),
-                        volume: i32::from(mixer.volume()),
+                        volume: u16::from(mixer.volume()),
                         linear_volume: self.linear_volume,
                     },
                     session.clone(),

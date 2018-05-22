@@ -61,7 +61,7 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
         ConnectConfig {
             name: config.device_name.clone(),
             device_type: DeviceType::default(),
-            volume: i32::from((mixer()).volume()),
+            volume: u16::from((mixer()).volume()),
             linear_volume: linear_volume,
         },
         device_id,
