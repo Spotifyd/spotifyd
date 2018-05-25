@@ -68,13 +68,25 @@ no-daemon mode, among other things.
 ## Audio Backend
 By default, the audio backend is ALSA, as ALSA is available by default on a lot
 of machines and requires no extra dependencies. There is also support for
-`pulseaudio`. To use PulseAudio, compile with the `--features` flag to enable
+`pulseaudio` and `portaudio`. 
+
+### PulseAudio
+To use PulseAudio, compile with the `--features` flag to enable
 it:
 ```
 cargo build --release --features pulseaudio_backend
 ```
 You will need the development package for PulseAudio, as well
 as `build-essential` or the equivalent in your distribution.
+
+### PortAudio
+To use PortAudio (works on OSX), compile with the `--features` flag to enable it:
+```
+cargo build --release --no-default-features --features portaudio_backend
+```
+You will need the development package for PortAudio (`brew install portaudio`), as well
+as `build-essential` or the equivalent in your distribution.
+
 
 # Usage
 Spotifyd communicates over the Spotify Connect protocol, meaning that it can be
