@@ -22,9 +22,7 @@ dbus = { version = "0.6", optional = true }
 dbus-tokio = { version = "0.2", optional = true }
 rspotify = "0.1.2"
 chrono = "0.4"
-
-[target.'cfg(linux)'.dependencies]
-alsa = "0.2"
+alsa = { version = "0.2", optional = true }
 
 [replace]
 "rust-crypto:0.2.36" = { git = "https://github.com/awmath/rust-crypto.git", branch = "avx2" }
@@ -35,7 +33,7 @@ default-features = false
 features = ["with-tremor"]
 
 [features]
-alsa_backend = ["librespot/alsa-backend"]
+alsa_backend = ["librespot/alsa-backend", "alsa"]
 pulseaudio_backend = ["librespot/pulseaudio-backend"]
 portaudio_backend = ["librespot/portaudio-backend"]
 dbus_mpris = ["dbus", "dbus-tokio"]
