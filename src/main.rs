@@ -1,3 +1,4 @@
+#[cfg(feature = "alsa_backend")]
 extern crate alsa;
 extern crate chrono;
 extern crate crypto;
@@ -32,6 +33,7 @@ use tokio_core::reactor::Core;
 
 mod config;
 mod cli;
+#[cfg(feature = "alsa_backend")]
 mod alsa_mixer;
 mod main_loop;
 mod setup;

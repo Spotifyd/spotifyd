@@ -14,6 +14,7 @@ use librespot::playback::audio_backend::{Sink, BACKENDS};
 use futures::Future;
 use getopts::Matches;
 use config;
+#[cfg(feature = "alsa_backend")]
 use alsa_mixer;
 use futures;
 use main_loop;
@@ -27,6 +28,8 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
 
     let local_audio_device = config.audio_device.clone();
     let local_mixer = config.mixer.clone();
+
+    #[cfg(feature = "alsa_backend")]
     let mut mixer = match config.volume_controller {
         config::VolumeController::Alsa { linear } => {
             info!("Using alsa volume controller.");
@@ -47,15 +50,28 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
         }
     };
 
+    #[cfg(not(feature = "alsa_backend"))]
+    let mut mixer = {
+        info!("Using software volume controller.");
+        Box::new(|| Box::new(mixer::softmixer::SoftMixer::open()) as Box<Mixer>)
+            as Box<FnMut() -> Box<Mixer>>
+    };
+
     let cache = config.cache;
     let player_config = config.player_config;
     let session_config = config.session_config;
     let backend = config.backend.clone();
     let device_id = session_config.device_id.clone();
+
+    #[cfg(feature = "alsa_backend")]
     let linear_volume = match config.volume_controller {
         config::VolumeController::Alsa { linear } => linear,
         _ => false,
     };
+
+    #[cfg(not(feature = "alsa_backend"))]
+    let linear_volume = false;
+
     let discovery_stream = discovery(
         &handle,
         ConnectConfig {
