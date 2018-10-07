@@ -78,6 +78,7 @@ impl Default for SpotifydConfig {
                 user_agent: version::version_string(),
                 device_id: device_id("Spotifyd"),
                 proxy: None,
+                ap_port: Some(80),
             },
             onevent: None,
         }
