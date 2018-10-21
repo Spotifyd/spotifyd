@@ -20,7 +20,7 @@ hostname = "0.1"
 rust-crypto = "0.2.36"
 dbus = { version = "0.6", optional = true }
 dbus-tokio = { version = "0.2", optional = true }
-rspotify = "0.2.3"
+rspotify = "0.2.5"
 chrono = "0.4"
 alsa = { version = "0.2", optional = true }
 
