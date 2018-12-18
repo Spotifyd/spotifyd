@@ -1,0 +1,42 @@
+name: spotifyd
+adopt-info: spotifyd
+summary: A spotify daemon
+description: |
+  An open source Spotify client running as a UNIX daemon. 
+  Spotifyd streams music just like the official client, 
+  but is more lightweight and supports more platforms. 
+  Spotifyd also supports the Spotify Connect protocol 
+  which makes it show up as a device that can be controlled 
+  from the official clients.
+  Spotifyd requires a Spotify Premium account
+
+grade: stable
+confinement: strict
+
+parts:
+  spotifyd:
+    plugin: rust
+    rust-channel: nightly
+    source: https://github.com/Spotifyd/spotifyd.git
+    rust-features: ["pulseaudio_backend"]
+    build-packages:
+      - libssl-dev
+      - libasound2-dev
+      - libpulse-dev
+      - pkg-config
+    stage-packages:
+      - libpulse0
+    override-build: |
+      snapcraftctl build
+      snapcraftctl set-version $(git describe --tags)
+
+apps:
+  spotifyd:
+    environment:
+      LD_LIBRARY_PATH: "$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio"
+    command: bin/spotifyd 
+    daemon: forking
+    plugs:
+      - network
+      - network-bind
+      - pulseaudio
