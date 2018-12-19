@@ -17,7 +17,7 @@ parts:
   spotifyd:
     plugin: rust
     rust-channel: nightly
-    source: https://github.com/Spotifyd/spotifyd.git
+    source: .
     rust-features: ["pulseaudio_backend"]
     build-packages:
       - libssl-dev
@@ -26,9 +26,18 @@ parts:
       - pkg-config
     stage-packages:
       - libpulse0
-    override-build: |
-      snapcraftctl build
-      snapcraftctl set-version $(git describe --tags)
+    override-pull: |
+      snapcraftctl pull
+      last_committed_tag="$(git describe --tags --abbrev=0)"
+      last_committed_tag_ver="$(echo ${last_committed_tag} | sed 's/v//')"
+      last_released_tag="$(snap info spotifyd | awk '$1 == "beta:" { print $2 }')"
+      # If the latest tag from the upstream project has not been released to
+      # beta, build that tag instead of master.
+      if [ "${last_committed_tag_ver}" != "${last_released_tag}" ]; then
+        git fetch
+        git checkout "${last_committed_tag}"
+      fi
+      snapcraftctl set-version "$(git describe --tags | sed 's/v//')"
 
 apps:
   spotifyd:
