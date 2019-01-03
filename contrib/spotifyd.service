@@ -7,7 +7,7 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-ExecStart=/usr/bin/spotifyd --no-daemon
+ExecStart=/usr/bin/spotifyd --no-daemon --config /etc/spotifyd.conf
 Restart=always
 RestartSec=12
 
