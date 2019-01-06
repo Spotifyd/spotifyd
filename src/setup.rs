@@ -75,7 +75,7 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
     let discovery_stream = discovery(
         &handle,
         ConnectConfig {
-            name: config.device_name.clone(),
+            name: matches.opt_str("device_name").unwrap_or(config.device_name.clone()),
             device_type: DeviceType::default(),
             volume: u16::from((mixer()).volume()),
             linear_volume: linear_volume,
@@ -115,7 +115,7 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
             ctrl_c_stream: Box::new(ctrl_c(&handle).flatten_stream()),
             shutting_down: false,
             cache: cache,
-            device_name: config.device_name.clone(),
+            device_name: matches.opt_str("device_name").unwrap_or(config.device_name.clone()),
             player_event_channel: None,
             player_event_program: config.onevent,
             dbus_mpris_server: None,
