@@ -124,6 +124,7 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
         session_config: session_config,
         handle: handle,
         linear_volume: linear_volume,
+        running_event_program: None,
     }
 }
 
