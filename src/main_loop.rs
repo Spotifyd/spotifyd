@@ -1,6 +1,7 @@
 use futures::{Async, Future, Poll, Stream};
 use futures;
 use std::io;
+use std::process::Child;
 use std::rc::Rc;
 
 use librespot::connect::spirc::{Spirc, SpircTask};
@@ -92,6 +93,7 @@ pub struct MainLoopState {
     pub session_config: SessionConfig,
     pub handle: Handle,
     pub linear_volume: bool,
+    pub running_event_program: Option<Child>,
 }
 
 impl Future for MainLoopState {
@@ -113,10 +115,21 @@ impl Future for MainLoopState {
                     Session::connect(session_config, creds, cache, handle);
             }
 
-            if let Some(ref mut player_event_channel) = self.spotifyd_state.player_event_channel {
-                if let Async::Ready(Some(event)) = player_event_channel.poll().unwrap() {
-                    if let Some(ref program) = self.spotifyd_state.player_event_program {
-                        run_program_on_events(event, program);
+            if let Some(mut child) = self.running_event_program.take() {
+                match child.try_wait() {
+                    Ok(None) => {
+                        self.running_event_program = Some(child);
+                    },
+                    _ => {},
+                }
+            }
+            if self.running_event_program.is_none() {
+                if let Some(ref mut player_event_channel) = self.spotifyd_state.player_event_channel {
+                    if let Async::Ready(Some(event)) = player_event_channel.poll().unwrap() {
+                        if let Some(ref program) = self.spotifyd_state.player_event_program {
+                            let child = run_program_on_events(event, program);
+                            self.running_event_program = Some(child);
+                        }
                     }
                 }
             }
