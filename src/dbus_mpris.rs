@@ -338,6 +338,9 @@ fn create_dbus_server(
                                                     MessageItem::Str(track.album.images.first()
                                                                      .unwrap().url.clone()))
                                                 as Box<RefArg>));
+                                        m.insert("xesam:trackNumber".to_string(), Variant(Box::new(
+                                                    MessageItem::UInt32(track.track_number)
+                                                    ) as Box<RefArg>));
                                     }
                                 } else {
                                     info!("Couldn't fetch metadata from spotify: {:?}", v);
