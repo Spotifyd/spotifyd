@@ -334,6 +334,10 @@ fn create_dbus_server(
                                         m.insert("mpris:length".to_string(), Variant(Box::new(
                                                     MessageItem::Int64(track.duration_ms as i64))
                                                 as Box<RefArg>));
+                                        m.insert("mpris:artUrl".to_string(), Variant(Box::new(
+                                                    MessageItem::Str(track.album.images.first()
+                                                                     .unwrap().url.clone()))
+                                                as Box<RefArg>));
                                     }
                                 } else {
                                     info!("Couldn't fetch metadata from spotify: {:?}", v);
