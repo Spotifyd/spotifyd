@@ -243,11 +243,19 @@ fn create_dbus_server(
                         f.property::<String, _>("PlaybackStatus", ())
                             .access(Access::Read)
                             .on_get(spotify_api_property!([sp, _device]
-                              if let Ok(Some(track)) = sp.current_user_playing_track() {
-                                  if track.is_playing {
-                                      "Playing"
+                              if let Ok(Some(player)) = sp.current_playback(None) {
+                                  if player.device.id == _device.unwrap() {
+                                    if let Ok(Some(track)) = sp.current_user_playing_track() {
+                                        if track.is_playing {
+                                            "Playing"
+                                        } else {
+                                            "Paused"
+                                        }
+                                    } else {
+                                        "Stopped"
+                                    }
                                   } else {
-                                      "Paused"
+                                      "Stopped"
                                   }
                               } else {
                                   "Stopped"
@@ -334,6 +342,13 @@ fn create_dbus_server(
                                         m.insert("mpris:length".to_string(), Variant(Box::new(
                                                     MessageItem::Int64(track.duration_ms as i64))
                                                 as Box<RefArg>));
+                                        m.insert("mpris:artUrl".to_string(), Variant(Box::new(
+                                                    MessageItem::Str(track.album.images.first()
+                                                                     .unwrap().url.clone()))
+                                                as Box<RefArg>));
+                                        m.insert("xesam:trackNumber".to_string(), Variant(Box::new(
+                                                    MessageItem::UInt32(track.track_number)
+                                                    ) as Box<RefArg>));
                                     }
                                 } else {
                                     info!("Couldn't fetch metadata from spotify: {:?}", v);
