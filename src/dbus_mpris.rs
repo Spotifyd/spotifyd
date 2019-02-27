@@ -243,11 +243,19 @@ fn create_dbus_server(
                         f.property::<String, _>("PlaybackStatus", ())
                             .access(Access::Read)
                             .on_get(spotify_api_property!([sp, _device]
-                              if let Ok(Some(track)) = sp.current_user_playing_track() {
-                                  if track.is_playing {
-                                      "Playing"
+                              if let Ok(Some(player)) = sp.current_playback(None) {
+                                  if player.device.id == _device.unwrap() {
+                                    if let Ok(Some(track)) = sp.current_user_playing_track() {
+                                        if track.is_playing {
+                                            "Playing"
+                                        } else {
+                                            "Paused"
+                                        }
+                                    } else {
+                                        "Stopped"
+                                    }
                                   } else {
-                                      "Paused"
+                                      "Stopped"
                                   }
                               } else {
                                   "Stopped"
