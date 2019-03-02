@@ -330,6 +330,16 @@ fn create_dbus_server(
                                                  Variant(Box::new(
                                                          MessageItem::Str(track.album.name))
                                                          as Box<RefArg>));
+                                        m.insert("xesam:artist".to_string(),
+                                                 Variant(
+                                                     Box::new(
+                                                         MessageItem::Str(
+                                                             track.artists
+                                                                 .iter()
+                                                                 .next()
+                                                                 .map_or("", |a| &a.name)
+                                                                 .to_string()
+                                                         )) as Box<RefArg>));
                                         m.insert("xesam:artists".to_string(),
                                                  Variant(Box::new(track.artists
                                                                   .iter()
