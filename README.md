@@ -27,6 +27,14 @@ cargo build --release
 ```
 The resulting binary will be placed in `target/release/spotifyd`.
 
+Alternatively, the package can be installed into the user's home directory
+by running the following command:
+```
+cargo install --path .
+```
+This method also allows further configuration by specifing more feature flags
+as shown [further down](#command-line-arguments).
+
 The default is to build spotifyd with an ALSA backend, but it is possible
 to build with other audio backends, making Spotifyd availible on platforms
 other than Linux, by adding the `--no-default-features` argument to cargo
@@ -119,6 +127,9 @@ either:
 
 Packagers of systemd-based distributions are encouraged to include the file in
 the former location. End-user should prefer the latter.
+
+It should be noted that some targets are not available when running under the
+user, directory, such as `network-online.target`.
 
 Control of the daemon is then done via systemd. The following example commands
 will run the service once and enable the service to always run on login in the
