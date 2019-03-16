@@ -53,5 +53,6 @@ pub fn command_line_argument_options() -> Options {
     opts.optflag("", "no-daemon", "Don't detach from console.");
     opts.optflag("", "backends", "List available audio backends.");
     opts.optflag("h", "help", "Print this help text.");
+    opts.optflag("V", "version", "Print version number");
     opts
 }

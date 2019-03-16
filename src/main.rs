@@ -40,6 +40,8 @@ mod setup;
 mod player_event_handler;
 #[cfg(feature = "dbus_mpris")]
 mod dbus_mpris;
+#[macro_use]
+mod macros;
 
 fn main() {
     let opts = cli::command_line_argument_options();
@@ -61,6 +63,11 @@ fn main() {
     if matches.opt_present("help") {
         println!("{}", cli::usage(&args[0], &opts));
         exit(0);
+    }
+
+    if matches.opt_present("version") {
+        println!("spotifyd version {}", crate_version!());
+        exit(0)
     }
 
     if matches.opt_present("no-daemon") {
