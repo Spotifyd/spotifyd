@@ -86,9 +86,9 @@ fn main() {
             .expect("Couldn't initialize logger");
     } else {
         let filter = if matches.opt_present("verbose") {
-            log::LogLevelFilter::Trace
+            log::LevelFilter::Trace
         } else {
-            log::LogLevelFilter::Info
+            log::LevelFilter::Info
         };
         syslog::init(syslog::Facility::LOG_DAEMON, filter, Some("Spotifyd"))
             .expect("Couldn't initialize logger");
