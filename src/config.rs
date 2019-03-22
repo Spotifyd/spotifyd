@@ -16,6 +16,7 @@ use librespot::core::version;
 use xdg;
 use ini::Ini;
 use getopts::Matches;
+use log::info;
 
 use hostname;
 
@@ -87,7 +88,7 @@ impl Default for SpotifydConfig {
 
 pub fn get_config_file() -> Result<PathBuf, Box<Error>> {
     let etc_conf = format!("/etc/{}", CONFIG_FILE);
-    let xdg_dirs = try!(xdg::BaseDirectories::with_prefix("spotifyd"));
+    let xdg_dirs = xdg::BaseDirectories::with_prefix("spotifyd")?;
     xdg_dirs
         .find_config_file(CONFIG_FILE)
         .or_else(|| {

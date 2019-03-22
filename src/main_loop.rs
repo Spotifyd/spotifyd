@@ -21,7 +21,7 @@ use dbus_mpris::DbusServer;
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
 
-use player_event_handler::run_program_on_events;
+use crate::player_event_handler::run_program_on_events;
 
 pub struct LibreSpotConnection {
     connection: Box<Future<Item = Session, Error = io::Error>>,

@@ -1,34 +1,10 @@
-#[cfg(feature = "alsa_backend")]
-extern crate alsa;
-extern crate chrono;
-extern crate crypto;
-extern crate daemonize;
-#[cfg(feature = "dbus_mpris")]
-extern crate dbus;
-#[cfg(feature = "dbus_mpris")]
-extern crate dbus_tokio;
-extern crate futures;
-extern crate getopts;
-extern crate hostname;
-extern crate ini;
-extern crate librespot;
-#[macro_use]
-extern crate log;
-#[cfg(feature = "dbus_mpris")]
-extern crate rspotify;
-extern crate simplelog;
-extern crate syslog;
-extern crate tokio_core;
-extern crate tokio_io;
-extern crate tokio_signal;
-extern crate xdg;
-
 use std::process::exit;
 use std::panic;
 use std::convert::From;
 use std::error::Error;
 
 use daemonize::Daemonize;
+use log::{error, info, LevelFilter};
 use tokio_core::reactor::Core;
 
 mod config;
@@ -86,9 +62,9 @@ fn main() {
             .expect("Couldn't initialize logger");
     } else {
         let filter = if matches.opt_present("verbose") {
-            log::LogLevelFilter::Trace
+            LevelFilter::Trace
         } else {
-            log::LogLevelFilter::Info
+            LevelFilter::Info
         };
         syslog::init(syslog::Facility::LOG_DAEMON, filter, Some("Spotifyd"))
             .expect("Couldn't initialize logger");
