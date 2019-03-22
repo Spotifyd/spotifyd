@@ -19,6 +19,7 @@ use rspotify::spotify::client::Spotify;
 use rspotify::spotify::senum::*;
 use futures::{Async, Future, Poll, Stream};
 use futures::sync::oneshot;
+use log::{info, warn};
 
 pub struct DbusServer {
     session: Session,

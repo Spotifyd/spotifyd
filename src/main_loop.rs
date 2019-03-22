@@ -16,7 +16,7 @@ use librespot::core::cache::Cache;
 use librespot::core::config::{ConnectConfig, DeviceType};
 
 #[cfg(feature = "dbus_mpris")]
-use dbus_mpris::DbusServer;
+use crate::dbus_mpris::DbusServer;
 
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
