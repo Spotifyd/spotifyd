@@ -2,6 +2,7 @@
 name = "spotifyd"
 version = "0.2.6"
 authors = ["Simon Persson <simon@flaskpost.org>"]
+edition = "2018"
 
 [dependencies]
 simplelog = "0.4"
