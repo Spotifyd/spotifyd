@@ -5,12 +5,11 @@ authors = ["Simon Persson <simon@flaskpost.org>"]
 
 [dependencies]
 simplelog = "0.4"
-xdg = "2.1"
-ctrlc = { version = "3.1", features = ["termination"] }
-rust-ini = "0.10"
+xdg = "2.2"
+rust-ini = "0.13"
 getopts = "0.2"
-log = "0.3"
-syslog = "3.3"
+log = "0.4"
+syslog = "4.0"
 daemonize = "0.3"
 futures = "0.1"
 tokio-core = "0.1"
