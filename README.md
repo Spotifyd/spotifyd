@@ -20,7 +20,7 @@ distribution, e.g. libasound2-dev on Ubuntu.
 Detailed install instructions can be found on the [wiki](https://github.com/Spotifyd/spotifyd/wiki).
 
 ## Build from source
-The [Rust compiler and Cargo package](https://www.rust-lang.org/en-US/)
+The [Rust compiler and Cargo package](https://www.rust-lang.org/learn/get-started)
  manager are needed:
 ```
 cargo build --release
