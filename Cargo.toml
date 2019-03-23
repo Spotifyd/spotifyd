@@ -2,14 +2,15 @@
 name = "spotifyd"
 version = "0.2.6"
 authors = ["Simon Persson <simon@flaskpost.org>"]
+edition = "2018"
 
 [dependencies]
 simplelog = "0.4"
 xdg = "2.2"
 rust-ini = "0.13"
 getopts = "0.2"
-log = "0.4"
-syslog = "4.0"
+log = "0.4.6"
+syslog = "4.0.1"
 daemonize = "0.3"
 futures = "0.1"
 tokio-core = "0.1"
@@ -23,13 +24,13 @@ rspotify = "0.2.5"
 chrono = "0.4"
 alsa = { version = "0.2", optional = true }
 
-[replace]
-"rust-crypto:0.2.36" = { git = "https://github.com/awmath/rust-crypto.git", branch = "avx2" }
-
 [dependencies.librespot]
 git = "https://github.com/librespot-org/librespot.git"
 default-features = false
 features = ["with-tremor"]
+
+[replace]
+"rust-crypto:0.2.36" = { git = "https://github.com/awmath/rust-crypto.git", branch = "avx2" }
 
 [features]
 alsa_backend = ["librespot/alsa-backend", "alsa"]

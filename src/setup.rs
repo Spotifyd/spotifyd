@@ -13,11 +13,12 @@ use librespot::core::cache::Cache;
 use librespot::playback::audio_backend::{Sink, BACKENDS};
 use futures::Future;
 use getopts::Matches;
-use config;
+use crate::config;
 #[cfg(feature = "alsa_backend")]
-use alsa_mixer;
+use crate::alsa_mixer;
 use futures;
-use main_loop;
+use crate::main_loop;
+use log::{error, info};
 
 pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopState {
     let config_file = matches

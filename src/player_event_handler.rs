@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::process::{Child, Command};
 use librespot::playback::player::PlayerEvent;
+use log::info;
 
 fn run_program(program: &str, env_vars: HashMap<&str, String>) -> Child {
     let mut v: Vec<&str> = program.split_whitespace().collect();
