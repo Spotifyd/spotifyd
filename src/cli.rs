@@ -3,7 +3,7 @@ use getopts::Options;
 
 pub fn usage(program: &str, opts: &Options) -> String {
     let brief = format!("Usage: {} [options]", program);
-    format!("{}", opts.usage(&brief))
+    opts.usage(&brief).to_string()
 }
 
 pub fn print_backends() {

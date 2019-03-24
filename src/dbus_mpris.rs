@@ -90,10 +90,8 @@ impl Future for DbusServer {
             } else {
                 self.token_request = Some(get_token(&self.session, CLIENT_ID, SCOPE));
             }
-        } else {
-            if let Some(ref mut fut) = self.dbus_future {
-                return fut.poll();
-            }
+        } else if let Some(ref mut fut) = self.dbus_future {
+            return fut.poll();
         }
 
         if got_new_token {
@@ -208,6 +206,11 @@ fn create_dbus_server(
                         "Seek",
                         (),
                         spotify_api_method!([sp, device, pos: u32]{
+                            if let Ok(p) = pos {
+                                if let Ok(Some(playing)) = sp.current_user_playing_track() {
+                                    let _ = sp.seek_track(playing.progress_ms.unwrap_or(0) + p, device);
+                                }
+                            }/* 
                             match pos {
                                 Ok(p) => {
                                     if let Ok(Some(playing)) = sp.current_user_playing_track() {
@@ -216,29 +219,26 @@ fn create_dbus_server(
                                     }
                                 },
                                 _ => (),
-                            };
+                            }; */
                         }),
                     ))
                     .add_m(f.amethod(
                         "SetPosition",
                         (),
                         spotify_api_method!([sp, device, pos: u32]
-                            match pos {
-                                Ok(p) => { let _ = sp.seek_track(p, device); },
-                                _ => (),
-                            }),
+                            if let Ok(p) = pos { 
+                                let _ = sp.seek_track(p, device); 
+                            }
+                        ),
                     ))
                     .add_m(f.amethod(
                         "OpenUri",
                         (),
-                        spotify_api_method!([sp, device, uri: String] match uri {
-                            Ok(uri) => {
-                                let _ = sp.start_playback(device,
-                                                          None,
-                                                          Some(vec![uri]), None);
-                            },
-                            _ => ()
-                        }),
+                        spotify_api_method!([sp, device, uri: String]
+                            if let Ok(uri) = uri {
+                                let _ = sp.start_playback(device, None, Some(vec![uri]), None);
+                            }
+                        ),
                     ))
                     .add_p(
                         f.property::<String, _>("PlaybackStatus", ())
@@ -308,7 +308,7 @@ fn create_dbus_server(
                                 if let Ok(Some(pos)) =
                                     sp.current_playback(None)
                                     .map(|maybe_player| maybe_player.and_then(|p| p.progress_ms)) {
-                                    pos as i64
+                                    i64::from(pos)
                                 } else {
                                     0
                                 }
@@ -351,7 +351,7 @@ fn create_dbus_server(
                                                                            ) as Box<RefArg>)
                                                                   .collect::<Vec<Box<RefArg>>>())));
                                         m.insert("mpris:length".to_string(), Variant(Box::new(
-                                                    MessageItem::Int64(track.duration_ms as i64))
+                                                    MessageItem::Int64(i64::from(track.duration_ms)))
                                                 as Box<RefArg>));
                                         m.insert("mpris:artUrl".to_string(), Variant(Box::new(
                                                     MessageItem::Str(track.album.images.first()

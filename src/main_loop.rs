@@ -36,10 +36,10 @@ impl LibreSpotConnection {
         discovery_stream: DiscoveryStream,
     ) -> LibreSpotConnection {
         LibreSpotConnection {
-            connection: connection,
+            connection,
             spirc_task: None,
             spirc: None,
-            discovery_stream: discovery_stream,
+            discovery_stream,
         }
     }
 }
@@ -116,11 +116,8 @@ impl Future for MainLoopState {
             }
 
             if let Some(mut child) = self.running_event_program.take() {
-                match child.try_wait() {
-                    Ok(None) => {
-                        self.running_event_program = Some(child);
-                    },
-                    _ => {},
+                if let Ok(None) = child.try_wait() {
+                    self.running_event_program = Some(child);
                 }
             }
             if self.running_event_program.is_none() {
@@ -157,7 +154,7 @@ impl Future for MainLoopState {
                     ConnectConfig {
                         name: self.spotifyd_state.device_name.clone(),
                         device_type: DeviceType::default(),
-                        volume: u16::from(mixer.volume()),
+                        volume: mixer.volume(),
                         linear_volume: self.linear_volume,
                     },
                     session.clone(),
