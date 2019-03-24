@@ -19,6 +19,8 @@ use crate::alsa_mixer;
 use futures;
 use crate::main_loop;
 use log::{error, info};
+#[cfg(feature = "dbus_keyring")]
+use keyring::Keyring;
 
 pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopState {
     let config_file = matches
@@ -84,9 +86,24 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
         device_id,
         0,
     ).unwrap();
+
+    let username = config.username.or_else(|| matches.opt_str("username"));
+    let mut password = config.password.or_else(|| matches.opt_str("password"));
+    #[cfg(feature = "dbus_keyring")]
+    {
+        // We only need to check if an actual user has been specified as
+        // spotifyd can run without being signed in too.
+        if username.is_some() && config.use_keyring {
+            info!("Checking keyring for password");
+            let keyring = Keyring::new("spotifyd", username.as_ref().unwrap());
+            let retrieved_password = keyring.get_password();
+            password = password.or_else(|| { retrieved_password.ok() });
+        }
+    }
+
     let connection = if let Some(credentials) = get_credentials(
-        config.username.or_else(|| matches.opt_str("username")),
-        config.password.or_else(|| matches.opt_str("password")),
+        username,
+        password,
         cache.as_ref().and_then(Cache::credentials),
         |_| {
             error!("No password found.");

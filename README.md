@@ -49,6 +49,7 @@ directories (meaning, a users local config is placed in
 [global]
 username = USER
 password = PASS
+#use-keyring = true
 backend = alsa
 device = alsa_audio_device # Given by `aplay -L`
 mixer = PCM
@@ -67,6 +68,25 @@ the `[global]` section. This is useful when you run applications related to
 
 Values can be surrounded by double quotes (") which is useful if the value contains
 the comment character (#).
+
+Instead of writing down your password into the config file, `Spotifyd` supports the
+Linux Secret Service API when compiled with the `dbus_keyring` feature. To enable 
+this feature, you have to set the `use-keyring` config entry to `true` or pass the
+`--use-keyring` CLI flag during start to the daemon.
+
+The keyring entry needs to have the following attributes set:
+```
+application: rust-keyring
+service: spotifyd
+username: <your-spotify-username>
+```
+
+To add such an entry, you can use `secret-tool`, a CLI used to communicate with agents
+that support the Linux Secret Service API:
+
+```
+$ secret-tool --label='entry name that you can choose' application rust-keyring service spotifyd username <your-username>
+```
 
 ## Command Line Arguments
 `spotifyd --help` gives an up-to-date list of available arguments. The command

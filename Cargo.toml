@@ -1,6 +1,6 @@
 [package]
 name = "spotifyd"
-version = "0.2.6"
+version = "0.2.7"
 authors = ["Simon Persson <simon@flaskpost.org>"]
 edition = "2018"
 
@@ -23,6 +23,7 @@ dbus-tokio = { version = "0.2", optional = true }
 rspotify = "0.2.5"
 chrono = "0.4"
 alsa = { version = "0.2", optional = true }
+keyring = { version = "0.6.1", optional = true }
 
 [dependencies.librespot]
 git = "https://github.com/librespot-org/librespot.git"
@@ -37,4 +38,5 @@ alsa_backend = ["librespot/alsa-backend", "alsa"]
 pulseaudio_backend = ["librespot/pulseaudio-backend"]
 portaudio_backend = ["librespot/portaudio-backend"]
 dbus_mpris = ["dbus", "dbus-tokio"]
+dbus_keyring = ["keyring"]
 default = ["alsa_backend"]

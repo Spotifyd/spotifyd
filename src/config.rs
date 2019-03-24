@@ -48,6 +48,7 @@ impl FromStr for VolumeController {
 pub struct SpotifydConfig {
     pub username: Option<String>,
     pub password: Option<String>,
+    pub use_keyring: bool,
     pub cache: Option<Cache>,
     pub backend: Option<String>,
     pub audio_device: Option<String>,
@@ -64,6 +65,7 @@ impl Default for SpotifydConfig {
         SpotifydConfig {
             username: None,
             password: None,
+            use_keyring: false,
             cache: None,
             backend: None,
             audio_device: None,
@@ -152,6 +154,11 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
 
     config.username = lookup("username");
     config.password = lookup("password");
+    if let Some(ref value) = lookup("use-keyring") {
+        if value == "true" {
+            config.use_keyring = true;
+        }
+    }
     config.backend = lookup("backend");
     config.audio_device = lookup("device");
     config.mixer = lookup("mixer");

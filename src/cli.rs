@@ -50,6 +50,7 @@ pub fn command_line_argument_options() -> Options {
         "CONTROLLER",
     );
     opts.optflag("v", "verbose", "Add debug information to log.");
+    opts.optflag("", "use-keyring", "Use the system's keyring to retrieve the password");
     opts.optflag("", "no-daemon", "Don't detach from console.");
     opts.optflag("", "backends", "List available audio backends.");
     opts.optflag("h", "help", "Print this help text.");
