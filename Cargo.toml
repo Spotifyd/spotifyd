@@ -1,6 +1,6 @@
 [package]
 name = "spotifyd"
-version = "0.2.7"
+version = "0.2.8"
 authors = ["Simon Persson <simon@flaskpost.org>"]
 edition = "2018"
 
