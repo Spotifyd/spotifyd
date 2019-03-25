@@ -20,7 +20,7 @@ impl AlsaMixer {
 
         let volume_steps = (max - min) as f64;
         let normalised_volume = if self.linear_scaling {
-            ((f64::from(volume) / f64::from(u16::max_value())) * f64::from(volume_steps)) as i64
+            ((f64::from(volume) / f64::from(u16::max_value())) * volume_steps) as i64
                 + min
         } else {
             (f64::from(volume).log(f64::from(u16::max_value())) * volume_steps).floor() as i64 + min

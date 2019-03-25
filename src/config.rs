@@ -178,7 +178,7 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
         || spotifyd
             .and_then(|s| s.get("volume-normalisation").map(String::clone))
             .or_else(|| global.and_then(|g| g.get("volume-normalisation").map(String::clone)))
-            .unwrap_or("false".to_string()) == "true";
+            .unwrap_or_else(|| "false".to_string()) == "true";
 
     config.player_config.normalisation_pregain = lookup("normalisation-pregain")
         .map(|db| {

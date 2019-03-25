@@ -75,13 +75,15 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
     #[cfg(not(feature = "alsa_backend"))]
     let linear_volume = false;
 
+    #[allow(clippy::or_fun_call)]
+    let device_name = matches.opt_str("device_name").unwrap_or(config.device_name.clone());
     let discovery_stream = discovery(
         &handle,
         ConnectConfig {
-            name: matches.opt_str("device_name").unwrap_or(config.device_name.clone()),
+            name: device_name.clone(),
             device_type: DeviceType::default(),
-            volume: u16::from((mixer()).volume()),
-            linear_volume: linear_volume,
+            volume: mixer().volume(),
+            linear_volume,
         },
         device_id,
         0,
@@ -97,7 +99,7 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
             info!("Checking keyring for password");
             let keyring = Keyring::new("spotifyd", username.as_ref().unwrap());
             let retrieved_password = keyring.get_password();
-            password = password.or_else(|| { retrieved_password.ok() });
+            password = password.or_else(|| retrieved_password.ok());
         }
     }
 
@@ -125,23 +127,23 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
     main_loop::MainLoopState {
         librespot_connection: main_loop::LibreSpotConnection::new(connection, discovery_stream),
         audio_setup: main_loop::AudioSetup {
-            mixer: mixer,
-            backend: backend,
+            mixer,
+            backend,
             audio_device: config.audio_device.clone(),
         },
         spotifyd_state: main_loop::SpotifydState {
             ctrl_c_stream: Box::new(ctrl_c(&handle).flatten_stream()),
             shutting_down: false,
-            cache: cache,
-            device_name: matches.opt_str("device_name").unwrap_or(config.device_name.clone()),
+            cache,
+            device_name,
             player_event_channel: None,
             player_event_program: config.onevent,
             dbus_mpris_server: None,
         },
-        player_config: player_config,
-        session_config: session_config,
-        handle: handle,
-        linear_volume: linear_volume,
+        player_config,
+        session_config,
+        handle,
+        linear_volume,
         running_event_program: None,
     }
 }
@@ -152,7 +154,7 @@ fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<Sink> {
             BACKENDS
                 .iter()
                 .find(|backend| name == backend.0)
-                .expect(format!("Unknown backend: {}.", name).as_ref())
+                .unwrap_or_else(|| panic!("Unknown backend: {}.", name))
                 .1
         }
         None => {
