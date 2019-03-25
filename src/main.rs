@@ -1,11 +1,6 @@
-use std::convert::From;
-use std::error::Error;
-use std::panic;
-use std::path::PathBuf;
-use std::process::exit;
-
 use daemonize::Daemonize;
 use log::{error, info, LevelFilter};
+use std::{convert::From, error::Error, panic, path::PathBuf, process::exit};
 use tokio_core::reactor::Core;
 
 #[cfg(feature = "alsa_backend")]
@@ -29,7 +24,7 @@ fn main() {
         Err(f) => {
             println!("Error: {}\n{}", f.to_string(), cli::usage(&args[0], &opts));
             exit(1)
-        }
+        },
     };
 
     if matches.opt_present("backends") {

@@ -1,7 +1,7 @@
-use std::error::Error;
-use librespot::playback::mixer::{AudioFilter, Mixer};
 use alsa;
+use librespot::playback::mixer::{AudioFilter, Mixer};
 use log::error;
+use std::error::Error;
 
 pub struct AlsaMixer {
     pub device: String,
@@ -20,8 +20,7 @@ impl AlsaMixer {
 
         let volume_steps = (max - min) as f64;
         let normalised_volume = if self.linear_scaling {
-            ((f64::from(volume) / f64::from(u16::max_value())) * volume_steps) as i64
-                + min
+            ((f64::from(volume) / f64::from(u16::max_value())) * volume_steps) as i64 + min
         } else {
             (f64::from(volume).log(f64::from(u16::max_value())) * volume_steps).floor() as i64 + min
         };
@@ -39,7 +38,9 @@ impl Mixer for AlsaMixer {
             linear_scaling: false,
         }
     }
+
     fn start(&self) {}
+
     fn stop(&self) {}
 
     fn volume(&self) -> u16 {
@@ -64,7 +65,7 @@ impl Mixer for AlsaMixer {
                     self.device
                 );
                 0
-            }
+            },
         }
     }
 

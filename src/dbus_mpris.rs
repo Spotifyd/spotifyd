@@ -1,25 +1,28 @@
-use std::rc::Rc;
-use std::thread;
-use std::collections::HashMap;
-use dbus::{BusType, Connection, MessageItem, NameFlag};
-use dbus::arg::{RefArg, Variant};
-use dbus::tree::{Access, MethodErr};
-use dbus_tokio::tree::{AFactory, ATree, ATreeServer};
-use dbus_tokio::AConnection;
-use tokio_core::reactor::Handle;
-use librespot::connect::spirc::Spirc;
-use librespot::core::keymaster::{get_token, Token as LibrespotToken};
-use librespot::core::mercury::MercuryError;
-use librespot::core::session::Session;
 use chrono::prelude::*;
-
-use rspotify::spotify::oauth2::TokenInfo as RspotifyToken;
-use rspotify::spotify::util::datetime_to_timestamp;
-use rspotify::spotify::client::Spotify;
-use rspotify::spotify::senum::*;
-use futures::{Async, Future, Poll, Stream};
-use futures::sync::oneshot;
+use dbus::{
+    arg::{RefArg, Variant},
+    tree::{Access, MethodErr},
+    BusType, Connection, MessageItem, NameFlag,
+};
+use dbus_tokio::{
+    tree::{AFactory, ATree, ATreeServer},
+    AConnection,
+};
+use futures::{sync::oneshot, Async, Future, Poll, Stream};
+use librespot::{
+    connect::spirc::Spirc,
+    core::{
+        keymaster::{get_token, Token as LibrespotToken},
+        mercury::MercuryError,
+        session::Session,
+    },
+};
 use log::{info, warn};
+use rspotify::spotify::{
+    client::Spotify, oauth2::TokenInfo as RspotifyToken, senum::*, util::datetime_to_timestamp,
+};
+use std::{collections::HashMap, rc::Rc, thread};
+use tokio_core::reactor::Handle;
 
 pub struct DbusServer {
     session: Session,
@@ -33,10 +36,10 @@ pub struct DbusServer {
 
 const CLIENT_ID: &str = "2c1ea588dfbc4a989e2426f8385297c3";
 const SCOPE: &str = "user-read-playback-state,user-read-private,user-read-birthdate,\
-                     user-read-email,playlist-read-private,user-library-read,\
-                     user-library-modify,user-top-read,playlist-read-collaborative,\
-                     playlist-modify-public,playlist-modify-private,user-follow-read,\
-                     user-follow-modify,user-read-currently-playing,user-modify-playback-state,\
+                     user-read-email,playlist-read-private,user-library-read,user-library-modify,\
+                     user-top-read,playlist-read-collaborative,playlist-modify-public,\
+                     playlist-modify-private,user-follow-read,user-follow-modify,\
+                     user-read-currently-playing,user-modify-playback-state,\
                      user-read-recently-played";
 
 impl DbusServer {
@@ -67,8 +70,8 @@ impl DbusServer {
 }
 
 impl Future for DbusServer {
-    type Item = ();
     type Error = ();
+    type Item = ();
 
     fn poll(&mut self) -> Poll<(), ()> {
         let mut got_new_token = false;
@@ -138,25 +141,24 @@ fn create_dbus_server(
     }
 
     macro_rules! spotify_api_property {
-        ([ $sp:ident, $device:ident] $f:expr) => {
-            {
-                let device_name = device_name.clone();
-                let token = api_token.clone();
-                move |i, _| {
-                    let $sp = create_spotify_api(&token);
-                    let $device = Some(device_name.clone());
-                    let v = $f;
-                    i.append(v);
-                    Ok(())
-                }
+        ([ $sp:ident, $device:ident] $f:expr) => {{
+            let device_name = device_name.clone();
+            let token = api_token.clone();
+            move |i, _| {
+                let $sp = create_spotify_api(&token);
+                let $device = Some(device_name.clone());
+                let v = $f;
+                i.append(v);
+                Ok(())
             }
-        }
+        }};
     }
 
     c.register_name(
         "org.mpris.MediaPlayer2.spotifyd",
         NameFlag::ReplaceExisting as u32,
-    ).unwrap();
+    )
+    .unwrap();
 
     let spirc_quit = spirc.clone();
     let spirc_play_pause = spirc.clone();
@@ -217,8 +219,8 @@ fn create_dbus_server(
                         "SetPosition",
                         (),
                         spotify_api_method!([sp, device, pos: u32]
-                            if let Ok(p) = pos { 
-                                let _ = sp.seek_track(p, device); 
+                            if let Ok(p) = pos {
+                                let _ = sp.seek_track(p, device);
                             }
                         ),
                     ))

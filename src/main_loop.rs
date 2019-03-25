@@ -1,27 +1,27 @@
-use futures::{Async, Future, Poll, Stream};
-use futures;
-use std::io;
-use std::process::Child;
-use std::rc::Rc;
-
-use librespot::connect::spirc::{Spirc, SpircTask};
-use librespot::core::session::Session;
-use librespot::core::config::SessionConfig;
-use librespot::playback::player::{Player, PlayerEvent};
-use librespot::playback::audio_backend::Sink;
-use librespot::connect::discovery::DiscoveryStream;
-use librespot::playback::mixer::Mixer;
-use librespot::playback::config::PlayerConfig;
-use librespot::core::cache::Cache;
-use librespot::core::config::{ConnectConfig, DeviceType};
-
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
-
+use crate::player_event_handler::run_program_on_events;
+use futures::{self, Async, Future, Poll, Stream};
+use librespot::{
+    connect::{
+        discovery::DiscoveryStream,
+        spirc::{Spirc, SpircTask},
+    },
+    core::{
+        cache::Cache,
+        config::{ConnectConfig, DeviceType, SessionConfig},
+        session::Session,
+    },
+    playback::{
+        audio_backend::Sink,
+        config::PlayerConfig,
+        mixer::Mixer,
+        player::{Player, PlayerEvent},
+    },
+};
+use std::{io, process::Child, rc::Rc};
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
-
-use crate::player_event_handler::run_program_on_events;
 
 pub struct LibreSpotConnection {
     connection: Box<Future<Item = Session, Error = io::Error>>,
@@ -97,8 +97,8 @@ pub struct MainLoopState {
 }
 
 impl Future for MainLoopState {
-    type Item = ();
     type Error = ();
+    type Item = ();
 
     fn poll(&mut self) -> Poll<(), ()> {
         loop {
@@ -121,7 +121,8 @@ impl Future for MainLoopState {
                 }
             }
             if self.running_event_program.is_none() {
-                if let Some(ref mut player_event_channel) = self.spotifyd_state.player_event_channel {
+                if let Some(ref mut player_event_channel) = self.spotifyd_state.player_event_channel
+                {
                     if let Async::Ready(Some(event)) = player_event_channel.poll().unwrap() {
                         if let Some(ref program) = self.spotifyd_state.player_event_program {
                             let child = run_program_on_events(event, program);
@@ -180,7 +181,8 @@ impl Future for MainLoopState {
                         return Ok(Async::Ready(()));
                     }
                 }
-            } else if let Some(Async::Ready(_)) = self.librespot_connection
+            } else if let Some(Async::Ready(_)) = self
+                .librespot_connection
                 .spirc_task
                 .as_mut()
                 .map(|ref mut st| st.poll().unwrap())
