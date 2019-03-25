@@ -7,7 +7,7 @@ os:
 rust:
 - nightly
 before_script:
-   - rustup component add clippy
+- rustup component add clippy
 script:
 - cargo clippy --all-features --all-targets -- -D warnings
 - cargo build --verbose --features "pulseaudio_backend"
