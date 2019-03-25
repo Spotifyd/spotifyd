@@ -210,16 +210,7 @@ fn create_dbus_server(
                                 if let Ok(Some(playing)) = sp.current_user_playing_track() {
                                     let _ = sp.seek_track(playing.progress_ms.unwrap_or(0) + p, device);
                                 }
-                            }/* 
-                            match pos {
-                                Ok(p) => {
-                                    if let Ok(Some(playing)) = sp.current_user_playing_track() {
-                                        let _ = sp.seek_track(playing.progress_ms.unwrap_or(0) + p,
-                                                              device);
-                                    }
-                                },
-                                _ => (),
-                            }; */
+                            }
                         }),
                     ))
                     .add_m(f.amethod(

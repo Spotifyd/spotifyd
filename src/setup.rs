@@ -154,7 +154,7 @@ fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<Sink> {
             BACKENDS
                 .iter()
                 .find(|backend| name == backend.0)
-                .unwrap_or_else(|| { panic!("Unknown backend: {}.", name) })
+                .unwrap_or_else(|| panic!("Unknown backend: {}.", name))
                 .1
         }
         None => {
