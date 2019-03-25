@@ -1,22 +1,22 @@
-use std::error::Error;
-use std::path::{Path, PathBuf};
 use std::convert::From;
+use std::error::Error;
 use std::fs::metadata;
 use std::mem::swap;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-use crypto::sha1::Sha1;
 use crypto::digest::Digest;
+use crypto::sha1::Sha1;
 
-use librespot::playback::config::{Bitrate, PlayerConfig};
-use librespot::core::config::SessionConfig;
 use librespot::core::cache::Cache;
+use librespot::core::config::SessionConfig;
 use librespot::core::version;
+use librespot::playback::config::{Bitrate, PlayerConfig};
 
-use xdg;
-use ini::Ini;
 use getopts::Matches;
+use ini::Ini;
 use log::info;
+use xdg;
 
 use hostname;
 
@@ -58,6 +58,7 @@ pub struct SpotifydConfig {
     pub player_config: PlayerConfig,
     pub session_config: SessionConfig,
     pub onevent: Option<String>,
+    pub pid: Option<String>,
 }
 
 impl Default for SpotifydConfig {
@@ -84,6 +85,7 @@ impl Default for SpotifydConfig {
                 ap_port: Some(443),
             },
             onevent: None,
+            pid: None,
         }
     }
 }
@@ -178,7 +180,8 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
         || spotifyd
             .and_then(|s| s.get("volume-normalisation").map(String::clone))
             .or_else(|| global.and_then(|g| g.get("volume-normalisation").map(String::clone)))
-            .unwrap_or_else(|| "false".to_string()) == "true";
+            .unwrap_or_else(|| "false".to_string())
+            == "true";
 
     config.player_config.normalisation_pregain = lookup("normalisation-pregain")
         .map(|db| {
@@ -193,5 +196,6 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     );
     update(&mut config.session_config.device_id, lookup("device_name"));
 
+    config.pid = lookup("pid");
     config
 }

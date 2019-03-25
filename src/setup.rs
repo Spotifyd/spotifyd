@@ -1,34 +1,26 @@
+#[cfg(feature = "alsa_backend")]
+use crate::alsa_mixer;
+use crate::config;
+use crate::main_loop;
+use futures;
+use futures::Future;
+#[cfg(feature = "dbus_keyring")]
+use keyring::Keyring;
+use librespot::connect::discovery::discovery;
+use librespot::core::authentication::get_credentials;
+use librespot::core::cache::Cache;
+use librespot::core::config::{ConnectConfig, DeviceType};
+use librespot::core::session::Session;
+use librespot::playback::audio_backend::{Sink, BACKENDS};
+use librespot::playback::mixer;
+use librespot::playback::mixer::Mixer;
+use log::{error, info};
 use std::io;
-use std::path::PathBuf;
 use std::process::exit;
 use tokio_core::reactor::Handle;
 use tokio_signal::ctrl_c;
-use librespot::core::session::Session;
-use librespot::core::authentication::get_credentials;
-use librespot::connect::discovery::discovery;
-use librespot::playback::mixer::Mixer;
-use librespot::playback::mixer;
-use librespot::core::config::{ConnectConfig, DeviceType};
-use librespot::core::cache::Cache;
-use librespot::playback::audio_backend::{Sink, BACKENDS};
-use futures::Future;
-use getopts::Matches;
-use crate::config;
-#[cfg(feature = "alsa_backend")]
-use crate::alsa_mixer;
-use futures;
-use crate::main_loop;
-use log::{error, info};
-#[cfg(feature = "dbus_keyring")]
-use keyring::Keyring;
 
-pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopState {
-    let config_file = matches
-        .opt_str("config")
-        .map(PathBuf::from)
-        .or_else(|| config::get_config_file().ok());
-    let config = config::get_config(config_file, matches);
-
+pub fn initial_state(handle: Handle, config: config::SpotifydConfig) -> main_loop::MainLoopState {
     let local_audio_device = config.audio_device.clone();
     let local_mixer = config.mixer.clone();
 
@@ -76,21 +68,22 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
     let linear_volume = false;
 
     #[allow(clippy::or_fun_call)]
-    let device_name = matches.opt_str("device_name").unwrap_or(config.device_name.clone());
     let discovery_stream = discovery(
         &handle,
         ConnectConfig {
-            name: device_name.clone(),
+            name: config.device_name.clone(),
             device_type: DeviceType::default(),
             volume: mixer().volume(),
             linear_volume,
         },
         device_id,
         0,
-    ).unwrap();
+    )
+    .unwrap();
 
-    let username = config.username.or_else(|| matches.opt_str("username"));
-    let mut password = config.password.or_else(|| matches.opt_str("password"));
+    let username = config.username;
+    #[allow(unused_mut)] // mut is needed behind the dbus_keyring flag.
+    let mut password = config.password;
     #[cfg(feature = "dbus_keyring")]
     {
         // We only need to check if an actual user has been specified as
@@ -135,7 +128,7 @@ pub fn initial_state(handle: Handle, matches: &Matches) -> main_loop::MainLoopSt
             ctrl_c_stream: Box::new(ctrl_c(&handle).flatten_stream()),
             shutting_down: false,
             cache,
-            device_name,
+            device_name: config.device_name,
             player_event_channel: None,
             player_event_program: config.onevent,
             dbus_mpris_server: None,

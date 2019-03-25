@@ -1,6 +1,7 @@
 use std::convert::From;
 use std::error::Error;
 use std::panic;
+use std::path::PathBuf;
 use std::process::exit;
 
 use daemonize::Daemonize;
@@ -46,6 +47,12 @@ fn main() {
         exit(0)
     }
 
+    let config_file = matches
+        .opt_str("config")
+        .map(PathBuf::from)
+        .or_else(|| config::get_config_file().ok());
+    let config = config::get_config(config_file, &matches);
+
     if matches.opt_present("no-daemon") {
         let filter = if matches.opt_present("verbose") {
             simplelog::LogLevelFilter::Trace
@@ -70,7 +77,7 @@ fn main() {
             .expect("Couldn't initialize logger");
 
         let mut daemonize = Daemonize::new();
-        if let Some(pid) = matches.opt_str("pid") {
+        if let Some(pid) = config.pid.as_ref() {
             daemonize = daemonize.pid_file(pid);
         }
         match daemonize.start() {
@@ -96,7 +103,7 @@ fn main() {
     let mut core = Core::new().unwrap();
     let handle = core.handle();
 
-    let initial_state = setup::initial_state(handle, &matches);
+    let initial_state = setup::initial_state(handle, config);
 
     core.run(initial_state).unwrap();
 }
