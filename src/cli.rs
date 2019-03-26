@@ -1,5 +1,5 @@
-use librespot::playback::audio_backend::BACKENDS;
 use getopts::Options;
+use librespot::playback::audio_backend::BACKENDS;
 
 pub fn usage(program: &str, opts: &Options) -> String {
     let brief = format!("Usage: {} [options]", program);
@@ -39,8 +39,8 @@ pub fn command_line_argument_options() -> Options {
     opts.optopt(
         "",
         "onevent",
-        "Run a command on events. Environment variables PLAYER_EVENT, TRACK_ID,\
-         OLD_TRACK_ID are passed to the command.",
+        "Run a command on events. Environment variables PLAYER_EVENT, TRACK_ID,OLD_TRACK_ID are \
+         passed to the command.",
         "COMMAND",
     );
     opts.optopt(
@@ -50,7 +50,11 @@ pub fn command_line_argument_options() -> Options {
         "CONTROLLER",
     );
     opts.optflag("v", "verbose", "Add debug information to log.");
-    opts.optflag("", "use-keyring", "Use the system's keyring to retrieve the password");
+    opts.optflag(
+        "",
+        "use-keyring",
+        "Use the system's keyring to retrieve the password",
+    );
     opts.optflag("", "no-daemon", "Don't detach from console.");
     opts.optflag("", "backends", "List available audio backends.");
     opts.optflag("h", "help", "Print this help text.");

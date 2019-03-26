@@ -1,0 +1,5 @@
+format_strings = true
+merge_imports = true
+match_block_trailing_comma = true
+reorder_impl_items = true
+wrap_comments = true

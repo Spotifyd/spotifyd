@@ -1,24 +1,21 @@
-use std::convert::From;
-use std::error::Error;
-use std::fs::metadata;
-use std::mem::swap;
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
-
-use crypto::digest::Digest;
-use crypto::sha1::Sha1;
-
-use librespot::core::cache::Cache;
-use librespot::core::config::SessionConfig;
-use librespot::core::version;
-use librespot::playback::config::{Bitrate, PlayerConfig};
-
+use crypto::{digest::Digest, sha1::Sha1};
 use getopts::Matches;
-use ini::Ini;
-use log::info;
-use xdg;
-
 use hostname;
+use ini::Ini;
+use librespot::{
+    core::{cache::Cache, config::SessionConfig, version},
+    playback::config::{Bitrate, PlayerConfig},
+};
+use log::info;
+use std::{
+    convert::From,
+    error::Error,
+    fs::metadata,
+    mem::swap,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
+use xdg;
 
 const CONFIG_FILE: &str = "spotifyd.conf";
 
@@ -35,6 +32,7 @@ fn device_id(name: &str) -> String {
 
 impl FromStr for VolumeController {
     type Err = ();
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match &*s.to_uppercase() {
             "ALSA" => Ok(VolumeController::Alsa { linear: false }),
@@ -121,7 +119,7 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
         None => {
             info!("Couldn't find config file, continuing with default configuration.");
             return config;
-        }
+        },
     };
 
     let config_file = match Ini::load_from_file(config_path) {
@@ -132,7 +130,7 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
                 e
             );
             return config;
-        }
+        },
     };
 
     let global = config_file.section(Some("global".to_owned()));

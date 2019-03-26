@@ -1,22 +1,24 @@
 #[cfg(feature = "alsa_backend")]
 use crate::alsa_mixer;
-use crate::config;
-use crate::main_loop;
-use futures;
-use futures::Future;
+use crate::{config, main_loop};
+use futures::{self, Future};
 #[cfg(feature = "dbus_keyring")]
 use keyring::Keyring;
-use librespot::connect::discovery::discovery;
-use librespot::core::authentication::get_credentials;
-use librespot::core::cache::Cache;
-use librespot::core::config::{ConnectConfig, DeviceType};
-use librespot::core::session::Session;
-use librespot::playback::audio_backend::{Sink, BACKENDS};
-use librespot::playback::mixer;
-use librespot::playback::mixer::Mixer;
+use librespot::{
+    connect::discovery::discovery,
+    core::{
+        authentication::get_credentials,
+        cache::Cache,
+        config::{ConnectConfig, DeviceType},
+        session::Session,
+    },
+    playback::{
+        audio_backend::{Sink, BACKENDS},
+        mixer::{self, Mixer},
+    },
+};
 use log::{error, info};
-use std::io;
-use std::process::exit;
+use std::{io, process::exit};
 use tokio_core::reactor::Handle;
 use tokio_signal::ctrl_c;
 
@@ -37,12 +39,12 @@ pub fn initial_state(handle: Handle, config: config::SpotifydConfig) -> main_loo
                     linear_scaling: linear,
                 }) as Box<mixer::Mixer>
             }) as Box<FnMut() -> Box<Mixer>>
-        }
+        },
         config::VolumeController::SoftVol => {
             info!("Using software volume controller.");
             Box::new(|| Box::new(mixer::softmixer::SoftMixer::open()) as Box<Mixer>)
                 as Box<FnMut() -> Box<Mixer>>
-        }
+        },
     };
 
     #[cfg(not(feature = "alsa_backend"))]
@@ -149,13 +151,13 @@ fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<Sink> {
                 .find(|backend| name == backend.0)
                 .unwrap_or_else(|| panic!("Unknown backend: {}.", name))
                 .1
-        }
+        },
         None => {
             let &(name, back) = BACKENDS
                 .first()
                 .expect("No backends were enabled at build time");
             info!("No backend specified, defaulting to: {}.", name);
             back
-        }
+        },
     }
 }

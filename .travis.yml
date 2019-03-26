@@ -8,8 +8,10 @@ rust:
 - nightly
 before_script:
 - rustup component add clippy
+- rustup component add rustfmt
 script:
 - cargo clippy --all-features --all-targets -- -D warnings
+- cargo fmt -- --check
 - cargo build --verbose --features "pulseaudio_backend"
 - cargo build --release
 - zip -j spotifyd-`date --iso-8601`-amd64.zip target/release/spotifyd
