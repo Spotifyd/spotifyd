@@ -69,10 +69,11 @@ the `[global]` section. This is useful when you run applications related to
 Values can be surrounded by double quotes (") which is useful if the value contains
 the comment character (#).
 
-Instead of writing down your password into the config file, `Spotifyd` supports the
-Linux Secret Service API when compiled with the `dbus_keyring` feature. To enable 
-this feature, you have to set the `use-keyring` config entry to `true` or pass the
-`--use-keyring` CLI flag during start to the daemon.
+Instead of storing your password in the config file, `Spotifyd` supports the
+Linux Secret Service API when compiled with the `dbus_keyring` feature. To use
+this feature, set the `use-keyring` config entry to `true` or pass the
+`--use-keyring` CLI flag during start to the daemon. Make sure to also provide
+your username, either through a config entry or as a command-line option.
 
 The keyring entry needs to have the following attributes set:
 ```
