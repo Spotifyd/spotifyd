@@ -171,6 +171,20 @@ a bug report.
 * Spotifyd will not work without Spotify Premium
 * The device name cannot contain spaces
 
+# Contributing
+
+New PR's are always welcome! Lately did introduce two new tools to maintain some level of code consistency, `clippy` and `rustfmt`. To install them, run the following command: 
+
+```rustup add component clippy rustfmt```
+
+Make sure to check that `clippy` exits without any errors:
+
+```cargo clippy --all-targets --all-features -- -D warnings```.
+
+Please also format your source code before submitting the PR by running the following command: 
+
+```rustfmt src/**/*.rs```
+
 # Credits
 This project would not have been possible without the amazing reverse
 engineering work done in [librespot](https://github.com/plietar/librespot),
