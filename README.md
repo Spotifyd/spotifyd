@@ -85,7 +85,7 @@ To add such an entry, you can use `secret-tool`, a CLI used to communicate with 
 that support the Linux Secret Service API:
 
 ```
-$ secret-tool --label='entry name that you can choose' application rust-keyring service spotifyd username <your-username>
+$ secret-tool store --label='entry name that you can choose' application rust-keyring service spotifyd username <your-username>
 ```
 
 ## Command Line Arguments
