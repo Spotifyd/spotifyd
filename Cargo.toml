@@ -16,7 +16,8 @@ hostname = "0.1"
 keyring = { version = "0.6.1", optional = true }
 log = "0.4.6"
 rspotify = "0.2.5"
-rust-crypto = "0.2.36"
+sha-1 = "0.8"
+hex = "0.3"
 rust-ini = "0.13"
 simplelog = "0.4"
 syslog = "4.0.1"
@@ -29,9 +30,6 @@ xdg = "2.2"
 default-features = false
 features = ["with-tremor"]
 git = "https://github.com/librespot-org/librespot.git"
-
-[replace]
-"rust-crypto:0.2.36" = { git = "https://github.com/awmath/rust-crypto.git", branch = "avx2" }
 
 [features]
 alsa_backend = ["librespot/alsa-backend", "alsa"]
