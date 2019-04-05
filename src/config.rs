@@ -1,4 +1,3 @@
-use sha1::{Sha1, Digest};
 use getopts::Matches;
 use hostname;
 use ini::Ini;
@@ -7,6 +6,7 @@ use librespot::{
     playback::config::{Bitrate, PlayerConfig},
 };
 use log::info;
+use sha1::{Digest, Sha1};
 use std::{
     convert::From,
     error::Error,
