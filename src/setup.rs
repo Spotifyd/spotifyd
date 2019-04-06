@@ -42,7 +42,7 @@ pub fn initial_state(handle: Handle, config: config::SpotifydConfig) -> main_loo
         },
         config::VolumeController::SoftVol => {
             info!("Using software volume controller.");
-            Box::new(|| Box::new(mixer::softmixer::SoftMixer::open()) as Box<Mixer>)
+            Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<Mixer>)
                 as Box<FnMut() -> Box<Mixer>>
         },
     };
