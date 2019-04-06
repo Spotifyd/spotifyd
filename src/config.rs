@@ -1,4 +1,3 @@
-use crypto::{digest::Digest, sha1::Sha1};
 use getopts::Matches;
 use hostname;
 use ini::Ini;
@@ -7,6 +6,7 @@ use librespot::{
     playback::config::{Bitrate, PlayerConfig},
 };
 use log::info;
+use sha1::{Digest, Sha1};
 use std::{
     convert::From,
     error::Error,
@@ -25,9 +25,7 @@ pub enum VolumeController {
 }
 
 fn device_id(name: &str) -> String {
-    let mut h = Sha1::new();
-    h.input_str(name);
-    h.result_str()
+    hex::encode(&Sha1::digest(name.as_bytes()))
 }
 
 impl FromStr for VolumeController {
