@@ -1,5 +1,5 @@
 use alsa;
-use librespot::playback::mixer::{AudioFilter, Mixer};
+use librespot::playback::mixer::{AudioFilter, Mixer, MixerConfig};
 use log::error;
 use std::error::Error;
 
@@ -31,7 +31,7 @@ impl AlsaMixer {
 }
 
 impl Mixer for AlsaMixer {
-    fn open() -> AlsaMixer {
+    fn open(_: Option<MixerConfig>) -> AlsaMixer {
         AlsaMixer {
             device: "default".to_string(),
             mixer: "Master".to_string(),
