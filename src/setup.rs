@@ -50,7 +50,7 @@ pub fn initial_state(handle: Handle, config: config::SpotifydConfig) -> main_loo
     #[cfg(not(feature = "alsa_backend"))]
     let mut mixer = {
         info!("Using software volume controller.");
-        Box::new(|| Box::new(mixer::softmixer::SoftMixer::open()) as Box<Mixer>)
+        Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<Mixer>)
             as Box<FnMut() -> Box<Mixer>>
     };
 
