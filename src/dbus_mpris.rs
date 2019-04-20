@@ -437,10 +437,10 @@ fn create_dbus_server(
                             }),
                     )
                     .add_p(
-                        f.property::<String, _>("SupportedUriSchemes", ())
+                        f.property::<Vec<String>, _>("SupportedUriSchemes", ())
                             .access(Access::Read)
                             .on_get(|i, _| {
-                                i.append("Spotify".to_string());
+                                i.append(vec!["Spotify".to_string()]);
                                 Ok(())
                             }),
                     ),
