@@ -2,7 +2,7 @@ use chrono::prelude::*;
 use dbus::{
     arg::{RefArg, Variant},
     tree::{Access, MethodErr},
-    BusType, Connection, MessageItem, NameFlag,
+    BusType, Connection, MessageItem, MessageItemArray, NameFlag, Signature,
 };
 use dbus_tokio::{
     tree::{AFactory, ATree, ATreeServer},
@@ -339,21 +339,19 @@ fn create_dbus_server(
                                                 track.album.name
                                             )) as Box<RefArg>));
                                         m.insert("xesam:artist".to_string(), Variant(Box::new(
-                                            MessageItem::Str(
+                                            MessageItem::Array(MessageItemArray::new(
                                                 track.artists
                                                     .iter()
-                                                    .next()
-                                                    .map_or("", |a| &a.name)
-                                                    .to_string()
-                                            )) as Box<RefArg>));
+                                                    .map(|a| MessageItem::Str(a.name.to_string()))
+                                                    .collect::<Vec<_>>(), Signature::new("as").unwrap()
+                                            ).unwrap())) as Box<RefArg>));
                                         m.insert("xesam:albumArtist".to_string(), Variant(Box::new(
-                                            MessageItem::Str(
+                                            MessageItem::Array(MessageItemArray::new(
                                                 track.album.artists
                                                     .iter()
-                                                    .next()
-                                                    .map_or("", |a| &a.name)
-                                                    .to_string()
-                                            )) as Box<RefArg>));
+                                                    .map(|a| MessageItem::Str(a.name.to_string()))
+                                                    .collect::<Vec<_>>(), Signature::new("as").unwrap()
+                                            ).unwrap())) as Box<RefArg>));
                                         m.insert("xesam:autoRating".to_string(), Variant(Box::new(
                                             MessageItem::Double(
                                                 f64::from(track.popularity) / 100.0
