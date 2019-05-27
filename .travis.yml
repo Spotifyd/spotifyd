@@ -18,9 +18,6 @@ script:
 before_install:
 - sudo apt-get -qq update
 - sudo apt-get install -y libasound2-dev portaudio19-dev build-essential libpulse-dev libdbus-1-dev
-services:
-- docker
-before_deploy: "./build-release"
 deploy:
   provider: releases
   api_key:
