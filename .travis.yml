@@ -1,1 +1,61 @@
+language: rust
+rust:
+- stable
+sudo: required
+os:
+- linux
+#addons:
+#  apt:
+#    packages: libasound2-dev portaudio19-dev build-essential libpulse-dev libdbus-1-dev
+#before_script:
+#- sudo apt-get -qq update
+#- sudo apt-get install -y libasound2-dev portaudio19-dev build-essential libpulse-dev libdbus-1-dev
+#- rustup component add clippy
+#- rustup component add rustfmt
 
+matrix:
+  include:
+  #- env: TARGET=x86_64-unknown-linux-gnu
+  #  script:
+    #- cargo clippy --all-features --all-targets -- -D warnings
+    #- cargo fmt -- --check
+    #- cargo build --verbose --features "pulseaudio_backend"
+  #  - cargo build --release
+  #  - zip -j spotifyd-`date --iso-8601`-`$TARGET`.zip target/release/spotifyd
+  - env: 
+    - TARGET=arm-unknown-linux-gnueabihf #CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc
+    - LINKER=arm-linux-gnueabihf-gcc
+    - PKG_CONFIG_ALLOW_CROSS=1
+    - OPENSSL_DIR=$TRAVIS_BUILD_DIR/temp_ssl
+    - SHORT_TARGET=amrv6
+    addons:
+      apt:
+        packages:
+          - gcc-arm-linux-gnueabihf
+          - libc6-armhf-cross
+          - libc6-dev-armhf-cross
+          - build-essential
+          - libasound2-dev
+          - portaudio19-dev
+          - libpulse-dev
+          - libdbus-1-dev
+    before_script:
+      - wget https://www.openssl.org/source/openssl-1.0.1t.tar.gz
+      - tar xzf openssl-1.0.1t.tar.gz
+      - export MACHINE=armv6
+      - export ARCH=arm
+      - export CC=arm-linux-gnueabihf-gcc
+      - cd openssl-1.0.1t && ./config shared --openssldir=$TRAVIS_BUILD_DIR/temp_ssl && make && make install && cd -
+      
+script:
+- rustup target add $TARGET
+- cargo build --target=$TARGET --release
+- zip -j spotifyd-`date --iso-8601`-$SHORT_TARGET.zip target/release/spotifyd
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_OAUTH_TOKEN
+  file: "spotifyd*zip"
+  skip_cleanup: true
+  on:
+    branch: arm_travis
