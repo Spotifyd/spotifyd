@@ -43,9 +43,8 @@ script:
 
 deploy:
   provider: releases
-  api_key: $GITHUB_OAUTH_TOKEN
   file_glob: true
-  file: "spotifyd*zip"
+  api_key: $GITHUB_TOKEN
   skip_cleanup: true
   on:
     branch: arm_travis
