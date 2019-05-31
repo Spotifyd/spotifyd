@@ -1,4 +1,5 @@
 language: rust
+cache: cargo
 rust:
 - stable
 sudo: required
@@ -27,7 +28,7 @@ matrix:
     - LINKER=arm-linux-gnueabihf-gcc
     - PKG_CONFIG_ALLOW_CROSS=1
     - OPENSSL_DIR=$TRAVIS_BUILD_DIR/temp_ssl
-    - SHORT_TARGET=amrv6
+    - SHORT_TARGET=armv6
     addons:
       apt:
         packages:
