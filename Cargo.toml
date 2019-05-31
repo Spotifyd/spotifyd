@@ -5,7 +5,6 @@ name = "spotifyd"
 version = "0.2.8"
 
 [dependencies]
-lewton = "=0.9.3"
 alsa = { version = "0.2", optional = true }
 chrono = "0.4"
 daemonize = "0.3"
