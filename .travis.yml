@@ -8,28 +8,47 @@ os:
 
 matrix:
   include:
-    - env: 
+    - name: "ARM Build"
+      env: 
       - TARGET=arm-unknown-linux-gnueabihf
       - RUSTFLAGS="-C linker=arm-linux-gnueabihf-gcc -L/usr/arm-linux-gnueabihf/lib -L$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf"
-      #- PKG_CONFIG_ALLOW_CROSS=1
-      #- OPENSSL_DIR=$TRAVIS_BUILD_DIR/temp_ssl
+      - PKG_CONFIG_ALLOW_CROSS=1
+      - OPENSSL_DIR=$TRAVIS_BUILD_DIR/deps_root/usr
+      - OPENSSL_LIB_DIR=$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf
+      - OPENSSL_INCLUDE_DIR=$TRAVIS_BUILD_DIR/deps_root/usr/include/arm-linux-gnueabihf
       - SHORT_TARGET=armv6
       addons:
         apt:
           packages:
-            - gcc-arm-linux-gnueabihf
-            - libc6-armhf-cross
-            - libc6-dev-armhf-cross
-            - libasound2-dev
-            - libssl-dev
+          - gcc-arm-linux-gnueabihf
+          - libc6-armhf-cross
+          - libc6-dev-armhf-cross
+          - libasound2-dev
+          - libssl-dev
+          - libssl1.0.0
       before_script:
-        - echo "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ trusty main" | sudo tee -a /etc/apt/sources.list
-        - sudo apt-get update
-        - sudo apt-get download libasound2:armhf
-        - sudo apt-get download libssl-dev:armhf
-        - dpkg dpkg -x libasound2_1.1.3-5_armhf.deb $TRAVIS_BUILD_DIR/deps_root/
-        - dpkg dpkg -x libssl1.1_1.1.0g-2ubuntu4_armhf.deb $TRAVIS_BUILD_DIR/deps_root/
-      
+      - echo "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ trusty main" | sudo tee -a /etc/apt/sources.list
+      - sudo apt-get update
+      - sudo apt-get download libasound2:armhf
+      - sudo apt-get download libasound2-dev:armhf
+      - sudo apt-get download libssl-dev:armhf
+      - sudo apt-get download libssl1.0.0:armhf
+      - dpkg -x libasound2_*.deb $TRAVIS_BUILD_DIR/deps_root/
+      - dpkg -x libssl-dev*.deb $TRAVIS_BUILD_DIR/deps_root/
+      - dpkg -x libssl1.0.0*.deb $TRAVIS_BUILD_DIR/deps_root/
+      - dpkg -x libasound2-dev*.deb $TRAVIS_BUILD_DIR/deps_root/
+
+    - name: "x86 Build"
+      env:
+      - TARGET=x86_64-unknown-linux-gnu
+      - SHORT_TARGET=x86
+       addons:
+         apt:
+           packages:
+           - libasound2-dev
+           - libssl-dev
+           - libssl1.0.0      
+            
 script:
 - rustup target add $TARGET
 - cargo build --target=$TARGET --release
