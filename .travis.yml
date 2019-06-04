@@ -42,12 +42,12 @@ matrix:
       env:
       - TARGET=x86_64-unknown-linux-gnu
       - SHORT_TARGET=x86
-       addons:
-         apt:
-           packages:
-           - libasound2-dev
-           - libssl-dev
-           - libssl1.0.0      
+      addons:
+        apt:
+          packages:
+          - libasound2-dev
+          - libssl-dev
+          - libssl1.0.0      
             
 script:
 - rustup target add $TARGET
