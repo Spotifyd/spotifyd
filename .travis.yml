@@ -1,23 +1,59 @@
 language: rust
+cache: cargo
 rust:
-- nightly
+- stable
 sudo: required
 os:
 - linux
-rust:
-- nightly
-before_script:
-- rustup component add clippy
-- rustup component add rustfmt
+
+matrix:
+  include:
+    - name: "ARM Build"
+      env: 
+      - TARGET=arm-unknown-linux-gnueabihf
+      - RUSTFLAGS="-C linker=arm-linux-gnueabihf-gcc -L/usr/arm-linux-gnueabihf/lib -L$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf"
+      - PKG_CONFIG_ALLOW_CROSS=1
+      - OPENSSL_DIR=$TRAVIS_BUILD_DIR/deps_root/usr
+      - OPENSSL_LIB_DIR=$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf
+      - OPENSSL_INCLUDE_DIR=$TRAVIS_BUILD_DIR/deps_root/usr/include/arm-linux-gnueabihf
+      - SHORT_TARGET=armv6
+      addons:
+        apt:
+          packages:
+          - gcc-arm-linux-gnueabihf
+          - libc6-armhf-cross
+          - libc6-dev-armhf-cross
+          - libasound2-dev
+          - libssl-dev
+          - libssl1.0.0
+      before_script:
+      - echo "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ trusty main" | sudo tee -a /etc/apt/sources.list
+      - sudo apt-get update
+      - sudo apt-get download libasound2:armhf
+      - sudo apt-get download libasound2-dev:armhf
+      - sudo apt-get download libssl-dev:armhf
+      - sudo apt-get download libssl1.0.0:armhf
+      - dpkg -x libasound2_*.deb $TRAVIS_BUILD_DIR/deps_root/
+      - dpkg -x libssl-dev*.deb $TRAVIS_BUILD_DIR/deps_root/
+      - dpkg -x libssl1.0.0*.deb $TRAVIS_BUILD_DIR/deps_root/
+      - dpkg -x libasound2-dev*.deb $TRAVIS_BUILD_DIR/deps_root/
+
+    - name: "x86 Build"
+      env:
+      - TARGET=x86_64-unknown-linux-gnu
+      - SHORT_TARGET=x86
+      addons:
+        apt:
+          packages:
+          - libasound2-dev
+          - libssl-dev
+          - libssl1.0.0      
+            
 script:
-- cargo clippy --all-features --all-targets -- -D warnings
-- cargo fmt -- --check
-- cargo build --verbose --features "pulseaudio_backend"
-- cargo build --release
-- zip -j spotifyd-`date --iso-8601`-amd64.zip target/release/spotifyd
-before_install:
-- sudo apt-get -qq update
-- sudo apt-get install -y libasound2-dev portaudio19-dev build-essential libpulse-dev libdbus-1-dev
+- rustup target add $TARGET
+- cargo build --target=$TARGET --release
+- zip -j spotifyd-`date --iso-8601`-$SHORT_TARGET.zip target/$TARGET/release/spotifyd
+
 deploy:
   provider: releases
   api_key:
