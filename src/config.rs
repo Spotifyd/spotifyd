@@ -48,6 +48,7 @@ pub struct SpotifydConfig {
     pub cache: Option<Cache>,
     pub backend: Option<String>,
     pub audio_device: Option<String>,
+    pub control_device: Option<String>,
     pub mixer: Option<String>,
     pub volume_controller: VolumeController,
     pub device_name: String,
@@ -66,6 +67,7 @@ impl Default for SpotifydConfig {
             cache: None,
             backend: None,
             audio_device: None,
+            control_device: None,
             mixer: None,
             volume_controller: VolumeController::SoftVol,
             device_name: "Spotifyd".to_string(),
@@ -159,6 +161,7 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     }
     config.backend = lookup("backend");
     config.audio_device = lookup("device");
+    config.control_device = lookup("control");
     config.mixer = lookup("mixer");
     update(
         &mut config.volume_controller,

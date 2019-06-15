@@ -24,6 +24,7 @@ use tokio_signal::ctrl_c;
 
 pub fn initial_state(handle: Handle, config: config::SpotifydConfig) -> main_loop::MainLoopState {
     let local_audio_device = config.audio_device.clone();
+    let local_control_device = config.control_device.clone();
     let local_mixer = config.mixer.clone();
 
     #[cfg(feature = "alsa_backend")]
@@ -32,8 +33,9 @@ pub fn initial_state(handle: Handle, config: config::SpotifydConfig) -> main_loo
             info!("Using alsa volume controller.");
             Box::new(move || {
                 Box::new(alsa_mixer::AlsaMixer {
-                    device: local_audio_device
+                    device: local_control_device
                         .clone()
+                        .or_else(|| local_audio_device.clone())
                         .unwrap_or_else(|| "default".to_string()),
                     mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
                     linear_scaling: linear,
