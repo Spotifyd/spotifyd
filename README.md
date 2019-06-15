@@ -52,6 +52,7 @@ password = PASS
 #use-keyring = true
 backend = alsa
 device = alsa_audio_device # Given by `aplay -L`
+#control = alsa_audio_device # device for the mixer, if not the same as 'device'
 mixer = PCM
 volume-control = alsa # or alsa_linear, or softvol
 #onevent = command_run_on_playback_event
