@@ -2,7 +2,7 @@
 authors = ["Simon Persson <simon@flaskpost.org>"]
 edition = "2018"
 name = "spotifyd"
-version = "0.2.8"
+version = "0.2.11"
 
 [dependencies]
 alsa = { version = "0.2", optional = true }
