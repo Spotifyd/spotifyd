@@ -119,16 +119,14 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
             info!("Couldn't find config file, continuing with default configuration.");
             None
         })
-        .and_then(|config_path| {
-            match Ini::load_from_file(config_path) {
-                Ok(ini_file) => Some(ini_file),
-                Err(err) => {
-                    info!(
-                        "Couldn't read configuration file, continuing with default configuration: {}",
-                        err
-                    );
-                    None
-                }
+        .and_then(|config_path| match Ini::load_from_file(config_path) {
+            Ok(ini_file) => Some(ini_file),
+            Err(err) => {
+                info!(
+                    "Couldn't read configuration file, continuing with default configuration: {}",
+                    err
+                );
+                None
             }
         })
         .unwrap_or_else(|| {
