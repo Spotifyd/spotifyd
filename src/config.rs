@@ -114,24 +114,27 @@ fn update<T>(r: &mut T, val: Option<T>) {
 pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> SpotifydConfig {
     let mut config = SpotifydConfig::default();
 
-    let config_path = match config_path {
-        Some(c) => c,
-        None => {
+    let config_file = config_path
+        .or_else(|| {
             info!("Couldn't find config file, continuing with default configuration.");
-            return config;
-        },
-    };
-
-    let config_file = match Ini::load_from_file(config_path) {
-        Ok(c) => c,
-        Err(e) => {
-            info!(
-                "Couldn't read configuration file, continuing with default configuration: {}",
-                e
-            );
-            return config;
-        },
-    };
+            None
+        })
+        .and_then(|config_path| {
+            match Ini::load_from_file(config_path) {
+                Ok(ini_file) => Some(ini_file),
+                Err(err) => {
+                    info!(
+                        "Couldn't read configuration file, continuing with default configuration: {}",
+                        err
+                    );
+                    None
+                }
+            }
+        })
+        .unwrap_or_else(|| {
+            // Whenever we do not have a configuration file, we default to an empty one.
+            ini::Ini::new()
+        });
 
     let global = config_file.section(Some("global".to_owned()));
     let spotifyd = config_file.section(Some("spotifyd".to_owned()));
