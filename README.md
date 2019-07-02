@@ -70,6 +70,12 @@ the `[global]` section. This is useful when you run applications related to
 Values can be surrounded by double quotes (") which is useful if the value contains
 the comment character (#).
 
+The line "cache_path = cache_directory" defines where Spotify's cache-files are stored. 
+These files are used to avoid downloading a file again when a track is replayed. 
+Here it's set to "cache_directory" and the cache files will be stored in "/cache_directory".
+To save space on the system disc you can use another directory, for example "/mount/disk/spotifyCache"
+(which of course have to exist).
+
 Instead of storing your password in the config file, `Spotifyd` supports the
 Linux Secret Service API when compiled with the `dbus_keyring` feature. To use
 this feature, set the `use-keyring` config entry to `true` or pass the
