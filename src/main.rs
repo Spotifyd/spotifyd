@@ -9,8 +9,9 @@ mod cli;
 mod config;
 #[cfg(feature = "dbus_mpris")]
 mod dbus_mpris;
+mod error;
 mod main_loop;
-mod player_event_handler;
+mod process;
 mod setup;
 #[macro_use]
 mod macros;
@@ -42,13 +43,17 @@ fn main() {
         exit(0)
     }
 
-    let config_file = matches
-        .opt_str("config")
-        .map(PathBuf::from)
-        .or_else(|| config::get_config_file().ok());
-    let config = config::get_config(config_file, &matches);
+    let is_daemon = !matches.opt_present("no-daemon");
 
-    if matches.opt_present("no-daemon") {
+    if is_daemon {
+        let filter = if matches.opt_present("verbose") {
+            LevelFilter::Trace
+        } else {
+            LevelFilter::Info
+        };
+        syslog::init(syslog::Facility::LOG_DAEMON, filter, Some("Spotifyd"))
+            .expect("Couldn't initialize logger");
+    } else {
         let filter = if matches.opt_present("verbose") {
             simplelog::LogLevelFilter::Trace
         } else {
@@ -62,15 +67,22 @@ fn main() {
                     .map_err(Box::<Error>::from)
             })
             .expect("Couldn't initialize logger");
-    } else {
-        let filter = if matches.opt_present("verbose") {
-            LevelFilter::Trace
-        } else {
-            LevelFilter::Info
-        };
-        syslog::init(syslog::Facility::LOG_DAEMON, filter, Some("Spotifyd"))
-            .expect("Couldn't initialize logger");
+    }
 
+    let config_file = matches
+        .opt_str("config")
+        .map(PathBuf::from)
+        .or_else(|| config::get_config_file());
+
+    let config = match config::get_config(config_file, &matches) {
+        Ok(config) => config,
+        Err(e) => {
+            error!("{}", e);
+            exit(1);
+        }
+    };
+
+    if is_daemon {
         let mut daemonize = Daemonize::new();
         if let Some(pid) = config.pid.as_ref() {
             daemonize = daemonize.pid_file(pid);

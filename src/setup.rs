@@ -22,7 +22,10 @@ use std::{io, process::exit};
 use tokio_core::reactor::Handle;
 use tokio_signal::ctrl_c;
 
-pub fn initial_state(handle: Handle, config: config::SpotifydConfig) -> main_loop::MainLoopState {
+pub(crate) fn initial_state(
+    handle: Handle,
+    config: config::SpotifydConfig,
+) -> main_loop::MainLoopState {
     let local_audio_device = config.audio_device.clone();
     let local_control_device = config.control_device.clone();
     let local_mixer = config.mixer.clone();
