@@ -72,7 +72,7 @@ fn main() {
     let config_file = matches
         .opt_str("config")
         .map(PathBuf::from)
-        .or_else(|| config::get_config_file());
+        .or_else(config::get_config_file);
 
     let config = match config::get_config(config_file, &matches) {
         Ok(config) => config,
