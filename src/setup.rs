@@ -42,21 +42,21 @@ pub(crate) fn initial_state(
                         .unwrap_or_else(|| "default".to_string()),
                     mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
                     linear_scaling: linear,
-                }) as Box<mixer::Mixer>
-            }) as Box<FnMut() -> Box<Mixer>>
+                }) as Box<dyn mixer::Mixer>
+            }) as Box<dyn FnMut() -> Box<dyn Mixer>>
         }
         config::VolumeController::SoftVol => {
             info!("Using software volume controller.");
-            Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<Mixer>)
-                as Box<FnMut() -> Box<Mixer>>
+            Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+                as Box<dyn FnMut() -> Box<dyn Mixer>>
         }
     };
 
     #[cfg(not(feature = "alsa_backend"))]
     let mut mixer = {
         info!("Using software volume controller.");
-        Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<Mixer>)
-            as Box<FnMut() -> Box<Mixer>>
+        Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+            as Box<dyn FnMut() -> Box<dyn Mixer>>
     };
 
     let cache = config.cache;
@@ -120,7 +120,7 @@ pub(crate) fn initial_state(
         )
     } else {
         Box::new(futures::future::empty())
-            as Box<futures::Future<Item = Session, Error = io::Error>>
+            as Box<dyn futures::Future<Item = Session, Error = io::Error>>
     };
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
@@ -148,7 +148,7 @@ pub(crate) fn initial_state(
     }
 }
 
-fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<Sink> {
+fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<dyn Sink> {
     match name {
         Some(name) => {
             BACKENDS

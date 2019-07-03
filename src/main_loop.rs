@@ -26,7 +26,7 @@ use crate::dbus_mpris::DbusServer;
 use crate::process::{spawn_program_on_event, Child};
 
 pub struct LibreSpotConnection {
-    connection: Box<Future<Item = Session, Error = io::Error>>,
+    connection: Box<dyn Future<Item = Session, Error = io::Error>>,
     spirc_task: Option<SpircTask>,
     spirc: Option<Rc<Spirc>>,
     discovery_stream: DiscoveryStream,
@@ -34,7 +34,7 @@ pub struct LibreSpotConnection {
 
 impl LibreSpotConnection {
     pub fn new(
-        connection: Box<Future<Item = Session, Error = io::Error>>,
+        connection: Box<dyn Future<Item = Session, Error = io::Error>>,
         discovery_stream: DiscoveryStream,
     ) -> LibreSpotConnection {
         LibreSpotConnection {
@@ -47,8 +47,8 @@ impl LibreSpotConnection {
 }
 
 pub struct AudioSetup {
-    pub mixer: Box<FnMut() -> Box<Mixer>>,
-    pub backend: fn(Option<String>) -> Box<Sink>,
+    pub mixer: Box<dyn FnMut() -> Box<dyn Mixer>>,
+    pub backend: fn(Option<String>) -> Box<dyn Sink>,
     pub audio_device: Option<String>,
 }
 
@@ -59,7 +59,7 @@ pub struct SpotifydState {
     pub device_name: String,
     pub player_event_channel: Option<futures::sync::mpsc::UnboundedReceiver<PlayerEvent>>,
     pub player_event_program: Option<String>,
-    pub dbus_mpris_server: Option<Box<Future<Item = (), Error = ()>>>,
+    pub dbus_mpris_server: Option<Box<dyn Future<Item = (), Error = ()>>>,
 }
 
 #[cfg(feature = "dbus_mpris")]
@@ -83,7 +83,7 @@ fn new_dbus_server(
     _: Handle,
     _: Rc<Spirc>,
     _: String,
-) -> Option<Box<Future<Item = (), Error = ()>>> {
+) -> Option<Box<dyn Future<Item = (), Error = ()>>> {
     None
 }
 
