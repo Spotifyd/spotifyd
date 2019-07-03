@@ -25,15 +25,15 @@ pub fn run_program_on_events(event: PlayerEvent, onevent: &str) -> Child {
             env_vars.insert("PLAYER_EVENT", "change".to_string());
             env_vars.insert("OLD_TRACK_ID", old_track_id.to_base62());
             env_vars.insert("TRACK_ID", new_track_id.to_base62());
-        },
+        }
         PlayerEvent::Started { track_id } => {
             env_vars.insert("PLAYER_EVENT", "start".to_string());
             env_vars.insert("TRACK_ID", track_id.to_base62());
-        },
+        }
         PlayerEvent::Stopped { track_id } => {
             env_vars.insert("PLAYER_EVENT", "stop".to_string());
             env_vars.insert("TRACK_ID", track_id.to_base62());
-        },
+        }
     }
     run_program(onevent, env_vars)
 }

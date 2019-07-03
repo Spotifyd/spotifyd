@@ -24,7 +24,7 @@ fn main() {
         Err(f) => {
             println!("Error: {}\n{}", f.to_string(), cli::usage(&args[0], &opts));
             exit(1)
-        },
+        }
     };
 
     if matches.opt_present("backends") {

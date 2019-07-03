@@ -41,12 +41,12 @@ pub fn initial_state(handle: Handle, config: config::SpotifydConfig) -> main_loo
                     linear_scaling: linear,
                 }) as Box<mixer::Mixer>
             }) as Box<FnMut() -> Box<Mixer>>
-        },
+        }
         config::VolumeController::SoftVol => {
             info!("Using software volume controller.");
             Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<Mixer>)
                 as Box<FnMut() -> Box<Mixer>>
-        },
+        }
     };
 
     #[cfg(not(feature = "alsa_backend"))]
@@ -153,13 +153,13 @@ fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<Sink> {
                 .find(|backend| name == backend.0)
                 .unwrap_or_else(|| panic!("Unknown backend: {}.", name))
                 .1
-        },
+        }
         None => {
             let &(name, back) = BACKENDS
                 .first()
                 .expect("No backends were enabled at build time");
             info!("No backend specified, defaulting to: {}.", name);
             back
-        },
+        }
     }
 }

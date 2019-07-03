@@ -19,7 +19,12 @@ pub fn command_line_argument_options() -> Options {
     opts.optopt("u", "username", "Spotify user name.", "USERNAME");
     opts.optopt("p", "password", "Spotify password.", "PASSWORD");
     opts.optopt("", "device", "Audio device, given by aplay -L.", "DEVICE");
-    opts.optopt("", "control", "Mixer device, if not the same as 'device'.", "DEVICE");
+    opts.optopt(
+        "",
+        "control",
+        "Mixer device, if not the same as 'device'.",
+        "DEVICE",
+    );
     opts.optopt("", "mixer", "Audio mixer", "DEVICE");
     opts.optopt("", "bitrate", "Any of 96, 160, and 320.", "DEVICE");
     opts.optopt("", "pid", "Path to PID file.", "PID-FILE");
