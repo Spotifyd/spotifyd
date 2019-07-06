@@ -143,7 +143,7 @@ If either of these options is given, the shell `spotifyd` will use to run
 their commands is the shell indicated by the `SHELL` environment variable, if 
 set. If the `SHELL` environment variable is not set, `spotifyd` will use the 
 user's default shell, which, on linux and the BSDs, is the shell listed in 
-`/etc/password`, and, on macOS, is the shell listed in the output of 
+`/etc/passwd`, and, on macOS, is the shell listed in the output of 
 `dscl . -read /Users/<username> UserShell`.
 
 ## Command Line Arguments
