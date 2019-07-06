@@ -36,7 +36,7 @@ This method also allows further configuration by specifing more feature flags
 as shown [further down](#command-line-arguments).
 
 The default is to build spotifyd with an ALSA backend, but it is possible
-to build with other audio backends, making Spotifyd availible on platforms
+to build with other audio backends, making Spotifyd available on platforms
 other than Linux, by adding the `--no-default-features` argument to cargo
 and supplying an alternative backend (see the _Configuration_ section).
 
