@@ -47,7 +47,7 @@ pub(crate) fn get_shell() -> Option<String> {
         // "name:password:UID:GID:GECOS:directory:shell"
         for line in reader.lines() {
             let line = line.ok()?;
-            let mut iter = line.split(":");
+            let mut iter = line.split(':');
             if let Some(user) = iter.nth(0) {
                 if user == username {
                     let shell = iter.nth(5)?;
