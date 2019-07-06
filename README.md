@@ -97,19 +97,20 @@ the shell: paths containing e.g. `~/` or `$HOME/` will not work.
 
 - **`password_cmd`** config entry
 
-  This feature allows you to, in the config file, provide a bash command that 
+  This feature allows you to, in the config file, provide a command that 
   prints your password to `stdout`, which saves you from having to store your
   password in the config file directly. To use it, set the `password_cmd` config 
   entry to the command you would like to use and remove the `password` config 
   entry, which, if present, would take priority. 
-  
+
   For example (using the password-management utility 
   [pass](https://www.passwordstore.org/)) ...
 
-  ```bash
+  ```ini
   # ~/.config/spotifyd/spotifyd.conf
   password_cmd = pass spotify
   ```
+
 
 - **`use-keyring`** config entry / **`--use-keyring`** CLI flag
 
@@ -135,6 +136,15 @@ the shell: paths containing e.g. `~/` or `$HOME/` will not work.
   ```bash
   secret-tool store --label='name you choose' application rust-keyring service spotifyd username <your-username>
   ```
+
+**Shell used to run commands indicated by `password_cmd` or `onevent`**
+
+If either of these options is given, the shell `spotifyd` will use to run 
+their commands is the shell indicated by the `SHELL` environment variable, if 
+set. If the `SHELL` environment variable is not set, `spotifyd` will use the 
+user's default shell, which, on linux and the BSDs, is the shell listed in 
+`/etc/password`, and, on macOS, is the shell listed in the output of 
+`dscl . -read /Users/<username> UserShell`.
 
 ## Command Line Arguments
 

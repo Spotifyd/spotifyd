@@ -1,3 +1,5 @@
+#![cfg(unix)]
+
 use daemonize::Daemonize;
 use log::{error, info, LevelFilter};
 use std::{convert::From, error::Error, panic, path::PathBuf, process::exit};
@@ -13,6 +15,7 @@ mod error;
 mod main_loop;
 mod process;
 mod setup;
+mod utils;
 #[macro_use]
 mod macros;
 

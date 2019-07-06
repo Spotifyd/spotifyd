@@ -1,5 +1,4 @@
 use getopts::Matches;
-use hostname;
 use ini::Ini;
 use librespot::{
     core::{cache::Cache, config::SessionConfig, version},
@@ -18,6 +17,7 @@ use xdg;
 
 use crate::error::{Error, ErrorKind};
 use crate::process::run_program;
+use crate::utils;
 
 const CONFIG_FILE: &str = "spotifyd.conf";
 
@@ -58,6 +58,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) session_config: SessionConfig,
     pub(crate) onevent: Option<String>,
     pub(crate) pid: Option<String>,
+    pub(crate) shell: String,
 }
 
 impl Default for SpotifydConfig {
@@ -86,6 +87,10 @@ impl Default for SpotifydConfig {
             },
             onevent: None,
             pid: None,
+            shell: utils::get_shell().unwrap_or_else(|| {
+                info!("Unable to identify shell. Defaulting to \"sh\".");
+                "sh".to_string()
+            }),
         }
     }
 }
@@ -162,9 +167,9 @@ pub(crate) fn get_config<P: AsRef<Path>>(
     config.password = match lookup("password") {
         Some(password) => Some(password),
         None => match lookup("password_cmd") {
-            Some(ref cmd) => match run_program(cmd) {
+            Some(ref cmd) => match run_program(&config.shell, cmd) {
                 Ok(s) => Some(s.trim().to_string()),
-                Err(e) => return Err(Error::subprocess_with_err(cmd, e)),
+                Err(e) => return Err(Error::subprocess_with_err(&config.shell, cmd, e)),
             },
             None => None,
         },
@@ -183,7 +188,7 @@ pub(crate) fn get_config<P: AsRef<Path>>(
         lookup("volume-control").and_then(|s| VolumeController::from_str(&*s).ok()),
     );
     config.device_name = lookup("device_name").unwrap_or_else(|| {
-        if let Some(h) = hostname::get_hostname() {
+        if let Some(h) = utils::get_hostname() {
             format!("Spotifyd@{}", h)
         } else {
             "Spotifyd".to_string()

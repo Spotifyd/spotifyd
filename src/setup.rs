@@ -26,29 +26,30 @@ pub(crate) fn initial_state(
     handle: Handle,
     config: config::SpotifydConfig,
 ) -> main_loop::MainLoopState {
-    let local_audio_device = config.audio_device.clone();
-    let local_control_device = config.control_device.clone();
-    let local_mixer = config.mixer.clone();
-
     #[cfg(feature = "alsa_backend")]
-    let mut mixer = match config.volume_controller {
-        config::VolumeController::Alsa { linear } => {
-            info!("Using alsa volume controller.");
-            Box::new(move || {
-                Box::new(alsa_mixer::AlsaMixer {
-                    device: local_control_device
-                        .clone()
-                        .or_else(|| local_audio_device.clone())
-                        .unwrap_or_else(|| "default".to_string()),
-                    mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
-                    linear_scaling: linear,
-                }) as Box<dyn mixer::Mixer>
-            }) as Box<dyn FnMut() -> Box<dyn Mixer>>
-        }
-        config::VolumeController::SoftVol => {
-            info!("Using software volume controller.");
-            Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
-                as Box<dyn FnMut() -> Box<dyn Mixer>>
+    let mut mixer = {
+        let local_audio_device = config.audio_device.clone();
+        let local_control_device = config.control_device.clone();
+        let local_mixer = config.mixer.clone();
+        match config.volume_controller {
+            config::VolumeController::Alsa { linear } => {
+                info!("Using alsa volume controller.");
+                Box::new(move || {
+                    Box::new(alsa_mixer::AlsaMixer {
+                        device: local_control_device
+                            .clone()
+                            .or_else(|| local_audio_device.clone())
+                            .unwrap_or_else(|| "default".to_string()),
+                        mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
+                        linear_scaling: linear,
+                    }) as Box<dyn mixer::Mixer>
+                }) as Box<dyn FnMut() -> Box<dyn Mixer>>
+            }
+            config::VolumeController::SoftVol => {
+                info!("Using software volume controller.");
+                Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+                    as Box<dyn FnMut() -> Box<dyn Mixer>>
+            }
         }
     };
 
@@ -145,6 +146,7 @@ pub(crate) fn initial_state(
         handle,
         linear_volume,
         running_event_program: None,
+        shell: config.shell,
     }
 }
 

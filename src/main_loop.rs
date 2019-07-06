@@ -96,6 +96,7 @@ pub(crate) struct MainLoopState {
     pub(crate) handle: Handle,
     pub(crate) linear_volume: bool,
     pub(crate) running_event_program: Option<Child>,
+    pub(crate) shell: String,
 }
 
 impl Future for MainLoopState {
@@ -131,8 +132,8 @@ impl Future for MainLoopState {
                 if let Some(ref mut player_event_channel) = self.spotifyd_state.player_event_channel
                 {
                     if let Async::Ready(Some(event)) = player_event_channel.poll().unwrap() {
-                        if let Some(ref program) = self.spotifyd_state.player_event_program {
-                            match spawn_program_on_event(program, event) {
+                        if let Some(ref cmd) = self.spotifyd_state.player_event_program {
+                            match spawn_program_on_event(&self.shell, cmd, event) {
                                 Ok(child) => self.running_event_program = Some(child),
                                 Err(e) => error!("{}", e),
                             }

@@ -1,37 +1,37 @@
 use librespot::playback::player::PlayerEvent;
 use log::info;
-use std::io::Read;
+use std::io::{self, Read, Write};
 use std::{
     collections::HashMap,
-    process::{Command, Stdio},
+    process::{Command, ExitStatus, Stdio},
 };
 
 use crate::error::Error;
 
-/// Blocks while provided bash command is run in a subprocess.
+/// Blocks while provided command is run in a subprocess using the provided shell.
 /// If successful, returns the contents of the subprocess's `stdout` as a `String`.
-pub(crate) fn run_program(cmd: &str) -> Result<String, Error> {
-    info!("Running {:?}", cmd);
-    let output = Command::new("bash")
+pub(crate) fn run_program(shell: &str, cmd: &str) -> Result<String, Error> {
+    info!("Running {:?} using {:?}", cmd, shell);
+    let output = Command::new(shell)
         .arg("-c")
         .arg(cmd)
         .output()
-        .map_err(|e| Error::subprocess_with_err(cmd, e))?;
+        .map_err(|e| Error::subprocess_with_err(shell, cmd, e))?;
     if !output.status.success() {
-        let s = std::str::from_utf8(&output.stderr).map_err(|_| Error::subprocess(cmd))?;
-        return Err(Error::subprocess_with_str(cmd, s));
+        let s = std::str::from_utf8(&output.stderr).map_err(|_| Error::subprocess(shell, cmd))?;
+        return Err(Error::subprocess_with_str(shell, cmd, s));
     }
-    let s = String::from_utf8(output.stdout).map_err(|_| Error::subprocess(cmd))?;
+    let s = String::from_utf8(output.stdout).map_err(|_| Error::subprocess(shell, cmd))?;
     Ok(s)
 }
 
-/// Spawns provided bash command in a subprocess, which does **not**
-/// inheret it's parent's stdin, stdout, and stderr. If successful, returns a handle
-/// to the subprocess, which in turn contains handles to subprocess's distinct stdin,
-/// stdout, and stderr.
-fn spawn_program(cmd: &str, env: HashMap<&str, String>) -> Result<Child, Error> {
-    info!("Running {:?} with environment variables {:?}", cmd, env);
-    let child = Command::new("bash")
+/// Spawns provided command in a subprocess using the provided shell.
+fn spawn_program(shell: &str, cmd: &str, env: HashMap<&str, String>) -> Result<Child, Error> {
+    info!(
+        "Running {:?} using {:?} with environment variables {:?}",
+        cmd, shell, env
+    );
+    let inner = Command::new(shell)
         .arg("-c")
         .arg(cmd)
         .envs(env.iter())
@@ -39,22 +39,27 @@ fn spawn_program(cmd: &str, env: HashMap<&str, String>) -> Result<Child, Error> 
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| Error::subprocess_with_err(cmd, e))?;
-    Ok(Child::new(cmd.to_string(), child))
+        .map_err(|e| Error::subprocess_with_err(shell, cmd, e))?;
+    let child = Child::new(cmd.to_string(), inner, shell.to_string());
+    Ok(child)
 }
 
-/// Spawns provided bash command in a subprocess, providing it various
-/// environment variables depending on the `PlayerEvent` that was passed in.
-/// If successful, returns a handle to the subprocess.
-pub(crate) fn spawn_program_on_event(cmd: &str, event: PlayerEvent) -> Result<Child, Error> {
+/// Spawns provided command in a subprocess using the provided shell.
+/// Various environment variables are included in the subprocess's environment
+/// depending on the `PlayerEvent` that was passed in.
+pub(crate) fn spawn_program_on_event(
+    shell: &str,
+    cmd: &str,
+    event: PlayerEvent,
+) -> Result<Child, Error> {
     let mut env = HashMap::new();
     match event {
         PlayerEvent::Changed {
             old_track_id,
             new_track_id,
         } => {
-            env.insert("PLAYER_EVENT", "change".to_string());
             env.insert("OLD_TRACK_ID", old_track_id.to_base62());
+            env.insert("PLAYER_EVENT", "change".to_string());
             env.insert("TRACK_ID", new_track_id.to_base62());
         }
         PlayerEvent::Started { track_id } => {
@@ -66,40 +71,37 @@ pub(crate) fn spawn_program_on_event(cmd: &str, event: PlayerEvent) -> Result<Ch
             env.insert("TRACK_ID", track_id.to_base62());
         }
     }
-    spawn_program(cmd, env)
+    spawn_program(shell, cmd, env)
 }
 
-/// Same as a `std::process::Child` except this `Child`'s `wait` and `try_wait`
-/// methods return an error if the subprocess exited unsuccesfully. This error
-/// contains a) information on the original command that was run and b) the contents
-/// of the subprocess's stderr, thereby enabling us to log that something bad happened
-/// with this particular command.
+/// Same as a `std::process::Child` except when this `Child` exits:
+/// * successfully: It writes the contents of it's stdout to the stdout of the main process.
+/// * unsuccesfully: It returns an error that includes the contents it's stderr as well as
+///   information on the command that was run and the shell that invoked it.
 #[derive(Debug)]
 pub(crate) struct Child {
     cmd: String,
     inner: std::process::Child,
+    shell: String,
 }
 
 impl Child {
-    pub(crate) fn new(cmd: String, child: std::process::Child) -> Self {
-        Self { cmd, inner: child }
+    pub(crate) fn new(cmd: String, child: std::process::Child, shell: String) -> Self {
+        Self {
+            cmd,
+            inner: child,
+            shell,
+        }
     }
 
     #[allow(unused)]
     pub(crate) fn wait(&mut self) -> Result<(), Error> {
         match self.inner.wait() {
             Ok(status) => {
-                if !status.success() {
-                    let mut buf = String::new();
-                    match self.inner.stderr.as_mut().unwrap().read_to_string(&mut buf) {
-                        Ok(_nread) => Err(Error::subprocess_with_str(&self.cmd, &buf)),
-                        Err(e) => Err(Error::subprocess_with_err(&self.cmd, e)),
-                    }
-                } else {
-                    Ok(())
-                }
+                self.write_output(status)?;
+                Ok(())
             }
-            Err(e) => Err(Error::subprocess_with_err(&self.cmd, e)),
+            Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
         }
     }
 
@@ -107,18 +109,39 @@ impl Child {
     pub(crate) fn try_wait(&mut self) -> Result<Option<()>, Error> {
         match self.inner.try_wait() {
             Ok(Some(status)) => {
-                if !status.success() {
-                    let mut buf = String::new();
-                    match self.inner.stderr.as_mut().unwrap().read_to_string(&mut buf) {
-                        Ok(_nread) => Err(Error::subprocess_with_str(&self.cmd, &buf)),
-                        Err(e) => Err(Error::subprocess_with_err(&self.cmd, e)),
-                    }
-                } else {
-                    Ok(Some(()))
-                }
+                self.write_output(status)?;
+                Ok(Some(()))
             }
             Ok(None) => Ok(None),
-            Err(e) => Err(Error::subprocess_with_err(&self.cmd, e)),
+            Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
+        }
+    }
+
+    fn write_output(&mut self, status: ExitStatus) -> Result<(), Error> {
+        if status.success() {
+            // If successful, write subprocess's stdout to main process's stdout...
+            let mut stdout_of_child = self.inner.stdout.as_mut().unwrap();
+            let reader = &mut stdout_of_child;
+
+            let stdout_of_main = io::stdout();
+            let mut guard = stdout_of_main.lock();
+            let writer = &mut guard;
+
+            io::copy(reader, writer)
+                .map_err(|e| Error::subprocess_with_err(&self.shell, &self.cmd, e))?;
+
+            writer
+                .flush()
+                .map_err(|e| Error::subprocess_with_err(&self.shell, &self.cmd, e))?;
+
+            Ok(())
+        } else {
+            // If unsuccessful, return an error that includes the contents of stderr...
+            let mut buf = String::new();
+            match self.inner.stderr.as_mut().unwrap().read_to_string(&mut buf) {
+                Ok(_nread) => Err(Error::subprocess_with_str(&self.shell, &self.cmd, &buf)),
+                Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
+            }
         }
     }
 }
