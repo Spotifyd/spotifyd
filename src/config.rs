@@ -146,13 +146,16 @@ pub(crate) fn get_config<P: AsRef<Path>>(
 
     let lookup = |field| {
         if matches.opt_defined(field) {
-            if let Some(val) = matches.opt_str(field) {
-                return Some(val);
-            }
+            matches.opt_str(field).or_else(|| {
+                spotifyd
+                    .and_then(|s| s.get(field).map(String::clone))
+                    .or_else(|| global.and_then(|s| s.get(field).map(String::clone)))
+            })
+        } else {
+            spotifyd
+                .and_then(|s| s.get(field).map(String::clone))
+                .or_else(|| global.and_then(|s| s.get(field).map(String::clone)))
         }
-        spotifyd
-            .and_then(|s| s.get(field).map(String::clone))
-            .or_else(|| global.and_then(|s| s.get(field).map(String::clone)))
     };
 
     update(
