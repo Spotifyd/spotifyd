@@ -1,5 +1,4 @@
 use getopts::Matches;
-use hostname;
 use ini::Ini;
 use librespot::{
     core::{cache::Cache, config::SessionConfig, version},
@@ -9,13 +8,16 @@ use log::info;
 use sha1::{Digest, Sha1};
 use std::{
     convert::From,
-    error::Error,
     fs::metadata,
     mem::swap,
     path::{Path, PathBuf},
     str::FromStr,
 };
 use xdg;
+
+use crate::error::{Error, ErrorKind};
+use crate::process::run_program;
+use crate::utils;
 
 const CONFIG_FILE: &str = "spotifyd.conf";
 
@@ -41,21 +43,22 @@ impl FromStr for VolumeController {
     }
 }
 
-pub struct SpotifydConfig {
-    pub username: Option<String>,
-    pub password: Option<String>,
-    pub use_keyring: bool,
-    pub cache: Option<Cache>,
-    pub backend: Option<String>,
-    pub audio_device: Option<String>,
-    pub control_device: Option<String>,
-    pub mixer: Option<String>,
-    pub volume_controller: VolumeController,
-    pub device_name: String,
-    pub player_config: PlayerConfig,
-    pub session_config: SessionConfig,
-    pub onevent: Option<String>,
-    pub pid: Option<String>,
+pub(crate) struct SpotifydConfig {
+    pub(crate) username: Option<String>,
+    pub(crate) password: Option<String>,
+    pub(crate) use_keyring: bool,
+    pub(crate) cache: Option<Cache>,
+    pub(crate) backend: Option<String>,
+    pub(crate) audio_device: Option<String>,
+    pub(crate) control_device: Option<String>,
+    pub(crate) mixer: Option<String>,
+    pub(crate) volume_controller: VolumeController,
+    pub(crate) device_name: String,
+    pub(crate) player_config: PlayerConfig,
+    pub(crate) session_config: SessionConfig,
+    pub(crate) onevent: Option<String>,
+    pub(crate) pid: Option<String>,
+    pub(crate) shell: String,
 }
 
 impl Default for SpotifydConfig {
@@ -84,25 +87,26 @@ impl Default for SpotifydConfig {
             },
             onevent: None,
             pid: None,
+            shell: utils::get_shell().unwrap_or_else(|| {
+                info!("Unable to identify shell. Defaulting to \"sh\".");
+                "sh".to_string()
+            }),
         }
     }
 }
 
-pub fn get_config_file() -> Result<PathBuf, Box<Error>> {
+pub(crate) fn get_config_file() -> Option<PathBuf> {
     let etc_conf = format!("/etc/{}", CONFIG_FILE);
-    let xdg_dirs = xdg::BaseDirectories::with_prefix("spotifyd")?;
-    xdg_dirs
-        .find_config_file(CONFIG_FILE)
-        .or_else(|| {
-            metadata(&*etc_conf).ok().and_then(|meta| {
-                if meta.is_file() {
-                    Some(etc_conf.into())
-                } else {
-                    None
-                }
-            })
+    let xdg_dirs = xdg::BaseDirectories::with_prefix("spotifyd").ok()?;
+    xdg_dirs.find_config_file(CONFIG_FILE).or_else(|| {
+        metadata(&*etc_conf).ok().and_then(|meta| {
+            if meta.is_file() {
+                Some(etc_conf.into())
+            } else {
+                None
+            }
         })
-        .ok_or_else(|| From::from("Couldn't find a config file."))
+    })
 }
 
 fn update<T>(r: &mut T, val: Option<T>) {
@@ -111,7 +115,10 @@ fn update<T>(r: &mut T, val: Option<T>) {
     }
 }
 
-pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> SpotifydConfig {
+pub(crate) fn get_config<P: AsRef<Path>>(
+    config_path: Option<P>,
+    matches: &Matches,
+) -> Result<SpotifydConfig, Error> {
     let mut config = SpotifydConfig::default();
 
     let config_file = config_path
@@ -138,11 +145,14 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     let spotifyd = config_file.section(Some("spotifyd".to_owned()));
 
     let lookup = |field| {
-        matches.opt_str(field).or_else(|| {
-            spotifyd
-                .and_then(|s| s.get(field).map(String::clone))
+        if matches.opt_defined(field) {
+            None.or_else(|| matches.opt_str(field))
+                .or_else(|| spotifyd.and_then(|s| s.get(field).map(String::clone)))
                 .or_else(|| global.and_then(|s| s.get(field).map(String::clone)))
-        })
+        } else {
+            None.or_else(|| spotifyd.and_then(|s| s.get(field).map(String::clone)))
+                .or_else(|| global.and_then(|s| s.get(field).map(String::clone)))
+        }
     };
 
     update(
@@ -154,7 +164,16 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     );
 
     config.username = lookup("username");
-    config.password = lookup("password");
+    config.password = match lookup("password") {
+        Some(password) => Some(password),
+        None => match lookup("password_cmd") {
+            Some(ref cmd) => match run_program(&config.shell, cmd) {
+                Ok(s) => Some(s.trim().to_string()),
+                Err(e) => return Err(Error::subprocess_with_err(&config.shell, cmd, e)),
+            },
+            None => None,
+        },
+    };
     if let Some(ref value) = lookup("use-keyring") {
         if value == "true" {
             config.use_keyring = true;
@@ -169,7 +188,7 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
         lookup("volume-control").and_then(|s| VolumeController::from_str(&*s).ok()),
     );
     config.device_name = lookup("device_name").unwrap_or_else(|| {
-        if let Some(h) = hostname::get_hostname() {
+        if let Some(h) = utils::get_hostname() {
             format!("Spotifyd@{}", h)
         } else {
             "Spotifyd".to_string()
@@ -183,12 +202,12 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
             .unwrap_or_else(|| "false".to_string())
             == "true";
 
-    config.player_config.normalisation_pregain = lookup("normalisation-pregain")
-        .map(|db| {
-            db.parse::<f32>()
-                .expect("volume-normalisation must be a floating point number.")
-        })
-        .unwrap_or(PlayerConfig::default().normalisation_pregain);
+    config.player_config.normalisation_pregain = match lookup("normalisation-pregain") {
+        Some(db) => db
+            .parse::<f32>()
+            .map_err(|_| Error::from(ErrorKind::NormalisationPregainInvalid))?,
+        None => PlayerConfig::default().normalisation_pregain,
+    };
 
     update(
         &mut config.player_config.bitrate,
@@ -197,5 +216,5 @@ pub fn get_config<P: AsRef<Path>>(config_path: Option<P>, matches: &Matches) -> 
     update(&mut config.session_config.device_id, lookup("device_name"));
 
     config.pid = lookup("pid");
-    config
+    Ok(config)
 }

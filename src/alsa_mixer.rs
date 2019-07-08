@@ -10,7 +10,7 @@ pub struct AlsaMixer {
 }
 
 impl AlsaMixer {
-    fn set_volume_with_err(&self, volume: u16) -> Result<(), Box<Error>> {
+    fn set_volume_with_err(&self, volume: u16) -> Result<(), Box<dyn Error>> {
         let mixer = alsa::mixer::Mixer::new(&self.device, false)?;
 
         let selem_id = alsa::mixer::SelemId::new(&*self.mixer, 0);
@@ -76,7 +76,7 @@ impl Mixer for AlsaMixer {
         }
     }
 
-    fn get_audio_filter(&self) -> Option<Box<AudioFilter + Send>> {
+    fn get_audio_filter(&self) -> Option<Box<dyn AudioFilter + Send>> {
         None
     }
 }

@@ -12,8 +12,8 @@ dbus = { version = "0.6", optional = true }
 dbus-tokio = { version = "0.2", optional = true }
 futures = "0.1"
 getopts = "0.2"
-hostname = "0.1"
 keyring = { version = "0.6.1", optional = true }
+libc = "0.2"
 log = "0.4.6"
 rspotify = "0.2.5"
 sha-1 = "0.8"
@@ -30,6 +30,9 @@ xdg = "2.2"
 default-features = false
 features = ["with-tremor"]
 git = "https://github.com/librespot-org/librespot.git"
+
+[dev-dependencies]
+env_logger = "0.6"
 
 [features]
 alsa_backend = ["librespot/alsa-backend", "alsa"]

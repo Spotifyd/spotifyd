@@ -1,6 +1,3 @@
-#[cfg(feature = "dbus_mpris")]
-use crate::dbus_mpris::DbusServer;
-use crate::player_event_handler::run_program_on_events;
 use futures::{self, Async, Future, Poll, Stream};
 use librespot::{
     connect::{
@@ -19,12 +16,17 @@ use librespot::{
         player::{Player, PlayerEvent},
     },
 };
-use std::{io, process::Child, rc::Rc};
+use log::error;
+use std::{io, rc::Rc};
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
 
+#[cfg(feature = "dbus_mpris")]
+use crate::dbus_mpris::DbusServer;
+use crate::process::{spawn_program_on_event, Child};
+
 pub struct LibreSpotConnection {
-    connection: Box<Future<Item = Session, Error = io::Error>>,
+    connection: Box<dyn Future<Item = Session, Error = io::Error>>,
     spirc_task: Option<SpircTask>,
     spirc: Option<Rc<Spirc>>,
     discovery_stream: DiscoveryStream,
@@ -32,7 +34,7 @@ pub struct LibreSpotConnection {
 
 impl LibreSpotConnection {
     pub fn new(
-        connection: Box<Future<Item = Session, Error = io::Error>>,
+        connection: Box<dyn Future<Item = Session, Error = io::Error>>,
         discovery_stream: DiscoveryStream,
     ) -> LibreSpotConnection {
         LibreSpotConnection {
@@ -45,8 +47,8 @@ impl LibreSpotConnection {
 }
 
 pub struct AudioSetup {
-    pub mixer: Box<FnMut() -> Box<Mixer>>,
-    pub backend: fn(Option<String>) -> Box<Sink>,
+    pub mixer: Box<dyn FnMut() -> Box<dyn Mixer>>,
+    pub backend: fn(Option<String>) -> Box<dyn Sink>,
     pub audio_device: Option<String>,
 }
 
@@ -57,7 +59,7 @@ pub struct SpotifydState {
     pub device_name: String,
     pub player_event_channel: Option<futures::sync::mpsc::UnboundedReceiver<PlayerEvent>>,
     pub player_event_program: Option<String>,
-    pub dbus_mpris_server: Option<Box<Future<Item = (), Error = ()>>>,
+    pub dbus_mpris_server: Option<Box<dyn Future<Item = (), Error = ()>>>,
 }
 
 #[cfg(feature = "dbus_mpris")]
@@ -81,19 +83,20 @@ fn new_dbus_server(
     _: Handle,
     _: Rc<Spirc>,
     _: String,
-) -> Option<Box<Future<Item = (), Error = ()>>> {
+) -> Option<Box<dyn Future<Item = (), Error = ()>>> {
     None
 }
 
-pub struct MainLoopState {
-    pub librespot_connection: LibreSpotConnection,
-    pub audio_setup: AudioSetup,
-    pub spotifyd_state: SpotifydState,
-    pub player_config: PlayerConfig,
-    pub session_config: SessionConfig,
-    pub handle: Handle,
-    pub linear_volume: bool,
-    pub running_event_program: Option<Child>,
+pub(crate) struct MainLoopState {
+    pub(crate) librespot_connection: LibreSpotConnection,
+    pub(crate) audio_setup: AudioSetup,
+    pub(crate) spotifyd_state: SpotifydState,
+    pub(crate) player_config: PlayerConfig,
+    pub(crate) session_config: SessionConfig,
+    pub(crate) handle: Handle,
+    pub(crate) linear_volume: bool,
+    pub(crate) running_event_program: Option<Child>,
+    pub(crate) shell: String,
 }
 
 impl Future for MainLoopState {
@@ -116,17 +119,24 @@ impl Future for MainLoopState {
             }
 
             if let Some(mut child) = self.running_event_program.take() {
-                if let Ok(None) = child.try_wait() {
-                    self.running_event_program = Some(child);
+                match child.try_wait() {
+                    // Still running...
+                    Ok(None) => self.running_event_program = Some(child),
+                    // Exited with error...
+                    Err(e) => error!("{}", e),
+                    // Exited without error...
+                    Ok(Some(_)) => (),
                 }
             }
             if self.running_event_program.is_none() {
                 if let Some(ref mut player_event_channel) = self.spotifyd_state.player_event_channel
                 {
                     if let Async::Ready(Some(event)) = player_event_channel.poll().unwrap() {
-                        if let Some(ref program) = self.spotifyd_state.player_event_program {
-                            let child = run_program_on_events(event, program);
-                            self.running_event_program = Some(child);
+                        if let Some(ref cmd) = self.spotifyd_state.player_event_program {
+                            match spawn_program_on_event(&self.shell, cmd, event) {
+                                Ok(child) => self.running_event_program = Some(child),
+                                Err(e) => error!("{}", e),
+                            }
                         }
                     }
                 }

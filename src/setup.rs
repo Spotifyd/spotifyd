@@ -22,38 +22,42 @@ use std::{io, process::exit};
 use tokio_core::reactor::Handle;
 use tokio_signal::ctrl_c;
 
-pub fn initial_state(handle: Handle, config: config::SpotifydConfig) -> main_loop::MainLoopState {
-    let local_audio_device = config.audio_device.clone();
-    let local_control_device = config.control_device.clone();
-    let local_mixer = config.mixer.clone();
-
+pub(crate) fn initial_state(
+    handle: Handle,
+    config: config::SpotifydConfig,
+) -> main_loop::MainLoopState {
     #[cfg(feature = "alsa_backend")]
-    let mut mixer = match config.volume_controller {
-        config::VolumeController::Alsa { linear } => {
-            info!("Using alsa volume controller.");
-            Box::new(move || {
-                Box::new(alsa_mixer::AlsaMixer {
-                    device: local_control_device
-                        .clone()
-                        .or_else(|| local_audio_device.clone())
-                        .unwrap_or_else(|| "default".to_string()),
-                    mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
-                    linear_scaling: linear,
-                }) as Box<mixer::Mixer>
-            }) as Box<FnMut() -> Box<Mixer>>
-        }
-        config::VolumeController::SoftVol => {
-            info!("Using software volume controller.");
-            Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<Mixer>)
-                as Box<FnMut() -> Box<Mixer>>
+    let mut mixer = {
+        let local_audio_device = config.audio_device.clone();
+        let local_control_device = config.control_device.clone();
+        let local_mixer = config.mixer.clone();
+        match config.volume_controller {
+            config::VolumeController::Alsa { linear } => {
+                info!("Using alsa volume controller.");
+                Box::new(move || {
+                    Box::new(alsa_mixer::AlsaMixer {
+                        device: local_control_device
+                            .clone()
+                            .or_else(|| local_audio_device.clone())
+                            .unwrap_or_else(|| "default".to_string()),
+                        mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
+                        linear_scaling: linear,
+                    }) as Box<dyn mixer::Mixer>
+                }) as Box<dyn FnMut() -> Box<dyn Mixer>>
+            }
+            config::VolumeController::SoftVol => {
+                info!("Using software volume controller.");
+                Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+                    as Box<dyn FnMut() -> Box<dyn Mixer>>
+            }
         }
     };
 
     #[cfg(not(feature = "alsa_backend"))]
     let mut mixer = {
         info!("Using software volume controller.");
-        Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<Mixer>)
-            as Box<FnMut() -> Box<Mixer>>
+        Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+            as Box<dyn FnMut() -> Box<dyn Mixer>>
     };
 
     let cache = config.cache;
@@ -117,7 +121,7 @@ pub fn initial_state(handle: Handle, config: config::SpotifydConfig) -> main_loo
         )
     } else {
         Box::new(futures::future::empty())
-            as Box<futures::Future<Item = Session, Error = io::Error>>
+            as Box<dyn futures::Future<Item = Session, Error = io::Error>>
     };
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
@@ -142,10 +146,11 @@ pub fn initial_state(handle: Handle, config: config::SpotifydConfig) -> main_loo
         handle,
         linear_volume,
         running_event_program: None,
+        shell: config.shell,
     }
 }
 
-fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<Sink> {
+fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<dyn Sink> {
     match name {
         Some(name) => {
             BACKENDS
