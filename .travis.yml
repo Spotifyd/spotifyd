@@ -60,13 +60,13 @@ script:
 - if [ $SHORT_TARGET = "x86" ]; then cargo build --target=$TARGET --release --features "pulseaudio_backend"; fi
 - if [ $SHORT_TARGET = "x86" ]; then zip -j spotifyd-`date --iso-8601`-$SHORT_TARGET-pulseaudio.zip target/$TARGET/release/spotifyd; fi
 
-#deploy:
-#  provider: releases
-#  api_key:
-#    secure: TwIv65LDHIBOgOsafV/wio+EwoG0pg5sFZZvEgNIV5J++zJoxaI35DH1/frKB6S4J2HhEKDojc7Np4tEgNUCOj+qZ51ma85SYr3SzVOg2n/TUI7lg/Gb13n6qd1AfTA2SsTryuGIvS7p4BaYSRtGXUuOghZg+7qdgl+zKeXiLnY=
-#  file_glob: true
-#  file: "spotifyd*zip"
-#  skip_cleanup: true
-#  on:
-#    branch: master
-#    tags: true
+deploy:
+  provider: releases
+  api_key:
+    secure: TwIv65LDHIBOgOsafV/wio+EwoG0pg5sFZZvEgNIV5J++zJoxaI35DH1/frKB6S4J2HhEKDojc7Np4tEgNUCOj+qZ51ma85SYr3SzVOg2n/TUI7lg/Gb13n6qd1AfTA2SsTryuGIvS7p4BaYSRtGXUuOghZg+7qdgl+zKeXiLnY=
+  file_glob: true
+  file: "spotifyd*zip"
+  skip_cleanup: true
+  on:
+    branch: master
+    tags: true
