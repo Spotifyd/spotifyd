@@ -8,7 +8,8 @@ env:
   - PKG_CONFIG_ALLOW_CROSS=1
 addons:
   apt:
-    - libaound2-dev
+    packages:
+      - libaound2-dev
 matrix:
   include:
   - env: TARGET=aarch64-unknown-linux-gnu
