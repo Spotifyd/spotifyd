@@ -4,30 +4,30 @@ services: docker
 sudo: required
 env:
   global:
-  - CRATE_NAME=spotifyd
-  - PKG_CONFIG_ALLOW_CROSS=1
-matrix:
-  include:
-  - env: TARGET=aarch64-unknown-linux-gnu
-  - env: TARGET=arm-unknown-linux-gnueabi
-  - env: TARGET=armv7-unknown-linux-gnueabihf
-  - env: TARGET=i686-unknown-linux-gnu
-  - env: TARGET=x86_64-unknown-linux-gnu
-  - env: TARGET=i686-apple-darwin
-    os: osx
-  - env: TARGET=x86_64-apple-darwin
-    os: osx
-  - env: TARGET=x86_64-pc-windows-gnu
+    - CRATE_NAME=spotifyd
+    - PKG_CONFIG_ALLOW_CROSS=1
+  matrix:
+    include:
+    - env: TARGET=aarch64-unknown-linux-gnu
+    - env: TARGET=arm-unknown-linux-gnueabi
+    - env: TARGET=armv7-unknown-linux-gnueabihf
+    - env: TARGET=i686-unknown-linux-gnu
+    - env: TARGET=x86_64-unknown-linux-gnu
+    - env: TARGET=i686-apple-darwin
+      os: osx
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+    - env: TARGET=x86_64-pc-windows-gnu
 before_install:
-- set -e
-- rustup self update
+  - set -e
+  - rustup self update
 install:
-- cargo install cross
+  - cargo install cross
 script:
-- cross test --target $TARGET
-- cross build --target $TARGET --release
+  - cross test --target $TARGET
+  - cross build --target $TARGET --release
 before_deploy:
-- sh .ci/before_deploy.sh
+  - sh .ci/before_deploy.sh
 deploy:
   api_key:
     secure: XvXqeuejVZFOEIu0IlSBu2sFrPLt8vMz+t5EO338gUz9aSZXI4+pFOEoNGG1iDvPUGC36lrV1R8JRlTL1WDlxoOEeISBqnAN9fKwk87LHNXPWDfBWAlXukBAy3U0ZsZOseOlvjs2pYEtaSLP8itob+88HuCipnbe3gyyW6+6Ni8s8AN9jw4BrvBAPxCgN55fJG+WxZdWLZ6TMyk8QGVQ7TfY1jxCgrqSB3CBitiKkwnCLbckAw4pbqBzk9FP7W5e4G5fnOTq2A65G2Rxrsa3XuXuMMNBjGxvsntXWF/7QmuuemD8ILG+o0JicLGVqeFTVblDEQbnfi13tSMkvb3bRPGx5Z+Erpjz03U/+DTsoWUdqUcRtInuHsapqkSnyp6HgXo+JUR83+Zygr6STzHZbObZIzkCp8o/tX8PGNjHFfkN5zmpFZAi3NM6nSkrvJHh1dKHFt2l1wjkdegLATbVXJrRCJUWv+t/XAfbjRMBvM20ziieN275SAmFMEnq5pGkq7j4IejECjryUkBTzDn77ms62NK3Nt+WxQHUCvZQaslovIsYD9D/QAhmqS2BnDeAuYVdkKIsjCqHtfgI2QObBhZujNHnmzhX7aOm0PeKR5hAd8jdhWszxbV6nersHXZd579YugdXR9rG4AHyH2Ic9obaVwhDkif9n96HPakUNHI=
@@ -40,8 +40,8 @@ deploy:
   skip_cleanup: true
 cache: cargo
 before_cache:
-- chmod -R a+r $HOME/.cargo
+  - chmod -R a+r $HOME/.cargo
 branches:
   only:
-  - "/^v\\d+\\.\\d+\\.\\d+.*$/"
-  - master
+    - "/^v\\d+\\.\\d+\\.\\d+.*$/"
+    - master
