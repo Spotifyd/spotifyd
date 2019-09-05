@@ -22,6 +22,7 @@ before_install:
   - set -e
   - rustup self update
 install:
+  - echo "$PKG_CONFIG_ALLOW_CROSS"
   - cargo install cross
 script:
   - cross test --target "$TARGET"
