@@ -21,11 +21,8 @@ matrix:
 before_install:
   - set -e
   - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6B05F25D762E3157
+  - sudo apt-get install -y libasound2-dev
   - rustup self update
-addons:
-  apt:
-    packages:
-      - libaound2-dev
 install:
   - echo "$PKG_CONFIG_ALLOW_CROSS"
   - cargo install cross
