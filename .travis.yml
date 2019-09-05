@@ -6,10 +6,6 @@ env:
   global:
   - CRATE_NAME=spotifyd
   - PKG_CONFIG_ALLOW_CROSS=1
-addons:
-  apt:
-    packages:
-      - libaound2-dev
 matrix:
   include:
   - env: TARGET=aarch64-unknown-linux-gnu
@@ -24,7 +20,12 @@ matrix:
   - env: TARGET=x86_64-pc-windows-gnu
 before_install:
   - set -e
+  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6B05F25D762E3157
   - rustup self update
+addons:
+  apt:
+    packages:
+      - libaound2-dev
 install:
   - echo "$PKG_CONFIG_ALLOW_CROSS"
   - cargo install cross
