@@ -4,6 +4,9 @@ use daemonize::Daemonize;
 use log::{error, info, LevelFilter};
 use std::{convert::From, error::Error, panic, path::PathBuf, process::exit};
 use tokio_core::reactor::Core;
+use structopt::StructOpt;
+
+use crate::config::Config;
 
 #[cfg(feature = "alsa_backend")]
 mod alsa_mixer;
@@ -20,44 +23,23 @@ mod utils;
 mod macros;
 
 fn main() {
-    let opts = cli::command_line_argument_options();
-    let args: Vec<String> = std::env::args().collect();
+    let mut cli_config = Config::from_args();
+    cli_config.load_config_file_values();
 
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => m,
-        Err(f) => {
-            println!("Error: {}\n{}", f.to_string(), cli::usage(&args[0], &opts));
-            exit(1)
-        }
-    };
-
-    if matches.opt_present("backends") {
-        cli::print_backends();
-        exit(0);
-    }
-
-    if matches.opt_present("help") {
-        println!("{}", cli::usage(&args[0], &opts));
-        exit(0);
-    }
-
-    if matches.opt_present("version") {
-        println!("spotifyd version {}", crate_version!());
-        exit(0)
-    }
-
-    let is_daemon = !matches.opt_present("no-daemon");
+    let is_daemon = cli_config.cli_only_config.daemon;
+    let is_verbose = cli_config.cli_only_config.verbose;
 
     if is_daemon {
-        let filter = if matches.opt_present("verbose") {
+        let filter = if is_verbose {
             LevelFilter::Trace
         } else {
             LevelFilter::Info
         };
+
         syslog::init(syslog::Facility::LOG_DAEMON, filter, Some("Spotifyd"))
             .expect("Couldn't initialize logger");
     } else {
-        let filter = if matches.opt_present("verbose") {
+        let filter = if is_verbose {
             simplelog::LogLevelFilter::Trace
         } else {
             simplelog::LogLevelFilter::Info
@@ -72,22 +54,11 @@ fn main() {
             .expect("Couldn't initialize logger");
     }
 
-    let config_file = matches
-        .opt_str("config")
-        .map(PathBuf::from)
-        .or_else(config::get_config_file);
-
-    let config = match config::get_config(config_file, &matches) {
-        Ok(config) => config,
-        Err(e) => {
-            error!("{}", e);
-            exit(1);
-        }
-    };
+    let internal_config = config::get_internal_config(cli_config);
 
     if is_daemon {
         let mut daemonize = Daemonize::new();
-        if let Some(pid) = config.pid.as_ref() {
+        if let Some(pid) = internal_config.pid.as_ref() {
             daemonize = daemonize.pid_file(pid);
         }
         match daemonize.start() {
@@ -113,7 +84,6 @@ fn main() {
     let mut core = Core::new().unwrap();
     let handle = core.handle();
 
-    let initial_state = setup::initial_state(handle, config);
-
+    let initial_state = setup::initial_state(handle, internal_config);
     core.run(initial_state).unwrap();
 }

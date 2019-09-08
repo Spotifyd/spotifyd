@@ -1,5 +1,5 @@
 [package]
-authors = ["Simon Persson <simon@flaskpost.org>"]
+authors = ["Simon Persson <simon@flaskpost.org>", "Sven Lechner <sven.lechner@rwth-aachen.de>"]
 edition = "2018"
 name = "spotifyd"
 version = "0.2.11"
@@ -25,6 +25,14 @@ tokio-core = "0.1"
 tokio-io = "0.1"
 tokio-signal = "0.1"
 xdg = "2.2"
+structopt = "0.3.0"
+clap = "2.33.0"
+serde = { version = "1.0.99", features = ["derive"] }
+serde_ini = "0.2.0"
+failure = "0.1.5"
+lazy_static = "1.4.0"
+app_dirs2 = "2.0.3"
+directories = "2.0.2"
 
 [dependencies.librespot]
 default-features = false
