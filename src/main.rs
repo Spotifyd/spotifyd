@@ -24,7 +24,7 @@ fn main() {
     let mut cli_config = CliConfig::from_args();
     cli_config.load_config_file_values();
 
-    let is_daemon = cli_config.daemon;
+    let is_daemon = !cli_config.no_daemon;
     let is_verbose = cli_config.verbose;
 
     if is_daemon {

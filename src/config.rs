@@ -132,8 +132,6 @@ impl<'de> de::Visitor<'de> for BoolFromStr {
     where
         E: serde::de::Error,
     {
-        println!("Trying to convert {}", s);
-        println!("COnverted to {}", bool::from_str(s).unwrap());
         bool::from_str(s).map_err(serde::de::Error::custom)
     }
 }
@@ -157,9 +155,9 @@ pub struct CliConfig {
     #[structopt(long, value_name = "string")]
     pub config_path: Option<PathBuf>,
 
-    /// If set, starts spotifyd as a unix daemon
+    /// If set, starts spotifyd without detaching
     #[structopt(long)]
-    pub daemon: bool,
+    pub no_daemon: bool,
 
     /// Prints more verbose output
     #[structopt(long)]
