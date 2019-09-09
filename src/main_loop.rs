@@ -69,7 +69,7 @@ fn new_dbus_server(
     handle: Handle,
     spirc: Rc<Spirc>,
     device_name: String,
-) -> Option<Box<Future<Item = (), Error = ()>>> {
+) -> Option<Box<dyn Future<Item = (), Error = ()>>> {
     Some(Box::new(DbusServer::new(
         session,
         handle,

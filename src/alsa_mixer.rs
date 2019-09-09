@@ -66,7 +66,7 @@ impl Mixer for AlsaMixer {
                     self.device
                 );
                 0
-            },
+            }
         }
     }
 

@@ -63,15 +63,15 @@ pub(crate) fn spawn_program_on_event(
             env.insert("OLD_TRACK_ID", old_track_id.to_base62());
             env.insert("PLAYER_EVENT", "change".to_string());
             env.insert("TRACK_ID", new_track_id.to_base62());
-        },
+        }
         PlayerEvent::Started { track_id } => {
             env.insert("PLAYER_EVENT", "start".to_string());
             env.insert("TRACK_ID", track_id.to_base62());
-        },
+        }
         PlayerEvent::Stopped { track_id } => {
             env.insert("PLAYER_EVENT", "stop".to_string());
             env.insert("TRACK_ID", track_id.to_base62());
-        },
+        }
     }
     spawn_program(shell, cmd, env)
 }
@@ -104,7 +104,7 @@ impl Child {
             Ok(status) => {
                 self.write_output(status)?;
                 Ok(())
-            },
+            }
             Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
         }
     }
@@ -115,7 +115,7 @@ impl Child {
             Ok(Some(status)) => {
                 self.write_output(status)?;
                 Ok(Some(()))
-            },
+            }
             Ok(None) => Ok(None),
             Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
         }

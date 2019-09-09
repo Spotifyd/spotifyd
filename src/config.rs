@@ -330,8 +330,8 @@ impl FileConfig {
         );
 
         // Handles boolean merging.
-        self.use_keyring = self.use_keyring | other.use_keyring;
-        self.volume_normalisation = self.volume_normalisation | other.volume_normalisation;
+        self.use_keyring |= other.use_keyring;
+        self.volume_normalisation |= other.volume_normalisation;
     }
 }
 
@@ -395,11 +395,13 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .unwrap_or(Backend::Alsa)
         .to_string();
 
-    let device_name = config.file_config.device_name.unwrap_or(format!(
-        "{}@{}",
-        "Spotifyd",
-        utils::get_hostname().unwrap_or("unknown".to_string())
-    ));
+    let device_name = config.file_config.device_name.unwrap_or_else(|| {
+        format!(
+            "{}@{}",
+            "Spotifyd",
+            utils::get_hostname().unwrap_or_else(|| "unknown".to_string())
+        )
+    });
 
     let normalisation_pregain = config.file_config.normalisation_pregain.unwrap_or(0.0f32);
 
@@ -414,7 +416,6 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     });
 
     let mut password = config.file_config.password;
-
     if password.is_none() && config.file_config.password_cmd.is_some() {
         info!("No password specified. Checking password_cmd");
 
