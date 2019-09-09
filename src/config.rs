@@ -264,6 +264,10 @@ pub struct FileConfig {
     /// A custom pregain applied before sending the audio to the output device
     #[structopt(long, value_name = "number")]
     normalisation_pregain: Option<f32>,
+
+    /// The port used for the Spotify Connect discovery
+    #[structopt(long)]
+    zeroconf_port: Option<u16>,
 }
 
 impl fmt::Debug for FileConfig {
@@ -290,6 +294,7 @@ impl fmt::Debug for FileConfig {
             .field("bitrate", &self.bitrate)
             .field("volume_normalisation", &self.volume_normalisation)
             .field("normalisation_pregain", &self.normalisation_pregain)
+            .field("zeroconf_port", &self.zeroconf_port)
             .finish()
     }
 }
@@ -372,6 +377,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) onevent: Option<String>,
     pub(crate) pid: Option<String>,
     pub(crate) shell: String,
+    pub(crate) zeroconf_port: Option<u16>,
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
@@ -424,5 +430,6 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
             info!("Unable to identify shell. Defaulting to \"sh\".");
             "sh".to_string()
         }),
+        zeroconf_port: config.file_config.zeroconf_port,
     }
 }

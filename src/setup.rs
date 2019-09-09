@@ -75,6 +75,9 @@ pub(crate) fn initial_state(
     #[cfg(not(feature = "alsa_backend"))]
     let linear_volume = false;
 
+    let zeroconf_port = config.zeroconf_port
+        .unwrap_or(0);
+
     #[allow(clippy::or_fun_call)]
     let discovery_stream = discovery(
         &handle,
@@ -85,7 +88,7 @@ pub(crate) fn initial_state(
             linear_volume,
         },
         device_id,
-        0,
+        zeroconf_port,
     )
     .unwrap();
 
