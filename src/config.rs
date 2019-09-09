@@ -2,6 +2,7 @@ use failure::{Error, Fail};
 
 use serde::{Deserialize, Serialize};
 use structopt::StructOpt;
+use clap::AppSettings;
 use lazy_static::lazy_static;
 
 use std::str::{FromStr};
@@ -158,6 +159,8 @@ impl<'de> de::Visitor<'de> for BoolFromStr {
     fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
         where E: serde::de::Error
     {
+        println!("Trying to convert {}", s);
+        println!("COnverted to {}", bool::from_str(s).unwrap());
         bool::from_str(s).map_err(serde::de::Error::custom)
     }
 }
@@ -169,8 +172,13 @@ fn de_from_str<'de, D>(deserializer: D) -> Result<bool, D::Error>
 }
 
 #[derive(Debug, Default, StructOpt)]
-#[structopt()]
-pub struct CliOnlyConfig {
+#[structopt(
+    about = "A Spotify daemon",
+    author,
+    name = "spotifyd",
+    setting(AppSettings::ColoredHelp)
+)]
+pub struct CliConfig {
     /// The path to the config file to use
     #[structopt(long, value_name = "string")]
     pub config_path: Option<PathBuf>,
@@ -186,15 +194,13 @@ pub struct CliOnlyConfig {
     /// Process id to launch the daemon on
     #[structopt(long)]
     pub pid: Option<i32>,
+
+    #[structopt(flatten)]
+    pub file_config: FileConfig,
 }
 
-#[derive(Debug, Deserialize, StructOpt)]
-#[structopt(
-    about = "A Spotify daemon",
-    author,
-    name = "spotifyd"
-)]
-pub struct Config {
+#[derive(Default, Deserialize, StructOpt)]
+pub struct FileConfig {
     /// The Spotify account user name
     #[structopt(long, short, value_name = "string")]
     username: Option<String>,
@@ -205,7 +211,7 @@ pub struct Config {
 
     /// Enables keyring password access
     #[structopt(long)]
-    #[serde(alias = "use-keyring", default, deserialize_with = "de_from_str")]
+    #[serde(alias = "use-keyring", deserialize_with = "de_from_str")]
     use_keyring: bool,
 
     /// A command that can be used to retrieve the Spotify account password
@@ -221,7 +227,7 @@ pub struct Config {
     #[structopt(long, parse(from_os_str), short, value_name = "string")]
     cache_path: Option<PathBuf>,
 
-    /// The audio backend to use. Can be alsa, pulseaudio or portaudio.
+    /// The audio backend to use
     #[structopt(long, short, possible_values = &BACKEND_VALUES, value_name = "string")]
     backend: Option<Backend>,
 
@@ -246,7 +252,7 @@ pub struct Config {
     #[structopt(long, short, value_name = "string")]
     device_name: Option<String>,
 
-    /// The bitrate of the streamed audio data. Can be 96, 160 or 320
+    /// The bitrate of the streamed audio data
     #[structopt(long, short = "B", possible_values = &BITRATE_VALUES, value_name = "number")]
     bitrate: Option<Bitrate>,
 
@@ -258,29 +264,39 @@ pub struct Config {
     /// A custom pregain applied before sending the audio to the output device
     #[structopt(long, value_name = "number")]
     normalisation_pregain: Option<f32>,
-
-    #[structopt(flatten)]
-    #[serde(skip)]
-    pub cli_only_config: CliOnlyConfig,
 }
 
-impl Config {
-    pub fn merge_with(&mut self, other: Config) {
-        macro_rules! merge {
-            ($($x:ident),+) => {
-                $(self.$x = self.$x.clone().or_else(|| other.$x.clone());)+
-            }
-        }
+impl fmt::Debug for FileConfig {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let password_value = if self.password.is_some() {
+            Some("taken out for privacy")
+        } else {
+            None
+        };
 
-        // Handles Option<T> merging. There is no need to merge boolean flags as the CLI parameters
-        // take absolute priority.
-        merge!(backend, username, password, password_cmd, normalisation_pregain, bitrate,
-            device_name, mixer, control, device, volume_controller, cache_path,
-            on_song_change_hook);
+        f.debug_struct("FileConfig")
+            .field("username", &self.username)
+            .field("password", &password_value)
+            .field("password_cmd", &self.password_cmd)
+            .field("use_keyring", &self.use_keyring)
+            .field("on_change_song_hook", &self.on_song_change_hook)
+            .field("cache_path", &self.cache_path)
+            .field("backend", &self.backend)
+            .field("volume_controller", &self.volume_controller)
+            .field("device", &self.device)
+            .field("control", &self.control)
+            .field("mixer", &self.mixer)
+            .field("device_name", &self.device_name)
+            .field("bitrate", &self.bitrate)
+            .field("volume_normalisation", &self.volume_normalisation)
+            .field("normalisation_pregain", &self.normalisation_pregain)
+            .finish()
     }
+}
 
+impl CliConfig {
     pub fn load_config_file_values(&mut self) {
-        let config_file_path = self.cli_only_config.config_path.clone()
+        let config_file_path = self.config_path.clone()
             .or_else(get_config_file);
 
         if config_file_path.is_none() {
@@ -288,6 +304,7 @@ impl Config {
             return;
         }
         let unwrapped_config_file_path = config_file_path.unwrap();
+        info!("Loading config from {:?}", &unwrapped_config_file_path);
 
         let config_file = fs::File::open(&unwrapped_config_file_path);
         if config_file.is_err() {
@@ -296,9 +313,28 @@ impl Config {
         }
 
         let bufreader = std::io::BufReader::new(config_file.unwrap());
-        let config_content: Config = serde_ini::from_bufread(bufreader).unwrap();
+        let config_content: FileConfig = serde_ini::from_bufread(bufreader).unwrap();
 
-        self.merge_with(config_content);
+        self.file_config.merge_with(config_content);
+    }
+}
+
+impl FileConfig {
+    pub fn merge_with(&mut self, other: FileConfig) {
+        macro_rules! merge {
+            ($($x:ident),+) => {
+                $(self.$x = self.$x.clone().or_else(|| other.$x.clone());)+
+            }
+        }
+
+        // Handles Option<T> merging.
+        merge!(backend, username, password, password_cmd, normalisation_pregain, bitrate,
+            device_name, mixer, control, device, volume_controller, cache_path,
+            on_song_change_hook);
+        
+        // Handles boolean merging.
+        self.use_keyring = self.use_keyring | other.use_keyring;
+        self.volume_normalisation = self.volume_normalisation | other.volume_normalisation;
     }
 }
 
@@ -338,42 +374,42 @@ pub(crate) struct SpotifydConfig {
     pub(crate) shell: String,
 }
 
-pub(crate) fn get_internal_config(config: Config) -> SpotifydConfig {
-    let cache = config.cache_path
+pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
+    let cache = config.file_config.cache_path
         .map(PathBuf::from)
         .and_then(|path| Some(Cache::new(path, true)));
 
-    let bitrate: LSBitrate = config.bitrate
+    let bitrate: LSBitrate = config.file_config.bitrate
         .unwrap_or(Bitrate::Bitrate160)
         .into();
 
-    let backend = config.backend
+    let backend = config.file_config.backend
         .unwrap_or(Backend::Alsa).to_string();
 
-    let device_name = config.device_name
+    let device_name = config.file_config.device_name
         .unwrap_or("Spotifyd".to_string());
 
-    let normalisation_pregain = config.normalisation_pregain
+    let normalisation_pregain = config.file_config.normalisation_pregain
         .unwrap_or(0.0f32);
 
-    let pid = config.cli_only_config.pid
+    let pid = config.pid
         .and_then(|f| Some(f.to_string()))
         .or_else(|| None);
 
     SpotifydConfig {
-        username: config.username,
-        password: config.password,
-        use_keyring: config.use_keyring,
+        username: config.file_config.username,
+        password: config.file_config.password,
+        use_keyring: config.file_config.use_keyring,
         cache,
         backend: Some(backend),
-        audio_device: config.device,
-        control_device: config.control,
-        mixer: config.mixer,
-        volume_controller: config.volume_controller.unwrap(),
+        audio_device: config.file_config.device,
+        control_device: config.file_config.control,
+        mixer: config.file_config.mixer,
+        volume_controller: config.file_config.volume_controller.unwrap(),
         device_name,
         player_config: PlayerConfig {
             bitrate,
-            normalisation: config.volume_normalisation,
+            normalisation: config.file_config.volume_normalisation,
             normalisation_pregain,
         },
         session_config: SessionConfig {
@@ -382,7 +418,7 @@ pub(crate) fn get_internal_config(config: Config) -> SpotifydConfig {
             proxy: None,
             ap_port: Some(443),
         },
-        onevent: config.on_song_change_hook,
+        onevent: config.file_config.on_song_change_hook,
         pid,
         shell: utils::get_shell().unwrap_or_else(|| {
             info!("Unable to identify shell. Defaulting to \"sh\".");

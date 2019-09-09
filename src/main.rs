@@ -1,12 +1,12 @@
 #![cfg(unix)]
 
 use daemonize::Daemonize;
-use log::{error, info, LevelFilter};
+use log::{error, info, trace, LevelFilter};
 use std::{convert::From, error::Error, panic, path::PathBuf, process::exit};
 use tokio_core::reactor::Core;
 use structopt::StructOpt;
 
-use crate::config::Config;
+use crate::config::CliConfig;
 
 #[cfg(feature = "alsa_backend")]
 mod alsa_mixer;
@@ -23,11 +23,11 @@ mod utils;
 mod macros;
 
 fn main() {
-    let mut cli_config = Config::from_args();
+    let mut cli_config = CliConfig::from_args();
     cli_config.load_config_file_values();
 
-    let is_daemon = cli_config.cli_only_config.daemon;
-    let is_verbose = cli_config.cli_only_config.verbose;
+    let is_daemon = cli_config.daemon;
+    let is_verbose = cli_config.verbose;
 
     if is_daemon {
         let filter = if is_verbose {
@@ -52,6 +52,10 @@ fn main() {
                     .map_err(Box::<dyn Error>::from)
             })
             .expect("Couldn't initialize logger");
+    }
+
+    if is_verbose {
+        trace!("{:?}", &cli_config);
     }
 
     let internal_config = config::get_internal_config(cli_config);

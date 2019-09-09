@@ -25,7 +25,7 @@ tokio-core = "0.1"
 tokio-io = "0.1"
 tokio-signal = "0.1"
 xdg = "2.2"
-structopt = "0.3.0"
+structopt = { version = "0.3.0", features = ["color"] }
 clap = "2.33.0"
 serde = { version = "1.0.99", features = ["derive"] }
 serde_ini = "0.2.0"
