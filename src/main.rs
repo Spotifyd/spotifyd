@@ -2,15 +2,15 @@
 
 use daemonize::Daemonize;
 use log::{error, info, trace, LevelFilter};
-use std::{convert::From, error::Error, panic, path::PathBuf, process::exit};
-use tokio_core::reactor::Core;
 use structopt::StructOpt;
+use tokio_core::reactor::Core;
+
+use std::{convert::From, error::Error, panic};
 
 use crate::config::CliConfig;
 
 #[cfg(feature = "alsa_backend")]
 mod alsa_mixer;
-mod cli;
 mod config;
 #[cfg(feature = "dbus_mpris")]
 mod dbus_mpris;
@@ -19,8 +19,6 @@ mod main_loop;
 mod process;
 mod setup;
 mod utils;
-#[macro_use]
-mod macros;
 
 fn main() {
     let mut cli_config = CliConfig::from_args();

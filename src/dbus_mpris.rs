@@ -21,8 +21,9 @@ use log::{info, warn};
 use rspotify::spotify::{
     client::Spotify, oauth2::TokenInfo as RspotifyToken, senum::*, util::datetime_to_timestamp,
 };
-use std::{collections::HashMap, rc::Rc, thread};
 use tokio_core::reactor::Handle;
+
+use std::{collections::HashMap, rc::Rc, thread};
 
 pub struct DbusServer {
     session: Session,

@@ -1,6 +1,7 @@
 use alsa;
 use librespot::playback::mixer::{AudioFilter, Mixer, MixerConfig};
 use log::error;
+
 use std::error::Error;
 
 pub struct AlsaMixer {
@@ -65,7 +66,7 @@ impl Mixer for AlsaMixer {
                     self.device
                 );
                 0
-            }
+            },
         }
     }
 

@@ -1,6 +1,3 @@
-#[cfg(feature = "alsa_backend")]
-use crate::alsa_mixer;
-use crate::{config, main_loop};
 use futures::{self, Future};
 #[cfg(feature = "dbus_keyring")]
 use keyring::Keyring;
@@ -18,9 +15,14 @@ use librespot::{
     },
 };
 use log::{error, info};
-use std::{io, process::exit};
 use tokio_core::reactor::Handle;
 use tokio_signal::ctrl_c;
+
+use std::{io, process::exit};
+
+#[cfg(feature = "alsa_backend")]
+use crate::alsa_mixer;
+use crate::{config, main_loop};
 
 pub(crate) fn initial_state(
     handle: Handle,
@@ -44,12 +46,12 @@ pub(crate) fn initial_state(
                         linear_scaling: linear,
                     }) as Box<dyn mixer::Mixer>
                 }) as Box<dyn FnMut() -> Box<dyn Mixer>>
-            }
+            },
             config::VolumeController::SoftVol => {
                 info!("Using software volume controller.");
                 Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
                     as Box<dyn FnMut() -> Box<dyn Mixer>>
-            }
+            },
         }
     };
 
@@ -75,8 +77,7 @@ pub(crate) fn initial_state(
     #[cfg(not(feature = "alsa_backend"))]
     let linear_volume = false;
 
-    let zeroconf_port = config.zeroconf_port
-        .unwrap_or(0);
+    let zeroconf_port = config.zeroconf_port.unwrap_or(0);
 
     #[allow(clippy::or_fun_call)]
     let discovery_stream = discovery(
@@ -161,13 +162,13 @@ fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<dyn Sink> {
                 .find(|backend| name == backend.0)
                 .unwrap_or_else(|| panic!("Unknown backend: {}.", name))
                 .1
-        }
+        },
         None => {
             let &(name, back) = BACKENDS
                 .first()
                 .expect("No backends were enabled at build time");
             info!("No backend specified, defaulting to: {}.", name);
             back
-        }
+        },
     }
 }

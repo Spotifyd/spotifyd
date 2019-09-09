@@ -1,49 +1,23 @@
-use failure::{Error, Fail};
-
-use serde::{Deserialize, Serialize};
-use structopt::StructOpt;
-use clap::AppSettings;
 use lazy_static::lazy_static;
-
-use std::str::{FromStr};
-use std::string::ToString;
-use std::path::PathBuf;
-use std::fmt;
-use std::fs;
-use std::error::Error as StdError;
-use serde::de;
-
-use app_dirs2::*;
-use xdg;
-use log::info;
-use librespot::core::cache::Cache;
-use librespot::core::version;
-use librespot::playback::config::PlayerConfig;
-use librespot::core::config::SessionConfig;
-use librespot::playback::config::Bitrate as LSBitrate;
-
-use crate::process::run_program;
-use crate::utils;
+use librespot::{
+    core::{cache::Cache, config::SessionConfig, version},
+    playback::config::{Bitrate as LSBitrate, PlayerConfig},
+};
+use log::{error, info};
+use serde::{de, Deserialize};
 use sha1::{Digest, Sha1};
+use structopt::{clap::AppSettings, StructOpt};
+use xdg;
 
-const APP_INFO: AppInfo = AppInfo { name: "spotifyd", author: "various" };
+use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
+
+use crate::{
+    error::{Error as CrateError, ParseError},
+    process::run_program,
+    utils,
+};
+
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
-
-#[derive(Clone, Debug, Fail)]
-pub enum ParseError {
-    #[fail(display = "invalid backend: {}", name)]
-    InvalidBackend {
-        name: String,
-    },
-    #[fail(display = "invalid volume controller: {}", name)]
-    InvalidVolumeController {
-        name: String,
-    },
-    #[fail(display = "invalid bitrate: {}", name)]
-    InvalidBitrate {
-        name: String,
-    },
-}
 
 lazy_static! {
     static ref BACKEND_VALUES: Vec<&'static str> = vec!["alsa", "pulseaudio", "portaudio"];
@@ -74,10 +48,9 @@ impl FromStr for Backend {
 impl ToString for Backend {
     fn to_string(&self) -> String {
         match self {
-            Backend::Alsa => "alsa".into(),
-            Backend::PortAudio => "portaudio".into(),
-            Backend::PulseAudio => "pulseaudio".into(),
-            _ => unreachable!(),
+            Backend::Alsa => "alsa".to_string(),
+            Backend::PortAudio => "portaudio".to_string(),
+            Backend::PulseAudio => "pulseaudio".to_string(),
         }
     }
 }
@@ -142,7 +115,6 @@ impl Into<LSBitrate> for Bitrate {
             Bitrate::Bitrate96 => LSBitrate::Bitrate96,
             Bitrate::Bitrate160 => LSBitrate::Bitrate160,
             Bitrate::Bitrate320 => LSBitrate::Bitrate320,
-            _ => unreachable!(),
         }
     }
 }
@@ -157,7 +129,8 @@ impl<'de> de::Visitor<'de> for BoolFromStr {
     }
 
     fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-        where E: serde::de::Error
+    where
+        E: serde::de::Error,
     {
         println!("Trying to convert {}", s);
         println!("COnverted to {}", bool::from_str(s).unwrap());
@@ -166,7 +139,8 @@ impl<'de> de::Visitor<'de> for BoolFromStr {
 }
 
 fn de_from_str<'de, D>(deserializer: D) -> Result<bool, D::Error>
-    where D: de::Deserializer<'de>
+where
+    D: de::Deserializer<'de>,
 {
     deserializer.deserialize_str(BoolFromStr)
 }
@@ -215,7 +189,13 @@ pub struct FileConfig {
     use_keyring: bool,
 
     /// A command that can be used to retrieve the Spotify account password
-    #[structopt(conflicts_with = "password", long, short = "P", value_name = "string", visible_alias = "password_cmd")]
+    #[structopt(
+        conflicts_with = "password",
+        long,
+        short = "P",
+        value_name = "string",
+        visible_alias = "password_cmd"
+    )]
     password_cmd: Option<String>,
 
     /// A script that gets evaluated in the user's shell when the song changes
@@ -266,7 +246,7 @@ pub struct FileConfig {
     normalisation_pregain: Option<f32>,
 
     /// The port used for the Spotify Connect discovery
-    #[structopt(long)]
+    #[structopt(long, value_name = "number")]
     zeroconf_port: Option<u16>,
 }
 
@@ -301,8 +281,7 @@ impl fmt::Debug for FileConfig {
 
 impl CliConfig {
     pub fn load_config_file_values(&mut self) {
-        let config_file_path = self.config_path.clone()
-            .or_else(get_config_file);
+        let config_file_path = self.config_path.clone().or_else(get_config_file);
 
         if config_file_path.is_none() {
             info!("No config file specified. Running with default values");
@@ -313,7 +292,10 @@ impl CliConfig {
 
         let config_file = fs::File::open(&unwrapped_config_file_path);
         if config_file.is_err() {
-            info!("Failed to open config file at {:?}", &unwrapped_config_file_path);
+            info!(
+                "Failed to open config file at {:?}",
+                &unwrapped_config_file_path
+            );
             return;
         }
 
@@ -333,10 +315,22 @@ impl FileConfig {
         }
 
         // Handles Option<T> merging.
-        merge!(backend, username, password, password_cmd, normalisation_pregain, bitrate,
-            device_name, mixer, control, device, volume_controller, cache_path,
-            on_song_change_hook);
-        
+        merge!(
+            backend,
+            username,
+            password,
+            password_cmd,
+            normalisation_pregain,
+            bitrate,
+            device_name,
+            mixer,
+            control,
+            device,
+            volume_controller,
+            cache_path,
+            on_song_change_hook
+        );
+
         // Handles boolean merging.
         self.use_keyring = self.use_keyring | other.use_keyring;
         self.volume_normalisation = self.volume_normalisation | other.volume_normalisation;
@@ -364,12 +358,16 @@ fn device_id(name: &str) -> String {
 pub(crate) struct SpotifydConfig {
     pub(crate) username: Option<String>,
     pub(crate) password: Option<String>,
+    #[allow(unused)]
     pub(crate) use_keyring: bool,
     pub(crate) cache: Option<Cache>,
     pub(crate) backend: Option<String>,
     pub(crate) audio_device: Option<String>,
+    #[allow(unused)]
     pub(crate) control_device: Option<String>,
+    #[allow(unused)]
     pub(crate) mixer: Option<String>,
+    #[allow(unused)]
     pub(crate) volume_controller: VolumeController,
     pub(crate) device_name: String,
     pub(crate) player_config: PlayerConfig,
@@ -381,30 +379,59 @@ pub(crate) struct SpotifydConfig {
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
-    let cache = config.file_config.cache_path
+    let cache = config
+        .file_config
+        .cache_path
         .map(PathBuf::from)
         .and_then(|path| Some(Cache::new(path, true)));
 
-    let bitrate: LSBitrate = config.file_config.bitrate
+    let bitrate: LSBitrate = config
+        .file_config
+        .bitrate
         .unwrap_or(Bitrate::Bitrate160)
         .into();
 
-    let backend = config.file_config.backend
-        .unwrap_or(Backend::Alsa).to_string();
+    let backend = config
+        .file_config
+        .backend
+        .unwrap_or(Backend::Alsa)
+        .to_string();
 
-    let device_name = config.file_config.device_name
-        .unwrap_or("Spotifyd".to_string());
+    let device_name = config.file_config.device_name.unwrap_or(format!(
+        "{}@{}",
+        "Spotifyd",
+        utils::get_hostname().unwrap_or("unknown".to_string())
+    ));
 
-    let normalisation_pregain = config.file_config.normalisation_pregain
-        .unwrap_or(0.0f32);
+    let normalisation_pregain = config.file_config.normalisation_pregain.unwrap_or(0.0f32);
 
-    let pid = config.pid
+    let pid = config
+        .pid
         .and_then(|f| Some(f.to_string()))
         .or_else(|| None);
 
+    let shell = utils::get_shell().unwrap_or_else(|| {
+        info!("Unable to identify shell. Defaulting to \"sh\".");
+        "sh".to_string()
+    });
+
+    let mut password = config.file_config.password;
+
+    if password.is_none() && config.file_config.password_cmd.is_some() {
+        info!("No password specified. Checking password_cmd");
+
+        match config.file_config.password_cmd {
+            Some(ref cmd) => match run_program(&shell, cmd) {
+                Ok(s) => password = Some(s.trim().to_string()),
+                Err(e) => error!("{}", CrateError::subprocess_with_err(&shell, cmd, e)),
+            },
+            None => info!("No password_cmd specified"),
+        }
+    }
+
     SpotifydConfig {
         username: config.file_config.username,
-        password: config.file_config.password,
+        password,
         use_keyring: config.file_config.use_keyring,
         cache,
         backend: Some(backend),
@@ -426,10 +453,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         },
         onevent: config.file_config.on_song_change_hook,
         pid,
-        shell: utils::get_shell().unwrap_or_else(|| {
-            info!("Unable to identify shell. Defaulting to \"sh\".");
-            "sh".to_string()
-        }),
+        shell,
         zeroconf_port: config.file_config.zeroconf_port,
     }
 }

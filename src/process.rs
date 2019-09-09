@@ -1,15 +1,17 @@
 use librespot::playback::player::PlayerEvent;
 use log::info;
-use std::io::{self, Read, Write};
+
 use std::{
     collections::HashMap,
+    io::{self, Read, Write},
     process::{Command, ExitStatus, Stdio},
 };
 
 use crate::error::Error;
 
-/// Blocks while provided command is run in a subprocess using the provided shell.
-/// If successful, returns the contents of the subprocess's `stdout` as a `String`.
+/// Blocks while provided command is run in a subprocess using the provided
+/// shell. If successful, returns the contents of the subprocess's `stdout` as a
+/// `String`.
 pub(crate) fn run_program(shell: &str, cmd: &str) -> Result<String, Error> {
     info!("Running {:?} using {:?}", cmd, shell);
     let output = Command::new(shell)
@@ -61,23 +63,25 @@ pub(crate) fn spawn_program_on_event(
             env.insert("OLD_TRACK_ID", old_track_id.to_base62());
             env.insert("PLAYER_EVENT", "change".to_string());
             env.insert("TRACK_ID", new_track_id.to_base62());
-        }
+        },
         PlayerEvent::Started { track_id } => {
             env.insert("PLAYER_EVENT", "start".to_string());
             env.insert("TRACK_ID", track_id.to_base62());
-        }
+        },
         PlayerEvent::Stopped { track_id } => {
             env.insert("PLAYER_EVENT", "stop".to_string());
             env.insert("TRACK_ID", track_id.to_base62());
-        }
+        },
     }
     spawn_program(shell, cmd, env)
 }
 
 /// Same as a `std::process::Child` except when this `Child` exits:
-/// * successfully: It writes the contents of it's stdout to the stdout of the main process.
-/// * unsuccesfully: It returns an error that includes the contents it's stderr as well as
-///   information on the command that was run and the shell that invoked it.
+/// * successfully: It writes the contents of it's stdout to the stdout of the
+///   main process.
+/// * unsuccesfully: It returns an error that includes the contents it's stderr
+///   as well as information on the command that was run and the shell that
+///   invoked it.
 #[derive(Debug)]
 pub(crate) struct Child {
     cmd: String,
@@ -100,7 +104,7 @@ impl Child {
             Ok(status) => {
                 self.write_output(status)?;
                 Ok(())
-            }
+            },
             Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
         }
     }
@@ -111,7 +115,7 @@ impl Child {
             Ok(Some(status)) => {
                 self.write_output(status)?;
                 Ok(Some(()))
-            }
+            },
             Ok(None) => Ok(None),
             Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
         }
@@ -148,6 +152,7 @@ impl Child {
 
 impl std::ops::Deref for Child {
     type Target = std::process::Child;
+
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
