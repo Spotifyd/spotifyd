@@ -21,16 +21,17 @@ use log::{info, warn};
 use rspotify::spotify::{
     client::Spotify, oauth2::TokenInfo as RspotifyToken, senum::*, util::datetime_to_timestamp,
 };
-use std::{collections::HashMap, rc::Rc, thread};
 use tokio_core::reactor::Handle;
+
+use std::{collections::HashMap, rc::Rc, thread};
 
 pub struct DbusServer {
     session: Session,
     handle: Handle,
     spirc: Rc<Spirc>,
     api_token: RspotifyToken,
-    token_request: Option<Box<Future<Item = LibrespotToken, Error = MercuryError>>>,
-    dbus_future: Option<Box<Future<Item = (), Error = ()>>>,
+    token_request: Option<Box<dyn Future<Item = LibrespotToken, Error = MercuryError>>>,
+    dbus_future: Option<Box<dyn Future<Item = (), Error = ()>>>,
     device_name: String,
 }
 
@@ -114,7 +115,7 @@ fn create_dbus_server(
     api_token: RspotifyToken,
     spirc: Rc<Spirc>,
     device_name: String,
-) -> Box<Future<Item = (), Error = ()>> {
+) -> Box<dyn Future<Item = (), Error = ()>> {
     let c = Rc::new(Connection::get_private(BusType::Session).unwrap());
 
     macro_rules! spotify_api_method {
@@ -308,7 +309,7 @@ fn create_dbus_server(
                             )),
                     )
                     .add_p(
-                        f.property::<HashMap<String, Variant<Box<RefArg>>>, _>("Metadata", ())
+                        f.property::<HashMap<String, Variant<Box<dyn RefArg>>>, _>("Metadata", ())
                             .access(Access::Read)
                             .on_get(spotify_api_property!([sp, _device] {
                                 let mut m = HashMap::new();
@@ -318,52 +319,52 @@ fn create_dbus_server(
                                         m.insert("mpris:trackid".to_string(), Variant(Box::new(
                                             MessageItem::Str(
                                                 track.uri
-                                            )) as Box<RefArg>));
+                                            )) as Box<dyn RefArg>));
                                         m.insert("mpris:length".to_string(), Variant(Box::new(
                                             MessageItem::Int64(
                                                 i64::from(track.duration_ms) * 1000
-                                            )) as Box<RefArg>));
+                                            )) as Box<dyn RefArg>));
                                         m.insert("mpris:artUrl".to_string(), Variant(Box::new(
                                             MessageItem::Str(
                                                 track.album.images
                                                     .first()
                                                     .unwrap().url.clone()
-                                            )) as Box<RefArg>));
+                                            )) as Box<dyn RefArg>));
 
                                         m.insert("xesam:title".to_string(), Variant(Box::new(
                                             MessageItem::Str(
                                                 track.name
-                                            )) as Box<RefArg>));
+                                            )) as Box<dyn RefArg>));
                                         m.insert("xesam:album".to_string(), Variant(Box::new(
                                             MessageItem::Str(
                                                 track.album.name
-                                            )) as Box<RefArg>));
+                                            )) as Box<dyn RefArg>));
                                         m.insert("xesam:artist".to_string(), Variant(Box::new(
                                             MessageItem::Array(MessageItemArray::new(
                                                 track.artists
                                                     .iter()
                                                     .map(|a| MessageItem::Str(a.name.to_string()))
                                                     .collect::<Vec<_>>(), Signature::new("as").unwrap()
-                                            ).unwrap())) as Box<RefArg>));
+                                            ).unwrap())) as Box<dyn RefArg>));
                                         m.insert("xesam:albumArtist".to_string(), Variant(Box::new(
                                             MessageItem::Array(MessageItemArray::new(
                                                 track.album.artists
                                                     .iter()
                                                     .map(|a| MessageItem::Str(a.name.to_string()))
                                                     .collect::<Vec<_>>(), Signature::new("as").unwrap()
-                                            ).unwrap())) as Box<RefArg>));
+                                            ).unwrap())) as Box<dyn RefArg>));
                                         m.insert("xesam:autoRating".to_string(), Variant(Box::new(
                                             MessageItem::Double(
                                                 f64::from(track.popularity) / 100.0
-                                            )) as Box<RefArg>));
+                                            )) as Box<dyn RefArg>));
                                         m.insert("xesam:trackNumber".to_string(), Variant(Box::new(
                                             MessageItem::UInt32(
                                                 track.track_number
-                                            )) as Box<RefArg>));
+                                            )) as Box<dyn RefArg>));
                                         m.insert("xesam:discNumber".to_string(), Variant(Box::new(
                                             MessageItem::Int32(
                                                 track.disc_number
-                                            )) as Box<RefArg>));
+                                            )) as Box<dyn RefArg>));
                                         m.insert("xesam:url".to_string(), Variant(Box::new(
                                             MessageItem::Str(
                                                 track.external_urls
@@ -371,7 +372,7 @@ fn create_dbus_server(
                                                     .next()
                                                     .map_or("", |(_, v)| &v)
                                                     .to_string()
-                                            )) as Box<RefArg>));
+                                            )) as Box<dyn RefArg>));
                                     }
                                 } else {
                                     info!("Couldn't fetch metadata from spotify: {:?}", v);

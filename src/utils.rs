@@ -1,6 +1,4 @@
-use std::cell::RefCell;
-use std::env;
-use std::ffi::CStr;
+use std::{cell::RefCell, env, ffi::CStr};
 
 extern "C" {
     fn getlogin_r(buf: *mut libc::c_char, size: libc::size_t) -> libc::c_int;
@@ -26,25 +24,28 @@ pub(crate) fn get_hostname() -> Option<String> {
 }
 
 pub(crate) fn get_shell() -> Option<String> {
-    // First look for the user's preferred shell using the SHELL environment variable...
+    // First look for the user's preferred shell using the SHELL environment
+    // variable...
     if let Ok(shell) = env::var("SHELL") {
         log::trace!("Found shell {:?} using SHELL environment variable.", shell);
         return Some(shell);
     }
 
-    // If the SHELL environment variable is not set and we're on linux or one of the BSDs,
-    // try to obtain the default shell from `/etc/passwd`...
+    // If the SHELL environment variable is not set and we're on linux or one of the
+    // BSDs, try to obtain the default shell from `/etc/passwd`...
     #[cfg(not(target_os = "macos"))]
     {
-        use std::fs::File;
-        use std::io::{self, BufRead};
+        use std::{
+            fs::File,
+            io::{self, BufRead},
+        };
 
         let username = get_username()?;
 
         let file = File::open("/etc/passwd").ok()?;
         let reader = io::BufReader::new(file);
-        // Each line of `/etc/passwd` describes a single user and contains seven colon-separated fields:
-        // "name:password:UID:GID:GECOS:directory:shell"
+        // Each line of `/etc/passwd` describes a single user and contains seven
+        // colon-separated fields: "name:password:UID:GID:GECOS:directory:shell"
         for line in reader.lines() {
             let line = line.ok()?;
             let mut iter = line.split(':');

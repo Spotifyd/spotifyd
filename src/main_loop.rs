@@ -17,9 +17,10 @@ use librespot::{
     },
 };
 use log::error;
-use std::{io, rc::Rc};
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
+
+use std::{io, rc::Rc};
 
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
@@ -68,7 +69,7 @@ fn new_dbus_server(
     handle: Handle,
     spirc: Rc<Spirc>,
     device_name: String,
-) -> Option<Box<Future<Item = (), Error = ()>>> {
+) -> Option<Box<dyn Future<Item = (), Error = ()>>> {
     Some(Box::new(DbusServer::new(
         session,
         handle,

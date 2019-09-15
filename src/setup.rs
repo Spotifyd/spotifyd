@@ -1,6 +1,3 @@
-#[cfg(feature = "alsa_backend")]
-use crate::alsa_mixer;
-use crate::{config, main_loop};
 use futures::{self, Future};
 #[cfg(feature = "dbus_keyring")]
 use keyring::Keyring;
@@ -18,9 +15,14 @@ use librespot::{
     },
 };
 use log::{error, info};
-use std::{io, process::exit};
 use tokio_core::reactor::Handle;
 use tokio_signal::ctrl_c;
+
+use std::{io, process::exit};
+
+#[cfg(feature = "alsa_backend")]
+use crate::alsa_mixer;
+use crate::{config, main_loop};
 
 pub(crate) fn initial_state(
     handle: Handle,
@@ -32,8 +34,18 @@ pub(crate) fn initial_state(
         let local_control_device = config.control_device.clone();
         let local_mixer = config.mixer.clone();
         match config.volume_controller {
-            config::VolumeController::Alsa { linear } => {
+            config::VolumeController::SoftVolume => {
+                info!("Using software volume controller.");
+                Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+                    as Box<dyn FnMut() -> Box<dyn Mixer>>
+            }
+            _ => {
                 info!("Using alsa volume controller.");
+
+                let linear = match config.volume_controller {
+                    config::VolumeController::AlsaLinear => true,
+                    _ => false,
+                };
                 Box::new(move || {
                     Box::new(alsa_mixer::AlsaMixer {
                         device: local_control_device
@@ -44,11 +56,6 @@ pub(crate) fn initial_state(
                         linear_scaling: linear,
                     }) as Box<dyn mixer::Mixer>
                 }) as Box<dyn FnMut() -> Box<dyn Mixer>>
-            }
-            config::VolumeController::SoftVol => {
-                info!("Using software volume controller.");
-                Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
-                    as Box<dyn FnMut() -> Box<dyn Mixer>>
             }
         }
     };
@@ -68,12 +75,14 @@ pub(crate) fn initial_state(
 
     #[cfg(feature = "alsa_backend")]
     let linear_volume = match config.volume_controller {
-        config::VolumeController::Alsa { linear } => linear,
+        config::VolumeController::AlsaLinear => true,
         _ => false,
     };
 
     #[cfg(not(feature = "alsa_backend"))]
     let linear_volume = false;
+
+    let zeroconf_port = config.zeroconf_port.unwrap_or(0);
 
     #[allow(clippy::or_fun_call)]
     let discovery_stream = discovery(
@@ -85,7 +94,7 @@ pub(crate) fn initial_state(
             linear_volume,
         },
         device_id,
-        0,
+        zeroconf_port,
     )
     .unwrap();
 

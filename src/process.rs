@@ -1,15 +1,17 @@
 use librespot::playback::player::PlayerEvent;
 use log::info;
-use std::io::{self, Read, Write};
+
 use std::{
     collections::HashMap,
+    io::{self, Read, Write},
     process::{Command, ExitStatus, Stdio},
 };
 
 use crate::error::Error;
 
-/// Blocks while provided command is run in a subprocess using the provided shell.
-/// If successful, returns the contents of the subprocess's `stdout` as a `String`.
+/// Blocks while provided command is run in a subprocess using the provided
+/// shell. If successful, returns the contents of the subprocess's `stdout` as a
+/// `String`.
 pub(crate) fn run_program(shell: &str, cmd: &str) -> Result<String, Error> {
     info!("Running {:?} using {:?}", cmd, shell);
     let output = Command::new(shell)
@@ -75,9 +77,11 @@ pub(crate) fn spawn_program_on_event(
 }
 
 /// Same as a `std::process::Child` except when this `Child` exits:
-/// * successfully: It writes the contents of it's stdout to the stdout of the main process.
-/// * unsuccesfully: It returns an error that includes the contents it's stderr as well as
-///   information on the command that was run and the shell that invoked it.
+/// * successfully: It writes the contents of it's stdout to the stdout of the
+///   main process.
+/// * unsuccesfully: It returns an error that includes the contents it's stderr
+///   as well as information on the command that was run and the shell that
+///   invoked it.
 #[derive(Debug)]
 pub(crate) struct Child {
     cmd: String,
@@ -148,6 +152,7 @@ impl Child {
 
 impl std::ops::Deref for Child {
     type Target = std::process::Child;
+
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
