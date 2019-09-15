@@ -297,7 +297,7 @@ impl fmt::Debug for SharedConfigValues {
             .field("password", &password_value)
             .field("password_cmd", &self.password_cmd)
             .field("use_keyring", &self.use_keyring)
-            .field("on_change_song_hook", &self.on_song_change_hook)
+            .field("on_song_change_hook", &self.on_song_change_hook)
             .field("cache_path", &self.cache_path)
             .field("backend", &self.backend)
             .field("volume_controller", &self.volume_controller)

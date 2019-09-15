@@ -61,18 +61,19 @@ directories (meaning, a user's local config is placed in
 username = USER
 password = PASS
 # password_cmd = command_that_writes_password_to_stdout  # can be used as alternative to `password`
-# use-keyring = true                                     # can be used as alternative to `password`
+# use_keyring = true                                     # can be used as alternative to `password`
 backend = alsa                                           # run `spotifyd --backends` for possible values
 device = alsa_audio_device                               # run `aplay -L` for possible values
 # control = alsa_audio_device                            # device for the mixer, if not the same as 'device'
 mixer = PCM
-volume-control = alsa                                    # or alsa_linear, or softvol
-# onevent = command_to_run_on_playback_events
+volume_controller = alsa                                    # or alsa_linear, or softvol
+# on_song_change_hook = command_to_run_on_playback_events
 device_name = device_name_in_spotify_connect             # must not contain spaces
 bitrate = 160                                            # or 96, or 320
 cache_path = cache_directory
-volume-normalisation = true
-normalisation-pregain = -10
+volume_normalisation = true
+normalisation_pregain = -10
+zeroconf_port = port_number                              # the port used to start the Spotify discovery service 
 ```
 
 Every field is optional; `Spotifyd` can even run without a configuration file.
@@ -112,7 +113,7 @@ the shell: paths containing e.g. `~/` or `$HOME/` will not work.
   ```
 
 
-- **`use-keyring`** config entry / **`--use-keyring`** CLI flag
+- **`use_keyring`** config entry / **`--use-keyring`** CLI flag
 
   This features leverages Linux's DBus Secret Service API 
   ([info](https://www.freedesktop.org/wiki/Specifications/secret-storage-spec/))
