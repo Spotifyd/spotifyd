@@ -1,13 +1,6 @@
-use std::{cell::RefCell, env, ffi::CStr};
+use whoami;
 
-extern "C" {
-    fn getlogin_r(buf: *mut libc::c_char, size: libc::size_t) -> libc::c_int;
-}
-
-thread_local! {
-    static BUF_HOSTNAME: RefCell<[libc::c_char; 255]> = RefCell::new([0; 255]);
-    static BUF_USERNAME: RefCell<[libc::c_char; 255]> = RefCell::new([0; 255]);
-}
+use std::env;
 
 pub(crate) fn get_shell() -> Option<String> {
     // First look for the user's preferred shell using the SHELL environment
@@ -26,7 +19,7 @@ pub(crate) fn get_shell() -> Option<String> {
             io::{self, BufRead},
         };
 
-        let username = get_username()?;
+        let username = whoami::username();
 
         let file = File::open("/etc/passwd").ok()?;
         let reader = io::BufReader::new(file);
@@ -52,7 +45,7 @@ pub(crate) fn get_shell() -> Option<String> {
     {
         use std::process::Command;
 
-        let username = get_username()?;
+        let username = whoami::username();
         let output = Command::new("dscl")
             .args(&[".", "-read", &format!("/Users/{}", username), "UserShell"])
             .output()
@@ -69,20 +62,6 @@ pub(crate) fn get_shell() -> Option<String> {
         }
     }
     None
-}
-
-fn get_username() -> Option<String> {
-    BUF_USERNAME.with(|refcell| {
-        let mut buf = refcell.borrow_mut();
-        let ret = unsafe { getlogin_r(buf.as_mut_ptr() as _, buf.len() as _) };
-        if ret != 0 {
-            return None;
-        }
-        let cstr = unsafe { CStr::from_ptr(buf.as_ptr()) };
-        let username = cstr.to_string_lossy().to_string();
-        log::trace!("Found username: {:?} using getlogin_r", username);
-        Some(username)
-    })
 }
 
 #[cfg(test)]
