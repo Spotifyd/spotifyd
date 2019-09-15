@@ -1,3 +1,4 @@
+use gethostname::gethostname;
 use lazy_static::lazy_static;
 use librespot::{
     core::{cache::Cache, config::SessionConfig, version},
@@ -435,13 +436,10 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .unwrap_or(Backend::Alsa)
         .to_string();
 
-    let device_name = config.shared_config.device_name.unwrap_or_else(|| {
-        format!(
-            "{}@{}",
-            "Spotifyd",
-            utils::get_hostname().unwrap_or_else(|| "unknown".to_string())
-        )
-    });
+    let device_name = config
+        .shared_config
+        .device_name
+        .unwrap_or_else(|| format!("{}@{}", "Spotifyd", gethostname().to_string_lossy()));
 
     let normalisation_pregain = config.shared_config.normalisation_pregain.unwrap_or(0.0f32);
 
