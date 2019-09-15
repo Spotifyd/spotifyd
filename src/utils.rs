@@ -9,20 +9,6 @@ thread_local! {
     static BUF_USERNAME: RefCell<[libc::c_char; 255]> = RefCell::new([0; 255]);
 }
 
-pub(crate) fn get_hostname() -> Option<String> {
-    BUF_HOSTNAME.with(|refcell| {
-        let mut buf = refcell.borrow_mut();
-        let ret = unsafe { libc::gethostname(buf.as_mut_ptr() as _, buf.len() as _) };
-        if ret != 0 {
-            return None;
-        }
-        let cstr = unsafe { CStr::from_ptr(buf.as_ptr()) };
-        let hostname = cstr.to_string_lossy().to_string();
-        log::trace!("Found hostname {:?} using gethostname.", hostname);
-        Some(hostname)
-    })
-}
-
 pub(crate) fn get_shell() -> Option<String> {
     // First look for the user's preferred shell using the SHELL environment
     // variable...
