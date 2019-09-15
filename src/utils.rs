@@ -95,8 +95,6 @@ mod tests {
 
         env_logger::init();
 
-        let _ = get_hostname().unwrap();
-
         let _ = get_shell().unwrap();
 
         if env::var("SHELL").is_ok() {
