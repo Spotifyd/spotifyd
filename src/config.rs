@@ -24,7 +24,7 @@ lazy_static! {
 }
 
 /// The backend used by librespot
-#[derive(Clone, Copy, Debug, Deserialize, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
 #[serde(rename_all = "lowercase")]
 pub enum Backend {
     Alsa,
@@ -59,7 +59,7 @@ lazy_static! {
     static ref VOLUME_CONTROLLER_VALUES: Vec<&'static str> = vec!["alsa", "alsa_linear", "softvol"];
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
 #[serde(rename_all = "snake_case")]
 pub enum VolumeController {
     Alsa,
@@ -86,7 +86,7 @@ lazy_static! {
 }
 
 /// Spotify's audio bitrate
-#[derive(Clone, Copy, Debug, Deserialize, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
 pub enum Bitrate {
     #[serde(rename = "96")]
     Bitrate96,
@@ -168,11 +168,13 @@ pub struct CliConfig {
     pub pid: Option<i32>,
 
     #[structopt(flatten)]
-    pub file_config: FileConfig,
+    pub shared_config: SharedConfigValues,
 }
 
-#[derive(Default, Deserialize, StructOpt)]
-pub struct FileConfig {
+/// A struct that holds all allowed config fields.
+/// The actual config file is made up of two sections, spotifyd and global.
+#[derive(Clone, Default, Deserialize, PartialEq, StructOpt)]
+pub struct SharedConfigValues {
     /// The Spotify account user name
     #[structopt(long, short, value_name = "string")]
     username: Option<String>,
@@ -248,7 +250,41 @@ pub struct FileConfig {
     zeroconf_port: Option<u16>,
 }
 
-impl fmt::Debug for FileConfig {
+#[derive(Debug, Deserialize)]
+pub struct FileConfig {
+    global: Option<SharedConfigValues>,
+    spotifyd: Option<SharedConfigValues>,
+}
+
+impl FileConfig {
+    pub fn get_merged_sections(self) -> Option<SharedConfigValues> {
+        let global_config_section = self.global;
+        let spotifyd_config_section = self.spotifyd;
+
+        let merged_config: Option<SharedConfigValues>;
+        // First merge the two sections together. The spotifyd has priority over global
+        // section.
+        if spotifyd_config_section.is_some() {
+            // spotifyd section exists. Try to merge it with global section.
+            if global_config_section.is_some() {
+                let mut unwrapped_spotifyd_section = spotifyd_config_section.unwrap();
+                unwrapped_spotifyd_section.merge_with(global_config_section.unwrap());
+                merged_config = Some(unwrapped_spotifyd_section);
+            } else {
+                // There is no global section. Just use the spotifyd section.
+                merged_config = spotifyd_config_section;
+            }
+        } else {
+            // No spotifyd config available. Check for global and use that, if both are
+            // none, use none.
+            merged_config = global_config_section;
+        }
+
+        merged_config
+    }
+}
+
+impl fmt::Debug for SharedConfigValues {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let password_value = if self.password.is_some() {
             Some("taken out for privacy")
@@ -256,7 +292,7 @@ impl fmt::Debug for FileConfig {
             None
         };
 
-        f.debug_struct("FileConfig")
+        f.debug_struct("SharedConfigValues")
             .field("username", &self.username)
             .field("password", &password_value)
             .field("password_cmd", &self.password_cmd)
@@ -300,12 +336,16 @@ impl CliConfig {
         let bufreader = std::io::BufReader::new(config_file.unwrap());
         let config_content: FileConfig = serde_ini::from_bufread(bufreader).unwrap();
 
-        self.file_config.merge_with(config_content);
+        // The call to get_merged_sections consumes the FileConfig!
+        let merged_sections = config_content.get_merged_sections();
+        if merged_sections.is_some() {
+            self.shared_config.merge_with(merged_sections.unwrap())
+        }
     }
 }
 
-impl FileConfig {
-    pub fn merge_with(&mut self, other: FileConfig) {
+impl SharedConfigValues {
+    pub fn merge_with(&mut self, other: SharedConfigValues) {
         macro_rules! merge {
             ($($x:ident),+) => {
                 $(self.$x = self.$x.clone().or_else(|| other.$x.clone());)+
@@ -378,24 +418,24 @@ pub(crate) struct SpotifydConfig {
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let cache = config
-        .file_config
+        .shared_config
         .cache_path
         .map(PathBuf::from)
         .and_then(|path| Some(Cache::new(path, true)));
 
     let bitrate: LSBitrate = config
-        .file_config
+        .shared_config
         .bitrate
         .unwrap_or(Bitrate::Bitrate160)
         .into();
 
     let backend = config
-        .file_config
+        .shared_config
         .backend
         .unwrap_or(Backend::Alsa)
         .to_string();
 
-    let device_name = config.file_config.device_name.unwrap_or_else(|| {
+    let device_name = config.shared_config.device_name.unwrap_or_else(|| {
         format!(
             "{}@{}",
             "Spotifyd",
@@ -403,7 +443,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         )
     });
 
-    let normalisation_pregain = config.file_config.normalisation_pregain.unwrap_or(0.0f32);
+    let normalisation_pregain = config.shared_config.normalisation_pregain.unwrap_or(0.0f32);
 
     let pid = config
         .pid
@@ -415,11 +455,11 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         "sh".to_string()
     });
 
-    let mut password = config.file_config.password;
-    if password.is_none() && config.file_config.password_cmd.is_some() {
+    let mut password = config.shared_config.password;
+    if password.is_none() && config.shared_config.password_cmd.is_some() {
         info!("No password specified. Checking password_cmd");
 
-        match config.file_config.password_cmd {
+        match config.shared_config.password_cmd {
             Some(ref cmd) => match run_program(&shell, cmd) {
                 Ok(s) => password = Some(s.trim().to_string()),
                 Err(e) => error!("{}", CrateError::subprocess_with_err(&shell, cmd, e)),
@@ -429,19 +469,19 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     }
 
     SpotifydConfig {
-        username: config.file_config.username,
+        username: config.shared_config.username,
         password,
-        use_keyring: config.file_config.use_keyring,
+        use_keyring: config.shared_config.use_keyring,
         cache,
         backend: Some(backend),
-        audio_device: config.file_config.device,
-        control_device: config.file_config.control,
-        mixer: config.file_config.mixer,
-        volume_controller: config.file_config.volume_controller.unwrap(),
+        audio_device: config.shared_config.device,
+        control_device: config.shared_config.control,
+        mixer: config.shared_config.mixer,
+        volume_controller: config.shared_config.volume_controller.unwrap(),
         device_name,
         player_config: PlayerConfig {
             bitrate,
-            normalisation: config.file_config.volume_normalisation,
+            normalisation: config.shared_config.volume_normalisation,
             normalisation_pregain,
         },
         session_config: SessionConfig {
@@ -450,9 +490,36 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
             proxy: None,
             ap_port: Some(443),
         },
-        onevent: config.file_config.on_song_change_hook,
+        onevent: config.shared_config.on_song_change_hook,
         pid,
         shell,
-        zeroconf_port: config.file_config.zeroconf_port,
+        zeroconf_port: config.shared_config.zeroconf_port,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_section_merging() {
+        let mut spotifyd_section = SharedConfigValues::default();
+        spotifyd_section.password = Some("123456".to_string());
+
+        let mut global_section = SharedConfigValues::default();
+        global_section.username = Some("testUserName".to_string());
+
+        // The test only makes sense if both sections differ.
+        assert!(spotifyd_section != global_section, true);
+
+        let file_config = FileConfig {
+            global: Some(global_section.clone()),
+            spotifyd: Some(spotifyd_section.clone()),
+        };
+        let merged_config = file_config.get_merged_sections().unwrap();
+
+        // Add the new field to spotifyd section.
+        spotifyd_section.username = Some("testUserName".to_string());
+        assert_eq!(merged_config, spotifyd_section);
     }
 }
