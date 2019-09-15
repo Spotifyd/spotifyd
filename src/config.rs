@@ -185,7 +185,7 @@ pub struct SharedConfigValues {
 
     /// Enables keyring password access
     #[structopt(long)]
-    #[serde(alias = "use-keyring", deserialize_with = "de_from_str")]
+    #[serde(alias = "use-keyring", default, deserialize_with = "de_from_str")]
     use_keyring: bool,
 
     /// A command that can be used to retrieve the Spotify account password
@@ -250,7 +250,7 @@ pub struct SharedConfigValues {
     zeroconf_port: Option<u16>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 pub struct FileConfig {
     global: Option<SharedConfigValues>,
     spotifyd: Option<SharedConfigValues>,
