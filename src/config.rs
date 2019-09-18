@@ -287,16 +287,31 @@ impl FileConfig {
 
 impl fmt::Debug for SharedConfigValues {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let placeholder = "taken out for privacy";
+
+        // TODO: somehow replace with a appropiate macro.
         let password_value = if self.password.is_some() {
-            Some("taken out for privacy")
+            Some(&placeholder)
+        } else {
+            None
+        };
+
+        let password_cmd_value = if self.password_cmd.is_some() {
+            Some(&placeholder)
+        } else {
+            None
+        };
+
+        let username_value = if self.username.is_some() {
+            Some(&placeholder)
         } else {
             None
         };
 
         f.debug_struct("SharedConfigValues")
-            .field("username", &self.username)
+            .field("username", &username_value)
             .field("password", &password_value)
-            .field("password_cmd", &self.password_cmd)
+            .field("password_cmd", &password_cmd_value)
             .field("use_keyring", &self.use_keyring)
             .field("on_song_change_hook", &self.on_song_change_hook)
             .field("cache_path", &self.cache_path)
