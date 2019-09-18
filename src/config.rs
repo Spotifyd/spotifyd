@@ -451,6 +451,11 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .unwrap_or(Backend::Alsa)
         .to_string();
 
+    let volume_controller = config
+        .shared_config
+        .volume_controller
+        .unwrap_or(VolumeController::SoftVolume);
+
     let device_name = config
         .shared_config
         .device_name
@@ -490,7 +495,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         audio_device: config.shared_config.device,
         control_device: config.shared_config.control,
         mixer: config.shared_config.mixer,
-        volume_controller: config.shared_config.volume_controller.unwrap(),
+        volume_controller,
         device_name,
         player_config: PlayerConfig {
             bitrate,
