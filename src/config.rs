@@ -10,7 +10,7 @@ use sha1::{Digest, Sha1};
 use structopt::{clap::AppSettings, StructOpt};
 use xdg;
 
-use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
+use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
 
 use crate::{
     error::{Error as CrateError, ParseError},
@@ -350,7 +350,25 @@ impl CliConfig {
         }
 
         let bufreader = std::io::BufReader::new(config_file.unwrap());
-        let config_content: FileConfig = serde_ini::from_bufread(bufreader).unwrap();
+        // serde_ini doesn't support inline comments. We treat every hashtag as a comment starter and everything that follows
+        // it as not part of the key's value.
+        // The method below will filter out any errors that occur.
+        // TODO: Is there a cleaner way to do this? One with less allocations.
+        let comment_free_lines: Vec<String> = bufreader
+            .lines()
+            .filter_map(Option::Some)
+            .map(|x| x.unwrap())
+            .map(|mut l: String| {
+                let last_index = l.rfind('#').unwrap_or_else(|| l.len());
+                l.drain(..last_index).collect()
+            })
+            // The password field takes the whole value as the password. We need to remove the space between
+            // the password and the # character.
+            .map(|l: String| l.trim().to_string())
+            .collect();
+
+        let comment_free_content = comment_free_lines.join("\n");
+        let config_content: FileConfig = serde_ini::from_str(&comment_free_content).unwrap();
 
         // The call to get_merged_sections consumes the FileConfig!
         let merged_sections = config_content.get_merged_sections();
