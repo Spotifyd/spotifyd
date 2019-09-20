@@ -7,7 +7,7 @@ version = "0.2.14"
 [dependencies]
 alsa = { version = "0.2", optional = true }
 chrono = "0.4"
-daemonize = "0.3"
+daemonize = "0.4"
 dbus = { version = "0.6", optional = true }
 dbus-tokio = { version = "0.2", optional = true }
 failure = "0.1.5"
