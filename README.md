@@ -1,3 +1,5 @@
+[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=Spotifyd/spotifyd)](https://dependabot.com)
+
 # Spotifyd
 
 An open source Spotify client running as a UNIX daemon. Spotifyd streams music
