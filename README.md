@@ -1,4 +1,6 @@
 [![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=Spotifyd/spotifyd)](https://dependabot.com)
+[![Github Actions - CD](https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Deployment/badge.svg)](https://github.com/Spotifyd/spotifyd/actions)
+[![Github Actions - CI](https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Integration/badge.svg)](https://github.com/Spotifyd/spotifyd/actions)
 
 # Spotifyd
 
