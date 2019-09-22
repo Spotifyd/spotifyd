@@ -1,0 +1,68 @@
+name: Continuous Deployment
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish:
+    name: Publishing for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        rust: [stable]
+        feature: [
+          '',                                             # Slim version has no features enabled by default.
+          'dbus_keyring,dbus_mpris'                       # Full version has all OS compatible features enabled
+        ]
+        artifact_type: ['slim', 'full']                   # The build strategy will build both types for each OS specified
+        include:
+          - os: macos-latest
+            artifact_prefix: macos
+            audio_backend: portaudio
+            target: x86_64-apple-darwin
+          - os: ubuntu-latest
+            artifact_prefix: linux
+            audio_backend: alsa
+            target: x86_64-unknown-linux-gnu
+
+    steps:
+      - name: Installing Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Installing needed macOS dependencies
+        if: matrix.os == 'macos-latest'
+        run: brew install awk dbus pkg-config portaudio
+      - name: Installing needed Ubuntu dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          ssudo apt-get install -y -qq libasound2-dev libssl-dev libpulse-dev libdbus-1-dev
+
+      - name: Checking out sources
+        uses: actions/checkout@v1
+      - name: Running cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          toolchain: ${{ matrix.rust }}
+          args: --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}_backend"
+      
+      - name: Packaging final binary
+        shell: bash
+        run: |
+          strip target/${{ matrix.target }}/release/spotifyd
+          tar czvf spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz target/${{ matrix.target }}/release/spotifyd
+          shasum -a 512 spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz | awk '{ print $1 }' > spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.sha512
+      - name: Releasing assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz
+            spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.sha512
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
