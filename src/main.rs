@@ -44,10 +44,7 @@ fn main() {
 
         TermLogger::init(filter, logger_config.clone(), TerminalMode::Mixed)
             .map_err(Box::<dyn Error>::from)
-            .or_else(|_| {
-                SimpleLogger::init(filter, logger_config)
-                    .map_err(Box::<dyn Error>::from)
-            })
+            .or_else(|_| SimpleLogger::init(filter, logger_config).map_err(Box::<dyn Error>::from))
             .expect("Couldn't initialize logger");
     }
 
