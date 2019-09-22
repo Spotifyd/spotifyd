@@ -162,7 +162,12 @@ fn create_dbus_server(
     .unwrap();
 
     let spirc_quit = spirc.clone();
+    let spirc_play = spirc.clone();
+    let spirc_pause = spirc.clone();
+    let spirc_next = spirc.clone();
+    let spirc_prev = spirc.clone();
     let spirc_play_pause = spirc.clone();
+    let spirc_stop = spirc.clone();
 
     let f = AFactory::new_afn::<()>();
     let tree = f.tree(ATree::new()).add(
@@ -173,17 +178,29 @@ fn create_dbus_server(
                     .add_m(f.amethod(
                         "Next",
                         (),
-                        spotify_api_method!([sp, device] sp.next_track(device)),
+                        move |m| {
+                            spirc_next.next();
+                            let mret = m.msg.method_return();
+                            Ok(vec![mret])
+                        },
                     ))
                     .add_m(f.amethod(
                         "Previous",
                         (),
-                        spotify_api_method!([sp, device] sp.previous_track(device)),
+                        move |m| {
+                            spirc_prev.prev();
+                            let mret = m.msg.method_return();
+                            Ok(vec![mret])
+                        },
                     ))
                     .add_m(f.amethod(
                         "Pause",
                         (),
-                        spotify_api_method!([sp, device] sp.pause_playback(device)),
+                        move |m| {
+                            spirc_pause.pause();
+                            let mret = m.msg.method_return();
+                            Ok(vec![mret])
+                        },
                     ))
                     .add_m(f.amethod("PlayPause", (), move |m| {
                         spirc_play_pause.play_pause();
@@ -193,17 +210,20 @@ fn create_dbus_server(
                     .add_m(f.amethod(
                         "Play",
                         (),
-                        spotify_api_method!([sp, device]
-                            sp.start_playback(device, None, None, None)
-                        ),
+                        move |m| {
+                            spirc_play.play();
+                            let mret = m.msg.method_return();
+                            Ok(vec![mret])
+                        },
                     ))
                     .add_m(f.amethod(
                         "Stop",
                         (),
-                        spotify_api_method!([sp, device]{
-                            let _ = sp.seek_track(0, device.clone());
-                            let _ = sp.pause_playback(device);
-                        }),
+                        move |m| {
+                            spirc_stop.pause();
+                            let mret = m.msg.method_return();
+                            Ok(vec![mret])
+                        },
                     ))
                     .add_m(f.amethod(
                         "Seek",
