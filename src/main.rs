@@ -2,6 +2,7 @@
 
 use daemonize::Daemonize;
 use log::{error, info, trace, LevelFilter};
+use simplelog::{ConfigBuilder, LevelPadding, SimpleLogger, TermLogger, TerminalMode};
 use structopt::StructOpt;
 use tokio_core::reactor::Core;
 
@@ -27,28 +28,23 @@ fn main() {
     let is_daemon = !cli_config.no_daemon;
     let is_verbose = cli_config.verbose;
 
-    if is_daemon {
-        let filter = if is_verbose {
-            LevelFilter::Trace
-        } else {
-            LevelFilter::Info
-        };
+    let filter = if is_verbose {
+        LevelFilter::Trace
+    } else {
+        LevelFilter::Info
+    };
 
+    if is_daemon {
         syslog::init(syslog::Facility::LOG_DAEMON, filter, Some("Spotifyd"))
             .expect("Couldn't initialize logger");
     } else {
-        let filter = if is_verbose {
-            simplelog::LogLevelFilter::Trace
-        } else {
-            simplelog::LogLevelFilter::Info
-        };
+        let logger_config = ConfigBuilder::new()
+            .set_level_padding(LevelPadding::Off)
+            .build();
 
-        simplelog::TermLogger::init(filter, simplelog::Config::default())
+        TermLogger::init(filter, logger_config.clone(), TerminalMode::Mixed)
             .map_err(Box::<dyn Error>::from)
-            .or_else(|_| {
-                simplelog::SimpleLogger::init(filter, simplelog::Config::default())
-                    .map_err(Box::<dyn Error>::from)
-            })
+            .or_else(|_| SimpleLogger::init(filter, logger_config).map_err(Box::<dyn Error>::from))
             .expect("Couldn't initialize logger");
     }
 
