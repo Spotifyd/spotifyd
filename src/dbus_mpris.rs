@@ -18,7 +18,7 @@ use librespot::{
     },
 };
 use log::{info, warn};
-use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use rspotify::spotify::{
     client::Spotify, oauth2::TokenInfo as RspotifyToken, senum::*, util::datetime_to_timestamp,
 };
