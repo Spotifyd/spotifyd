@@ -55,14 +55,17 @@ jobs:
       - name: Packaging final binary
         shell: bash
         run: |
-          strip target/${{ matrix.target }}/release/spotifyd
-          tar czvf spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz target/${{ matrix.target }}/release/spotifyd
-          shasum -a 512 spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz | awk '{ print $1 }' > spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.sha512
+          cd target/${{ matrix.target }}/release
+          
+          strip spotifyd
+          tar czvf spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz spotifyd
+          shasum -a 512 spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz > spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.sha512
+
       - name: Releasing assets
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz
-            spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.sha512
+            target/${{ matrix.target }}/release/spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz
+            target/${{ matrix.target }}/release/spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.sha512
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
