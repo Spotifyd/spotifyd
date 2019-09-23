@@ -18,6 +18,7 @@ use librespot::{
     },
 };
 use log::{info, warn};
+use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
 use rspotify::spotify::{
     client::Spotify, oauth2::TokenInfo as RspotifyToken, senum::*, util::datetime_to_timestamp,
 };
@@ -121,7 +122,7 @@ fn create_dbus_server(
     macro_rules! spotify_api_method {
         ([ $sp:ident, $device:ident $(, $m:ident: $t:ty)*] $f:expr) => {
             {
-                let device_name = device_name.clone();
+                let device_name = utf8_percent_encode(&device_name, NON_ALPHANUMERIC).to_string();
                 let token = api_token.clone();
                 move |m| {
                     let (p, c) = oneshot::channel();
@@ -143,7 +144,7 @@ fn create_dbus_server(
 
     macro_rules! spotify_api_property {
         ([ $sp:ident, $device:ident] $f:expr) => {{
-            let device_name = device_name.clone();
+            let device_name = utf8_percent_encode(&device_name, NON_ALPHANUMERIC).to_string();
             let token = api_token.clone();
             move |i, _| {
                 let $sp = create_spotify_api(&token);
