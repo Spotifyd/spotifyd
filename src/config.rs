@@ -265,15 +265,14 @@ impl FileConfig {
         let merged_config: Option<SharedConfigValues>;
         // First merge the two sections together. The spotifyd has priority over global
         // section.
-        if spotifyd_config_section.is_some() {
+        if let Some(mut spotifyd_section) = spotifyd_config_section {
             // spotifyd section exists. Try to merge it with global section.
-            if global_config_section.is_some() {
-                let mut unwrapped_spotifyd_section = spotifyd_config_section.unwrap();
-                unwrapped_spotifyd_section.merge_with(global_config_section.unwrap());
-                merged_config = Some(unwrapped_spotifyd_section);
+            if let Some(global_section) = global_config_section {
+                spotifyd_section.merge_with(global_section);
+                merged_config = Some(spotifyd_section);
             } else {
                 // There is no global section. Just use the spotifyd section.
-                merged_config = spotifyd_config_section;
+                merged_config = Some(spotifyd_section);
             }
         } else {
             // No spotifyd config available. Check for global and use that, if both are
@@ -371,9 +370,8 @@ impl CliConfig {
         let config_content: FileConfig = serde_ini::from_str(&comment_free_content).unwrap();
 
         // The call to get_merged_sections consumes the FileConfig!
-        let merged_sections = config_content.get_merged_sections();
-        if merged_sections.is_some() {
-            self.shared_config.merge_with(merged_sections.unwrap())
+        if let Some(merged_sections) = config_content.get_merged_sections() {
+            self.shared_config.merge_with(merged_sections);
         }
     }
 }
