@@ -370,9 +370,8 @@ impl CliConfig {
         let config_content: FileConfig = serde_ini::from_str(&comment_free_content).unwrap();
 
         // The call to get_merged_sections consumes the FileConfig!
-        let merged_sections = config_content.get_merged_sections();
-        if merged_sections.is_some() {
-            self.shared_config.merge_with(merged_sections.unwrap())
+        if let Some(merged_sections) = config_content.get_merged_sections() {
+            self.shared_config.merge_with(merged_sections);
         }
     }
 }
