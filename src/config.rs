@@ -479,6 +479,8 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .device_name
         .unwrap_or_else(|| format!("{}@{}", "Spotifyd", gethostname().to_string_lossy()));
 
+    let device_id = device_id(&device_name);
+
     let normalisation_pregain = config.shared_config.normalisation_pregain.unwrap_or(0.0f32);
 
     let pid = config
@@ -522,7 +524,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         },
         session_config: SessionConfig {
             user_agent: version::version_string(),
-            device_id: device_id("Spotifyd"),
+            device_id,
             proxy: None,
             ap_port: Some(443),
         },
