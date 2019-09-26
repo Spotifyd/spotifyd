@@ -191,7 +191,7 @@ controlled from the official Spotify client on Android/iOS/Desktop.
 
 For a more lightweight and scriptable alternative, there is
 the [Spotify Connect
-API](https://developer.spotify.com/web-api/web-api-connect-endpoint-reference/).
+API](https://developer.spotify.com/documentation/web-api/guides/using-connect-web-api/).
 
 ## D-Bus MPRIS
 
