@@ -21,7 +21,19 @@ use crate::{
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
 lazy_static! {
-    static ref BACKEND_VALUES: Vec<&'static str> = vec!["alsa", "pulseaudio", "portaudio"];
+    static ref BACKEND_VALUES: Vec<&'static str> = {
+        let mut vec = Vec::new();
+        if cfg!(feature = "asla_backend") {
+            vec.push("alsa");
+        }
+        if cfg!(feature = "pulseaudio_backend") {
+            vec.push("pulseaudio");
+        }
+        if cfg!(feature = "portaudio_backend") {
+            vec.push("portaudio");
+        }
+        vec
+    };
 }
 
 /// The backend used by librespot
