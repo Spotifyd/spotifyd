@@ -69,7 +69,17 @@ impl ToString for Backend {
 }
 
 lazy_static! {
-    static ref VOLUME_CONTROLLER_VALUES: Vec<&'static str> = vec!["alsa", "alsa_linear", "softvol"];
+    static ref VOLUME_CONTROLLER_VALUES: Vec<&'static str> = {
+        let mut vec = Vec::new();
+        vec.push("softvol");
+
+        if cfg!(feature = "alsa_backend") {
+            vec.push("alsa");
+            vec.push("alsa_linear");
+        }
+
+        vec
+    };
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
