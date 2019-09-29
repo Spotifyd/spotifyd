@@ -21,7 +21,21 @@ use crate::{
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
 lazy_static! {
-    static ref BACKEND_VALUES: Vec<&'static str> = vec!["alsa", "pulseaudio", "portaudio"];
+    static ref BACKEND_VALUES: Vec<&'static str> = {
+        let mut vec = Vec::new();
+
+        if cfg!(feature = "alsa_backend") {
+            vec.push("alsa");
+        }
+        if cfg!(feature = "pulseaudio_backend") {
+            vec.push("pulseaudio");
+        }
+        if cfg!(feature = "portaudio_backend") {
+            vec.push("portaudio");
+        }
+
+        vec
+    };
 }
 
 /// The backend used by librespot
@@ -57,7 +71,16 @@ impl ToString for Backend {
 }
 
 lazy_static! {
-    static ref VOLUME_CONTROLLER_VALUES: Vec<&'static str> = vec!["alsa", "alsa_linear", "softvol"];
+    static ref VOLUME_CONTROLLER_VALUES: Vec<&'static str> = {
+        let mut vec = vec!["softvol"];
+
+        if cfg!(feature = "alsa_backend") {
+            vec.push("alsa");
+            vec.push("alsa_linear");
+        }
+
+        vec
+    };
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
@@ -185,8 +208,12 @@ pub struct SharedConfigValues {
     password: Option<String>,
 
     /// Enables keyring password access
-    #[structopt(long)]
-    #[serde(alias = "use-keyring", default, deserialize_with = "de_from_str")]
+    #[cfg_attr(
+        feature = "dbus_keyring",
+        structopt(long),
+        serde(alias = "use-keyring", default, deserialize_with = "de_from_str")
+    )]
+    #[cfg_attr(not(feature = "dbus_keyring"), structopt(skip), serde(skip))]
     use_keyring: bool,
 
     /// A command that can be used to retrieve the Spotify account password
