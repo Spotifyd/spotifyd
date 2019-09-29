@@ -213,6 +213,11 @@ pub struct SharedConfigValues {
         structopt(long),
         serde(alias = "use-keyring", default, deserialize_with = "de_from_str")
     )]
+    #[cfg_attr(
+        not(feature = "dbus_keyring"),
+        structopt(skip),
+        serde(skip)
+    )]
     use_keyring: bool,
 
     /// A command that can be used to retrieve the Spotify account password
