@@ -23,6 +23,7 @@ const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 lazy_static! {
     static ref BACKEND_VALUES: Vec<&'static str> = {
         let mut vec = Vec::new();
+
         if cfg!(feature = "alsa_backend") {
             vec.push("alsa");
         }
@@ -32,6 +33,7 @@ lazy_static! {
         if cfg!(feature = "portaudio_backend") {
             vec.push("portaudio");
         }
+
         vec
     };
 }
@@ -70,8 +72,7 @@ impl ToString for Backend {
 
 lazy_static! {
     static ref VOLUME_CONTROLLER_VALUES: Vec<&'static str> = {
-        let mut vec = Vec::new();
-        vec.push("softvol");
+        let mut vec = vec!["softvol"];
 
         if cfg!(feature = "alsa_backend") {
             vec.push("alsa");
