@@ -187,9 +187,9 @@ pub struct CliConfig {
     #[structopt(long)]
     pub verbose: bool,
 
-    /// Process id to launch the daemon on
+    /// Path to PID file.
     #[structopt(long)]
-    pub pid: Option<i32>,
+    pub pid: Option<PathBuf>,
 
     #[structopt(flatten)]
     pub shared_config: SharedConfigValues,
@@ -510,7 +510,13 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
 
     let pid = config
         .pid
-        .and_then(|f| Some(f.to_string()))
+        .and_then(|f| {
+            Some(
+                f.into_os_string()
+                    .into_string()
+                    .expect("Failed to convert PID file path to valid Unicode"),
+            )
+        })
         .or_else(|| None);
 
     let shell = utils::get_shell().unwrap_or_else(|| {
