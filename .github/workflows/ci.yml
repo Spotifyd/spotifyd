@@ -78,4 +78,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --no-default-features --features ${{ matrix.features }}
+          args: --locked --no-default-features --features ${{ matrix.features }}

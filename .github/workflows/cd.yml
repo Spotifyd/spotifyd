@@ -50,7 +50,7 @@ jobs:
         with:
           command: build
           toolchain: ${{ matrix.rust }}
-          args: --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}_backend"
+          args: --locked --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}_backend"
       
       - name: Packaging final binary
         shell: bash
