@@ -21,13 +21,7 @@ mod process;
 mod setup;
 mod utils;
 
-fn main() {
-    let mut cli_config = CliConfig::from_args();
-    cli_config.load_config_file_values();
-
-    let is_daemon = !cli_config.no_daemon;
-    let is_verbose = cli_config.verbose;
-
+fn setup_logger(is_daemon: bool, is_verbose: bool) {
     let filter = if is_verbose {
         LevelFilter::Trace
     } else {
@@ -47,14 +41,24 @@ fn main() {
             .or_else(|_| SimpleLogger::init(filter, logger_config).map_err(Box::<dyn Error>::from))
             .expect("Couldn't initialize logger");
     }
+}
 
-    if is_verbose {
-        trace!("{:?}", &cli_config);
-    }
+fn main() {
+    let mut cli_config: CliConfig = CliConfig::from_args();
 
+    let is_daemon = !cli_config.no_daemon;
+    let is_verbose = cli_config.verbose;
+    setup_logger(is_daemon, is_verbose);
+
+    cli_config.load_config_file_values();
+    trace!("{:?}", &cli_config);
+
+    // Returns the old SpotifydConfig struct used within the rest of the daemon.
     let internal_config = config::get_internal_config(cli_config);
 
     if is_daemon {
+        info!("Daemonizing running instance");
+
         let mut daemonize = Daemonize::new();
         if let Some(pid) = internal_config.pid.as_ref() {
             daemonize = daemonize.pid_file(pid);
