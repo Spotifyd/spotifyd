@@ -117,8 +117,6 @@ fn create_dbus_server(
     spirc: Rc<Spirc>,
     device_name: String,
 ) -> Box<dyn Future<Item = (), Error = ()>> {
-    let c = Rc::new(Connection::get_private(BusType::Session).unwrap());
-
     macro_rules! spotify_api_method {
         ([ $sp:ident, $device:ident $(, $m:ident: $t:ty)*] $f:expr) => {
             {
@@ -156,66 +154,165 @@ fn create_dbus_server(
         }};
     }
 
-    c.register_name(
-        "org.mpris.MediaPlayer2.spotifyd",
-        NameFlag::ReplaceExisting as u32,
-    )
-    .unwrap();
+    // TODO: allow other DBus types through CLI and config entry.
+    let connection = Rc::new(
+        Connection::get_private(BusType::Session).expect("Failed to initialize DBus connection"),
+    );
 
-    let spirc_quit = spirc.clone();
-    let spirc_play = spirc.clone();
-    let spirc_pause = spirc.clone();
-    let spirc_next = spirc.clone();
-    let spirc_prev = spirc.clone();
-    let spirc_play_pause = spirc.clone();
-    let spirc_stop = spirc.clone();
+    connection
+        .register_name(
+            "org.mpris.MediaPlayer2.spotifyd",
+            NameFlag::ReplaceExisting as u32,
+        )
+        .expect("Failed to register dbus player name");
 
+    // The tree is asynchronuous so we can fetch data over the spotify web api.
     let f = AFactory::new_afn::<()>();
 
-    let method_next = f.amethod("Next", (), move |m| {
-        spirc_next.next();
-        let mret = m.msg.method_return();
-        Ok(vec![mret])
-    });
-    let method_previous = f.amethod("Previous", (), move |m| {
-        spirc_prev.prev();
+    // The following methods and properties are part of the MediaPlayer2 interface.
+    // https://specifications.freedesktop.org/mpris-spec/latest/Media_Player.html
+    let property_can_quit = f
+        .property::<bool, _>("CanQuit", ())
+        .access(Access::Read)
+        .on_get(|iter, _| {
+            iter.append(true);
+            Ok(())
+        });
+
+    let property_can_raise = f
+        .property::<bool, _>("CanRaise", ())
+        .access(Access::Read)
+        .on_get(|iter, _| {
+            iter.append(false);
+            Ok(())
+        });
+
+    let property_can_fullscreen = f
+        .property::<bool, _>("CanSetFullscreen", ())
+        .access(Access::Read)
+        .on_get(|iter, _| {
+            iter.append(false);
+            Ok(())
+        });
+
+    let property_has_tracklist = f
+        .property::<bool, _>("HasTrackList", ())
+        .access(Access::Read)
+        .on_get(|iter, _| {
+            iter.append(false);
+            Ok(())
+        });
+
+    let property_identity = f
+        .property::<String, _>("Identity", ())
+        .access(Access::Read)
+        .on_get(|iter, _| {
+            iter.append("Spotifyd".to_string());
+            Ok(())
+        });
+
+    let property_supported_uri_schemes = f
+        .property::<Vec<String>, _>("SupportedUriSchemes", ())
+        .access(Access::Read)
+        .on_get(|iter, _| {
+            iter.append(vec!["spotify".to_string()]);
+            Ok(())
+        });
+
+    let property_mimetypes = f
+        .property::<Vec<String>, _>("SupportedMimeTypes", ())
+        .access(Access::Read)
+        .on_get(|iter, _| {
+            iter.append(Vec::<String>::new());
+            Ok(())
+        });
+
+    let method_raise = f.amethod("Raise", (), move |m| {
         let mret = m.msg.method_return();
         Ok(vec![mret])
     });
 
-    let method_pause = f.amethod("Pause", (), move |m| {
-        spirc_pause.pause();
-        let mret = m.msg.method_return();
-        Ok(vec![mret])
-    });
+    let method_quit = {
+        let local_spirc = spirc.clone();
+        f.amethod("Quit", (), move |m| {
+            local_spirc.shutdown();
+            let mret = m.msg.method_return();
+            Ok(vec![mret])
+        })
+    };
 
-    let method_pause_play = f.amethod("PlayPause", (), move |m| {
-        spirc_play_pause.play_pause();
-        let mret = m.msg.method_return();
-        Ok(vec![mret])
-    });
+    let media_player2_interface = f
+        .interface("org.mpris.MediaPlayer2", ())
+        .add_m(method_raise)
+        .add_m(method_quit)
+        .add_p(property_can_quit)
+        .add_p(property_can_raise)
+        .add_p(property_can_fullscreen)
+        .add_p(property_has_tracklist)
+        .add_p(property_identity)
+        .add_p(property_supported_uri_schemes)
+        .add_p(property_mimetypes);
 
-    let method_play = f.amethod("Play", (), move |m| {
-        spirc_play.play();
-        let mret = m.msg.method_return();
-        Ok(vec![mret])
-    });
+    // The following methods and properties are part of the MediaPlayer2.Player interface.
+    // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
+    let method_next = {
+        let local_spirc = spirc.clone();
+        f.amethod("Next", (), move |m| {
+            local_spirc.next();
+            Ok(vec![m.msg.method_return()])
+        })
+    };
 
-    let method_stop = f.amethod("Stop", (), move |m| {
-        spirc_stop.pause();
-        let mret = m.msg.method_return();
-        Ok(vec![mret])
-    });
+    let method_previous = {
+        let local_spirc = spirc.clone();
+        f.amethod("Previous", (), move |m| {
+            local_spirc.prev();
+            Ok(vec![m.msg.method_return()])
+        })
+    };
+
+    let method_pause = {
+        let local_spirc = spirc.clone();
+        f.method("Pause", (), move |m| {
+            local_spirc.pause();
+            Ok(vec![m.msg.method_return()])
+        })
+    };
+
+    let method_play_pause = {
+        let local_spirc = spirc.clone();
+        f.amethod("PlayPause", (), move |m| {
+            local_spirc.play_pause();
+            Ok(vec![m.msg.method_return()])
+        })
+    };
+
+    let method_play = {
+        let local_spirc = spirc.clone();
+        f.method("Play", (), move |m| {
+            local_spirc.play();
+            Ok(vec![m.msg.method_return()])
+        })
+    };
+
+    let method_stop = {
+        let local_spirc = spirc.clone();
+        f.amethod("Stop", (), move |m| {
+            // TODO: add real stop implementation.
+            local_spirc.pause();
+            Ok(vec![m.msg.method_return()])
+        })
+    };
 
     let method_seek = f.amethod(
         "Seek",
         (),
         spotify_api_method!([sp, device, pos: u32]{
-        if let Ok(p) = pos {
-        if let Ok(Some(playing)) = sp.current_user_playing_track() {
-        let _ = sp.seek_track(playing.progress_ms.unwrap_or(0) + p, device);
-        }
-        }
+            if let Ok(p) = pos {
+                if let Ok(Some(playing)) = sp.current_user_playing_track() {
+                    let _ = sp.seek_track(playing.progress_ms.unwrap_or(0) + p, device);
+                }
+            }
         }),
     );
 
@@ -223,9 +320,9 @@ fn create_dbus_server(
         "SetPosition",
         (),
         spotify_api_method!([sp, device, pos: u32]
-        if let Ok(p) = pos {
-            let _ = sp.seek_track(p, device);
-        }
+            if let Ok(p) = pos {
+                let _ = sp.seek_track(p, device);
+            }
         ),
     );
 
@@ -234,7 +331,7 @@ fn create_dbus_server(
         (),
         spotify_api_method!([sp, device, uri: String]
             if let Ok(uri) = uri {
-            let _ = sp.start_playback(device, None, Some(vec![uri]), None);
+                let _ = sp.start_playback(device, None, Some(vec![uri]), None);
             }
         ),
     );
@@ -261,27 +358,38 @@ fn create_dbus_server(
                         "Stopped"
                     }.to_string()));
 
+    let property_shuffle = f
+        .property::<bool, _>("Shuffle", ())
+        .access(Access::Read)
+        .on_get(spotify_api_property!([sp, _device]
+            if let Ok(Some(player)) = sp.current_playback(None) {
+                player.shuffle_state
+            } else {
+                false
+            }
+        ));
+
     let property_rate = f
         .property::<f64, _>("Rate", ())
         .access(Access::Read)
-        .on_get(|i, _| {
-            i.append(1.0);
+        .on_get(|iter, _| {
+            iter.append(1.0);
             Ok(())
         });
 
     let property_max_rate = f
         .property::<f64, _>("MaximumRate", ())
         .access(Access::Read)
-        .on_get(|i, _| {
-            i.append(1.0);
+        .on_get(|iter, _| {
+            iter.append(1.0);
             Ok(())
         });
 
     let property_min_rate = f
         .property::<f64, _>("MinimumRate", ())
         .access(Access::Read)
-        .on_get(|i, _| {
-            i.append(1.0);
+        .on_get(|iter, _| {
+            iter.append(1.0);
             Ok(())
         });
 
@@ -319,16 +427,19 @@ fn create_dbus_server(
         .on_get(spotify_api_property!([sp, _device] {
             let mut m = HashMap::new();
             let v = sp.current_user_playing_track();
+
             if let Ok(Some(playing)) = v {
                 if let Some(track) = playing.item {
                     m.insert("mpris:trackid".to_string(), Variant(Box::new(
                         MessageItem::Str(
                             track.uri
                         )) as Box<dyn RefArg>));
+
                     m.insert("mpris:length".to_string(), Variant(Box::new(
                         MessageItem::Int64(
                             i64::from(track.duration_ms) * 1000
                         )) as Box<dyn RefArg>));
+
                     m.insert("mpris:artUrl".to_string(), Variant(Box::new(
                         MessageItem::Str(
                             track.album.images
@@ -340,10 +451,12 @@ fn create_dbus_server(
                         MessageItem::Str(
                             track.name
                         )) as Box<dyn RefArg>));
+
                     m.insert("xesam:album".to_string(), Variant(Box::new(
                         MessageItem::Str(
                             track.album.name
                         )) as Box<dyn RefArg>));
+
                     m.insert("xesam:artist".to_string(), Variant(Box::new(
                         MessageItem::Array(MessageItemArray::new(
                             track.artists
@@ -351,6 +464,7 @@ fn create_dbus_server(
                                 .map(|a| MessageItem::Str(a.name.to_string()))
                                 .collect::<Vec<_>>(), Signature::new("as").unwrap()
                         ).unwrap())) as Box<dyn RefArg>));
+
                     m.insert("xesam:albumArtist".to_string(), Variant(Box::new(
                         MessageItem::Array(MessageItemArray::new(
                             track.album.artists
@@ -358,18 +472,22 @@ fn create_dbus_server(
                                 .map(|a| MessageItem::Str(a.name.to_string()))
                                 .collect::<Vec<_>>(), Signature::new("as").unwrap()
                         ).unwrap())) as Box<dyn RefArg>));
+
                     m.insert("xesam:autoRating".to_string(), Variant(Box::new(
                         MessageItem::Double(
                             f64::from(track.popularity) / 100.0
                         )) as Box<dyn RefArg>));
+
                     m.insert("xesam:trackNumber".to_string(), Variant(Box::new(
                         MessageItem::UInt32(
                             track.track_number
                         )) as Box<dyn RefArg>));
+
                     m.insert("xesam:discNumber".to_string(), Variant(Box::new(
                         MessageItem::Int32(
                             track.disc_number
                         )) as Box<dyn RefArg>));
+
                     m.insert("xesam:url".to_string(), Variant(Box::new(
                         MessageItem::Str(
                             track.external_urls
@@ -382,47 +500,64 @@ fn create_dbus_server(
             } else {
                 info!("Couldn't fetch metadata from spotify: {:?}", v);
             }
+
             m
         }));
 
     let property_can_play = f
         .property::<bool, _>("CanPlay", ())
         .access(Access::Read)
-        .on_get(|i, _| {
-            i.append(true);
+        .on_get(|iter, _| {
+            iter.append(true);
             Ok(())
         });
 
     let property_can_pause = f
         .property::<bool, _>("CanPause", ())
         .access(Access::Read)
-        .on_get(|i, _| {
-            i.append(true);
+        .on_get(|iter, _| {
+            iter.append(true);
             Ok(())
         });
 
     let property_can_seek = f
         .property::<bool, _>("CanSeek", ())
         .access(Access::Read)
-        .on_get(|i, _| {
-            i.append(true);
+        .on_get(|iter, _| {
+            iter.append(true);
             Ok(())
         });
 
     let property_can_control = f
         .property::<bool, _>("CanControl", ())
         .access(Access::Read)
-        .on_get(|i, _| {
-            i.append(true);
+        .on_get(|iter, _| {
+            iter.append(true);
             Ok(())
         });
 
-    let interface_player = f
+    let property_can_go_previous = f
+        .property::<bool, _>("CanGoPrevious", ())
+        .access(Access::Read)
+        .on_get(|iter, _| {
+            iter.append(true);
+            Ok(())
+        });
+
+    let property_can_go_next = f
+        .property::<bool, _>("CanGoNext", ())
+        .access(Access::Read)
+        .on_get(|iter, _| {
+            iter.append(true);
+            Ok(())
+        });
+
+    let media_player2_player_interface = f
         .interface("org.mpris.MediaPlayer2.Player", ())
         .add_m(method_next)
         .add_m(method_previous)
         .add_m(method_pause)
-        .add_m(method_pause_play)
+        .add_m(method_play_pause)
         .add_m(method_play)
         .add_m(method_stop)
         .add_m(method_seek)
@@ -438,81 +573,34 @@ fn create_dbus_server(
         .add_p(property_can_play)
         .add_p(property_can_pause)
         .add_p(property_can_seek)
-        .add_p(property_can_control);
-
-    let method_quit = f.amethod("Quit", (), move |m| {
-        spirc_quit.shutdown();
-        let mret = m.msg.method_return();
-        Ok(vec![mret])
-    });
-
-    let method_raise = f.amethod("Raise", (), move |m| {
-        let mret = m.msg.method_return();
-        Ok(vec![mret])
-    });
-
-    let method_can_quit = f
-        .property::<bool, _>("CanQuit", ())
-        .access(Access::Read)
-        .on_get(|i, _| {
-            i.append(true);
-            Ok(())
-        });
-
-    let method_can_raise = f
-        .property::<bool, _>("CanRaise", ())
-        .access(Access::Read)
-        .on_get(|i, _| {
-            i.append(false);
-            Ok(())
-        });
-
-    let property_has_tracklist = f
-        .property::<bool, _>("HasTrackList", ())
-        .access(Access::Read)
-        .on_get(|i, _| {
-            i.append(false);
-            Ok(())
-        });
-
-    let property_identity = f
-        .property::<String, _>("Identity", ())
-        .access(Access::Read)
-        .on_get(|i, _| {
-            i.append("Spotifyd".to_string());
-            Ok(())
-        });
-
-    let property_supported_uri_schemes = f
-        .property::<Vec<String>, _>("SupportedUriSchemes", ())
-        .access(Access::Read)
-        .on_get(|i, _| {
-            i.append(vec!["Spotify".to_string()]);
-            Ok(())
-        });
-
-    let interface_player2 = f
-        .interface("org.mpris.MediaPlayer2", ())
-        .add_m(method_quit)
-        .add_m(method_raise)
-        .add_p(method_can_quit)
-        .add_p(method_can_raise)
-        .add_p(property_has_tracklist)
-        .add_p(property_identity)
-        .add_p(property_supported_uri_schemes);
+        .add_p(property_can_control)
+        .add_p(property_can_go_next)
+        .add_p(property_can_go_previous)
+        .add_p(property_shuffle);
 
     let tree = f.tree(ATree::new()).add(
         f.object_path("/org/mpris/MediaPlayer2", ())
             .introspectable()
-            .add(interface_player)
-            .add(interface_player2),
+            .add(media_player2_interface)
+            .add(media_player2_player_interface),
     );
 
-    tree.set_registered(&c, true).unwrap();
-    let aconn = AConnection::new(c.clone(), handle).unwrap();
-    let server = ATreeServer::new(c.clone(), Box::new(tree), aconn.messages().unwrap());
-    Box::new(server.for_each(|m| {
-        warn!("Unhandled dbus message: {:?}", m);
+    tree.set_registered(&connection, true)
+        .expect("Failed to register tree");
+
+    let async_connection = AConnection::new(connection.clone(), handle)
+        .expect("Failed to create async dbus connection");
+
+    let server = ATreeServer::new(
+        connection.clone(),
+        Box::new(tree),
+        async_connection
+            .messages()
+            .expect("Failed to unwrap async messages"),
+    );
+
+    Box::new(server.for_each(|message| {
+        warn!("Unhandled DBus message: {:?}", message);
         Ok(())
     }))
 }
