@@ -171,321 +171,341 @@ fn create_dbus_server(
     let spirc_stop = spirc.clone();
 
     let f = AFactory::new_afn::<()>();
+
+    let method_next = f.amethod("Next", (), move |m| {
+        spirc_next.next();
+        let mret = m.msg.method_return();
+        Ok(vec![mret])
+    });
+    let method_previous = f.amethod("Previous", (), move |m| {
+        spirc_prev.prev();
+        let mret = m.msg.method_return();
+        Ok(vec![mret])
+    });
+
+    let method_pause = f.amethod("Pause", (), move |m| {
+        spirc_pause.pause();
+        let mret = m.msg.method_return();
+        Ok(vec![mret])
+    });
+
+    let method_pause_play = f.amethod("PlayPause", (), move |m| {
+        spirc_play_pause.play_pause();
+        let mret = m.msg.method_return();
+        Ok(vec![mret])
+    });
+
+    let method_play = f.amethod("Play", (), move |m| {
+        spirc_play.play();
+        let mret = m.msg.method_return();
+        Ok(vec![mret])
+    });
+
+    let method_stop = f.amethod("Stop", (), move |m| {
+        spirc_stop.pause();
+        let mret = m.msg.method_return();
+        Ok(vec![mret])
+    });
+
+    let method_seek = f.amethod(
+        "Seek",
+        (),
+        spotify_api_method!([sp, device, pos: u32]{
+        if let Ok(p) = pos {
+        if let Ok(Some(playing)) = sp.current_user_playing_track() {
+        let _ = sp.seek_track(playing.progress_ms.unwrap_or(0) + p, device);
+        }
+        }
+        }),
+    );
+
+    let method_set_position = f.amethod(
+        "SetPosition",
+        (),
+        spotify_api_method!([sp, device, pos: u32]
+        if let Ok(p) = pos {
+            let _ = sp.seek_track(p, device);
+        }
+        ),
+    );
+
+    let method_open_uri = f.amethod(
+        "OpenUri",
+        (),
+        spotify_api_method!([sp, device, uri: String]
+            if let Ok(uri) = uri {
+            let _ = sp.start_playback(device, None, Some(vec![uri]), None);
+            }
+        ),
+    );
+
+    let property_playback_status = f
+        .property::<String, _>("PlaybackStatus", ())
+        .access(Access::Read)
+        .on_get(spotify_api_property!([sp, _device]
+                    if let Ok(Some(player)) = sp.current_playback(None) {
+                        if player.device.id == _device.unwrap() {
+                            if let Ok(Some(track)) = sp.current_user_playing_track() {
+                                if track.is_playing {
+                                    "Playing"
+                                } else {
+                                    "Paused"
+                                }
+                            } else {
+                                "Stopped"
+                            }
+                        } else {
+                            "Stopped"
+                        }
+                    } else {
+                        "Stopped"
+                    }.to_string()));
+
+    let property_rate = f
+        .property::<f64, _>("Rate", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append(1.0);
+            Ok(())
+        });
+
+    let property_max_rate = f
+        .property::<f64, _>("MaximumRate", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append(1.0);
+            Ok(())
+        });
+
+    let property_min_rate = f
+        .property::<f64, _>("MinimumRate", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append(1.0);
+            Ok(())
+        });
+
+    let property_loop_status = f
+        .property::<String, _>("LoopStatus", ())
+        .access(Access::Read)
+        .on_get(spotify_api_property!([sp, _device]
+            if let Ok(Some(player)) = sp.current_playback(None) {
+                match player.repeat_state {
+                    RepeatState::Off => "None",
+                    RepeatState::Track => "Track",
+                    RepeatState::Context => "Playlist",
+                }
+            } else {
+                "None"
+            }.to_string()
+        ));
+
+    let property_position = f
+        .property::<i64, _>("Position", ())
+        .access(Access::Read)
+        .on_get(spotify_api_property!([sp, _device]
+            if let Ok(Some(pos)) =
+                sp.current_playback(None)
+                .map(|maybe_player| maybe_player.and_then(|p| p.progress_ms)) {
+                i64::from(pos)
+            } else {
+                0
+            }
+        ));
+
+    let property_metadata = f
+        .property::<HashMap<String, Variant<Box<dyn RefArg>>>, _>("Metadata", ())
+        .access(Access::Read)
+        .on_get(spotify_api_property!([sp, _device] {
+            let mut m = HashMap::new();
+            let v = sp.current_user_playing_track();
+            if let Ok(Some(playing)) = v {
+                if let Some(track) = playing.item {
+                    m.insert("mpris:trackid".to_string(), Variant(Box::new(
+                        MessageItem::Str(
+                            track.uri
+                        )) as Box<dyn RefArg>));
+                    m.insert("mpris:length".to_string(), Variant(Box::new(
+                        MessageItem::Int64(
+                            i64::from(track.duration_ms) * 1000
+                        )) as Box<dyn RefArg>));
+                    m.insert("mpris:artUrl".to_string(), Variant(Box::new(
+                        MessageItem::Str(
+                            track.album.images
+                                .first()
+                                .unwrap().url.clone()
+                        )) as Box<dyn RefArg>));
+
+                    m.insert("xesam:title".to_string(), Variant(Box::new(
+                        MessageItem::Str(
+                            track.name
+                        )) as Box<dyn RefArg>));
+                    m.insert("xesam:album".to_string(), Variant(Box::new(
+                        MessageItem::Str(
+                            track.album.name
+                        )) as Box<dyn RefArg>));
+                    m.insert("xesam:artist".to_string(), Variant(Box::new(
+                        MessageItem::Array(MessageItemArray::new(
+                            track.artists
+                                .iter()
+                                .map(|a| MessageItem::Str(a.name.to_string()))
+                                .collect::<Vec<_>>(), Signature::new("as").unwrap()
+                        ).unwrap())) as Box<dyn RefArg>));
+                    m.insert("xesam:albumArtist".to_string(), Variant(Box::new(
+                        MessageItem::Array(MessageItemArray::new(
+                            track.album.artists
+                                .iter()
+                                .map(|a| MessageItem::Str(a.name.to_string()))
+                                .collect::<Vec<_>>(), Signature::new("as").unwrap()
+                        ).unwrap())) as Box<dyn RefArg>));
+                    m.insert("xesam:autoRating".to_string(), Variant(Box::new(
+                        MessageItem::Double(
+                            f64::from(track.popularity) / 100.0
+                        )) as Box<dyn RefArg>));
+                    m.insert("xesam:trackNumber".to_string(), Variant(Box::new(
+                        MessageItem::UInt32(
+                            track.track_number
+                        )) as Box<dyn RefArg>));
+                    m.insert("xesam:discNumber".to_string(), Variant(Box::new(
+                        MessageItem::Int32(
+                            track.disc_number
+                        )) as Box<dyn RefArg>));
+                    m.insert("xesam:url".to_string(), Variant(Box::new(
+                        MessageItem::Str(
+                            track.external_urls
+                                .iter()
+                                .next()
+                                .map_or("", |(_, v)| &v)
+                                .to_string()
+                        )) as Box<dyn RefArg>));
+                }
+            } else {
+                info!("Couldn't fetch metadata from spotify: {:?}", v);
+            }
+            m
+        }));
+
+    let property_can_play = f
+        .property::<bool, _>("CanPlay", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append(true);
+            Ok(())
+        });
+
+    let property_can_pause = f
+        .property::<bool, _>("CanPause", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append(true);
+            Ok(())
+        });
+
+    let property_can_seek = f
+        .property::<bool, _>("CanSeek", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append(true);
+            Ok(())
+        });
+
+    let property_can_control = f
+        .property::<bool, _>("CanControl", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append(true);
+            Ok(())
+        });
+
+    let interface_player = f
+        .interface("org.mpris.MediaPlayer2.Player", ())
+        .add_m(method_next)
+        .add_m(method_previous)
+        .add_m(method_pause)
+        .add_m(method_pause_play)
+        .add_m(method_play)
+        .add_m(method_stop)
+        .add_m(method_seek)
+        .add_m(method_set_position)
+        .add_m(method_open_uri)
+        .add_p(property_playback_status)
+        .add_p(property_rate)
+        .add_p(property_max_rate)
+        .add_p(property_min_rate)
+        .add_p(property_loop_status)
+        .add_p(property_position)
+        .add_p(property_metadata)
+        .add_p(property_can_play)
+        .add_p(property_can_pause)
+        .add_p(property_can_seek)
+        .add_p(property_can_control);
+
+    let method_quit = f.amethod("Quit", (), move |m| {
+        spirc_quit.shutdown();
+        let mret = m.msg.method_return();
+        Ok(vec![mret])
+    });
+
+    let method_raise = f.amethod("Raise", (), move |m| {
+        let mret = m.msg.method_return();
+        Ok(vec![mret])
+    });
+
+    let method_can_quit = f
+        .property::<bool, _>("CanQuit", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append(true);
+            Ok(())
+        });
+
+    let method_can_raise = f
+        .property::<bool, _>("CanRaise", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append(false);
+            Ok(())
+        });
+
+    let property_has_tracklist = f
+        .property::<bool, _>("HasTrackList", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append(false);
+            Ok(())
+        });
+
+    let property_identity = f
+        .property::<String, _>("Identity", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append("Spotifyd".to_string());
+            Ok(())
+        });
+
+    let property_supported_uri_schemes = f
+        .property::<Vec<String>, _>("SupportedUriSchemes", ())
+        .access(Access::Read)
+        .on_get(|i, _| {
+            i.append(vec!["Spotify".to_string()]);
+            Ok(())
+        });
+
+    let interface_player2 = f
+        .interface("org.mpris.MediaPlayer2", ())
+        .add_m(method_quit)
+        .add_m(method_raise)
+        .add_p(method_can_quit)
+        .add_p(method_can_raise)
+        .add_p(property_has_tracklist)
+        .add_p(property_identity)
+        .add_p(property_supported_uri_schemes);
+
     let tree = f.tree(ATree::new()).add(
         f.object_path("/org/mpris/MediaPlayer2", ())
             .introspectable()
-            .add(
-                f.interface("org.mpris.MediaPlayer2.Player", ())
-                    .add_m(f.amethod(
-                        "Next",
-                        (),
-                        move |m| {
-                            spirc_next.next();
-                            let mret = m.msg.method_return();
-                            Ok(vec![mret])
-                        },
-                    ))
-                    .add_m(f.amethod(
-                        "Previous",
-                        (),
-                        move |m| {
-                            spirc_prev.prev();
-                            let mret = m.msg.method_return();
-                            Ok(vec![mret])
-                        },
-                    ))
-                    .add_m(f.amethod(
-                        "Pause",
-                        (),
-                        move |m| {
-                            spirc_pause.pause();
-                            let mret = m.msg.method_return();
-                            Ok(vec![mret])
-                        },
-                    ))
-                    .add_m(f.amethod("PlayPause", (), move |m| {
-                        spirc_play_pause.play_pause();
-                        let mret = m.msg.method_return();
-                        Ok(vec![mret])
-                    }))
-                    .add_m(f.amethod(
-                        "Play",
-                        (),
-                        move |m| {
-                            spirc_play.play();
-                            let mret = m.msg.method_return();
-                            Ok(vec![mret])
-                        },
-                    ))
-                    .add_m(f.amethod(
-                        "Stop",
-                        (),
-                        move |m| {
-                            spirc_stop.pause();
-                            let mret = m.msg.method_return();
-                            Ok(vec![mret])
-                        },
-                    ))
-                    .add_m(f.amethod(
-                        "Seek",
-                        (),
-                        spotify_api_method!([sp, device, pos: u32]{
-                            if let Ok(p) = pos {
-                                if let Ok(Some(playing)) = sp.current_user_playing_track() {
-                                    let _ = sp.seek_track(playing.progress_ms.unwrap_or(0) + p, device);
-                                }
-                            }
-                        }),
-                    ))
-                    .add_m(f.amethod(
-                        "SetPosition",
-                        (),
-                        spotify_api_method!([sp, device, pos: u32]
-                            if let Ok(p) = pos {
-                                let _ = sp.seek_track(p, device);
-                            }
-                        ),
-                    ))
-                    .add_m(f.amethod(
-                        "OpenUri",
-                        (),
-                        spotify_api_method!([sp, device, uri: String]
-                            if let Ok(uri) = uri {
-                                let _ = sp.start_playback(device, None, Some(vec![uri]), None);
-                            }
-                        ),
-                    ))
-                    .add_p(
-                        f.property::<String, _>("PlaybackStatus", ())
-                            .access(Access::Read)
-                            .on_get(spotify_api_property!([sp, _device]
-                              if let Ok(Some(player)) = sp.current_playback(None) {
-                                  if player.device.id == _device.unwrap() {
-                                    if let Ok(Some(track)) = sp.current_user_playing_track() {
-                                        if track.is_playing {
-                                            "Playing"
-                                        } else {
-                                            "Paused"
-                                        }
-                                    } else {
-                                        "Stopped"
-                                    }
-                                  } else {
-                                      "Stopped"
-                                  }
-                              } else {
-                                  "Stopped"
-                              }.to_string())),
-                    )
-                    .add_p(
-                        f.property::<f64, _>("Rate", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append(1.0);
-                                Ok(())
-                            }),
-                    )
-                    .add_p(
-                        f.property::<f64, _>("MaximumRate", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append(1.0);
-                                Ok(())
-                            }),
-                    )
-                    .add_p(
-                        f.property::<f64, _>("MinimumRate", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append(1.0);
-                                Ok(())
-                            }),
-                    )
-                    .add_p(
-                        f.property::<String, _>("LoopStatus", ())
-                            .access(Access::Read)
-                            .on_get(spotify_api_property!([sp, _device]
-                                if let Ok(Some(player)) = sp.current_playback(None) {
-                                    match player.repeat_state {
-                                        RepeatState::Off => "None",
-                                        RepeatState::Track => "Track",
-                                        RepeatState::Context => "Playlist",
-                                    }
-                                } else {
-                                    "None"
-                                }.to_string()
-                            )),
-                    )
-                    .add_p(
-                        f.property::<i64, _>("Position", ())
-                            .access(Access::Read)
-                            .on_get(spotify_api_property!([sp, _device]
-                                if let Ok(Some(pos)) =
-                                    sp.current_playback(None)
-                                    .map(|maybe_player| maybe_player.and_then(|p| p.progress_ms)) {
-                                    i64::from(pos)
-                                } else {
-                                    0
-                                }
-                            )),
-                    )
-                    .add_p(
-                        f.property::<HashMap<String, Variant<Box<dyn RefArg>>>, _>("Metadata", ())
-                            .access(Access::Read)
-                            .on_get(spotify_api_property!([sp, _device] {
-                                let mut m = HashMap::new();
-                                let v = sp.current_user_playing_track();
-                                if let Ok(Some(playing)) = v {
-                                    if let Some(track) = playing.item {
-                                        m.insert("mpris:trackid".to_string(), Variant(Box::new(
-                                            MessageItem::Str(
-                                                track.uri
-                                            )) as Box<dyn RefArg>));
-                                        m.insert("mpris:length".to_string(), Variant(Box::new(
-                                            MessageItem::Int64(
-                                                i64::from(track.duration_ms) * 1000
-                                            )) as Box<dyn RefArg>));
-                                        m.insert("mpris:artUrl".to_string(), Variant(Box::new(
-                                            MessageItem::Str(
-                                                track.album.images
-                                                    .first()
-                                                    .unwrap().url.clone()
-                                            )) as Box<dyn RefArg>));
-
-                                        m.insert("xesam:title".to_string(), Variant(Box::new(
-                                            MessageItem::Str(
-                                                track.name
-                                            )) as Box<dyn RefArg>));
-                                        m.insert("xesam:album".to_string(), Variant(Box::new(
-                                            MessageItem::Str(
-                                                track.album.name
-                                            )) as Box<dyn RefArg>));
-                                        m.insert("xesam:artist".to_string(), Variant(Box::new(
-                                            MessageItem::Array(MessageItemArray::new(
-                                                track.artists
-                                                    .iter()
-                                                    .map(|a| MessageItem::Str(a.name.to_string()))
-                                                    .collect::<Vec<_>>(), Signature::new("as").unwrap()
-                                            ).unwrap())) as Box<dyn RefArg>));
-                                        m.insert("xesam:albumArtist".to_string(), Variant(Box::new(
-                                            MessageItem::Array(MessageItemArray::new(
-                                                track.album.artists
-                                                    .iter()
-                                                    .map(|a| MessageItem::Str(a.name.to_string()))
-                                                    .collect::<Vec<_>>(), Signature::new("as").unwrap()
-                                            ).unwrap())) as Box<dyn RefArg>));
-                                        m.insert("xesam:autoRating".to_string(), Variant(Box::new(
-                                            MessageItem::Double(
-                                                f64::from(track.popularity) / 100.0
-                                            )) as Box<dyn RefArg>));
-                                        m.insert("xesam:trackNumber".to_string(), Variant(Box::new(
-                                            MessageItem::UInt32(
-                                                track.track_number
-                                            )) as Box<dyn RefArg>));
-                                        m.insert("xesam:discNumber".to_string(), Variant(Box::new(
-                                            MessageItem::Int32(
-                                                track.disc_number
-                                            )) as Box<dyn RefArg>));
-                                        m.insert("xesam:url".to_string(), Variant(Box::new(
-                                            MessageItem::Str(
-                                                track.external_urls
-                                                    .iter()
-                                                    .next()
-                                                    .map_or("", |(_, v)| &v)
-                                                    .to_string()
-                                            )) as Box<dyn RefArg>));
-                                    }
-                                } else {
-                                    info!("Couldn't fetch metadata from spotify: {:?}", v);
-                                }
-                                m
-                            })),
-                    )
-                    .add_p(
-                        f.property::<bool, _>("CanPlay", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append(true);
-                                Ok(())
-                            }),
-                    )
-                    .add_p(
-                        f.property::<bool, _>("CanPause", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append(true);
-                                Ok(())
-                            }),
-                    )
-                    .add_p(
-                        f.property::<bool, _>("CanSeek", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append(true);
-                                Ok(())
-                            }),
-                    )
-                    .add_p(
-                        f.property::<bool, _>("CanControl", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append(true);
-                                Ok(())
-                            }),
-                    ),
-            )
-            .add(
-                f.interface("org.mpris.MediaPlayer2", ())
-                    .add_m(f.amethod("Quit", (), move |m| {
-                        spirc_quit.shutdown();
-                        let mret = m.msg.method_return();
-                        Ok(vec![mret])
-                    }))
-                    .add_m(f.amethod("Raise", (), move |m| {
-                        let mret = m.msg.method_return();
-                        Ok(vec![mret])
-                    }))
-                    .add_p(
-                        f.property::<bool, _>("CanQuit", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append(true);
-                                Ok(())
-                            }),
-                    )
-                    .add_p(
-                        f.property::<bool, _>("CanRaise", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append(false);
-                                Ok(())
-                            }),
-                    )
-                    .add_p(
-                        f.property::<bool, _>("HasTrackList", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append(false);
-                                Ok(())
-                            }),
-                    )
-                    .add_p(
-                        f.property::<String, _>("Identity", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append("Spotifyd".to_string());
-                                Ok(())
-                            }),
-                    )
-                    .add_p(
-                        f.property::<Vec<String>, _>("SupportedUriSchemes", ())
-                            .access(Access::Read)
-                            .on_get(|i, _| {
-                                i.append(vec!["Spotify".to_string()]);
-                                Ok(())
-                            }),
-                    ),
-            ),
+            .add(interface_player)
+            .add(interface_player2),
     );
 
     tree.set_registered(&c, true).unwrap();
