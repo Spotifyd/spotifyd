@@ -1,75 +1,126 @@
 [![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=Spotifyd/spotifyd)](https://dependabot.com)
+[![Github Actions - CD](https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Deployment/badge.svg)](https://github.com/Spotifyd/spotifyd/actions)
+[![Github Actions - CI](https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Integration/badge.svg)](https://github.com/Spotifyd/spotifyd/actions)
 
 # Spotifyd
 
-An open source Spotify client running as a UNIX daemon. Spotifyd streams music
+> An open source Spotify client running as a UNIX daemon.
+
+Spotifyd streams music
 just like the official client, but is more lightweight and supports more
 platforms. Spotifyd also supports the Spotify Connect protocol which makes it
 show up as a device that can be controlled from the official clients.
 
-Spotifyd requires a Spotify Premium account.
+**Note:** Spotifyd requires a Spotify Premium account.
 
-### What happened to the old spotifyd, written in C?
+## Installation 
 
-Unfortunately, Spotify decided to kill the libspotify library we used, and
-hence we had no choice but to rewrite everything.
+### Provided binaries
 
-# Installing
+We provide pre-built binaries through Github Actions for the more popular platforms: Linux, macOS and ARMv6. You can find them [here](https://github.com/Spotifyd/spotify/releases). For extra integrity, the files' SHA-512 gets calculated and uploaded as well.
 
-Travis CI builds binaries for systems running Linux on AMD64 and ARMv6 which
-should run on any Raspberry Pi model. The binaries can be found
-[here](https://github.com/Spotifyd/spotifyd/releases/latest). Other systems
-have to build from source for now. You will need the ALSA package for your
-distribution, e.g. libasound2-dev on Ubuntu.
+The provided binaries come in two flavours, `slim` and `full`. Each are compiled with different features. `slim` only contains the platform's most used audio backend, `full` has also all optional features enabled (see #[Feature Flags]).
 
-Detailed install instructions can be found on the [wiki](https://github.com/Spotifyd/spotifyd/wiki).
+### Compiling from source
 
-## Build from source
+You can also compile `Spotifyd` yourself, allowing you to make use of feature flags. `Spotifyd` is written in Rust. You can download the toolchain (compiler and package manager) over at [rustup.rs](https://rustup.rs). Follow their instructions to get started.
 
-The [Rust compiler and Cargo package manager](https://www.rust-lang.org/learn/get-started)
-are needed:
+`Spotifyd` might require additional libraries during build and runtime, depending on your platform. The following table shows the libraries needed for each OS respectively.
+
+| Target Platform | Libraries                                            |
+|-----------------|------------------------------------------------------|
+| Linux           | libasound2-dev libssl-dev libpulse-dev libdbus-1-dev |
+| macOS           | dbus, pkg-config, portaudio                          |
+
+> __Note:__ The package names for Linux are the ones used on Debian based OS (like Ubuntu). You will need to adapt the packages for your distribution.
+
+To install the resulting binary, run 
+
+```$ cargo install --path .```
+
+#### Feature Flags
+
+`Spotifyd` is split into a base package plus additional features that can be toggled on or off during compilation. Those can be split into two groups: The audio backends features and additional functionality features.
+
+To enable an additional audio backend, pass `<audio_backend_name>_backend` as a feature flag. We currently support `alsa`, `pulseaudio` and `portaudio`.
+
+`Spotifyd` provides the following additional functionality:
+
+| Feature Flag | Description                                                                         |
+|--------------|-------------------------------------------------------------------------------------|
+| dbus_keyring | Provides password authentication over the system's keyring (supports all platforms) |
+| dbus_mpris   | Provides multimedia key support for Linux only                                      |
+
+> __Note:__ Compiling Spotifyd with all features and the pulseaudio backend on Ubuntu would result in the following command: `cargo build --release --no-default-features --features pulseaudio_backend,dbus_keyring,dbus_mpris`
+
+##### DBus MPRIS
+
+Spotifyd implements 
+[DBus MPRIS](https://specifications.freedesktop.org/mpris-spec/latest/), meaning that it can be controlled by some generic media playback controllers such as
+[playerctl](https://github.com/acrisci/playerctl/tree/4cf5ba8ad00f47c8db8af0fd20286b050921a6e1)
+as well as some tools specifically designed for use with the official Spotify
+client such as [sp](https://gist.github.com/wandernauta/6800547).
+
+> __Note:__ Make sure to rename the service name within the `sp` script to `spotifyd`!
+
+The D-Bus server is currently experimental. Enable the `dbus_mpris` feature when
+compiling to try it out.
+
+#### Audio Backend
+
+By default, the audio backend is ALSA, as ALSA is available by default on a lot
+of machines and requires no extra dependencies. There is also support for
+`pulseaudio` and `portaudio`. 
+
+###### PulseAudio
+
+To use PulseAudio, compile with the `--features` flag to enable
+it:
 
 ```bash
-cargo build --release
+cargo build --release --features="pulseaudio_backend"
 ```
 
-The resulting binary will be placed in `target/release/spotifyd`.
+You will need the development package for PulseAudio, as well
+as `build-essential` or the equivalent in your distribution.
 
-Alternatively, the package can be installed into the user's home directory
-by running the following command:
+###### PortAudio
+To use PortAudio (works on OSX), compile with the `--features` flag to enable it:
 
 ```bash
-cargo install --path .
+cargo build --release --no-default-features --features="portaudio_backend"
 ```
 
-This method also allows further configuration by specifing more feature flags
-as shown [further down](#command-line-arguments).
+## Configuration
 
-The default is to build spotifyd with an ALSA backend, but it is possible
-to build with other audio backends, making Spotifyd available on platforms
-other than Linux, by adding the `--no-default-features` argument to cargo
-and supplying an alternative backend (see the _Configuration_ section).
+`Spotifyd` is able to run without configuration at all and will assume default values for most of the fields. However, running without configuration will only allow you to connect to it if you're on the same network as the daemon.
 
-# Configuration
+### CLI options
 
-Spotifyd will search for a file name `spotifyd.conf` in the XDG config
-directories (meaning, a user's local config is placed in
-`~/.config/spotifyd/spotifyd.conf`, a system-wide config in
-`/etc/spotifyd.conf` or `/etc/xdg/spotifyd/spotifyd.conf`) and has the following format:
+`Spotifyd` can be configured using CLI arguments. For a detailed description as well as possible values for each flag, run 
+
+```$ spotifyd --help```.
+
+### Configuration file
+
+`Spotifyd` is able to load configuration values from a file too. The file has to be named `spotifyd.conf` and reside in the user's configuration directory (`~/.config/spotifyd`) or the system configuration directory (`/etc` or `/etc/xdg/spotifyd`).
+
+The configuration file consists of two sections, `global` and `spotifyd`, whereas `spotifyd` takes priority over `global`.
+
+The configuration file has the following format:
 
 ```ini
-# ~/.config/spotifyd/spotifyd.conf
 [global]
-username = USER
-password = PASS
-# password_cmd = command_that_writes_password_to_stdout  # can be used as alternative to `password`
-# use_keyring = true                                     # can be used as alternative to `password`
+username = USER                                          # Spotify username
+password = PASS                                          # Spotify password
+password_cmd = command_that_writes_password_to_stdout    # can be used as alternative to `password`
+use_keyring = true                                       # can be used as alternative to `password`
 backend = alsa                                           # run `spotifyd --backends` for possible values
 device = alsa_audio_device                               # run `aplay -L` for possible values
-# control = alsa_audio_device                            # device for the mixer, if not the same as 'device'
+control = alsa_audio_device                              # device for the mixer, if not the same as 'device'
 mixer = PCM
-volume_controller = alsa                                    # or alsa_linear, or softvol
-# on_song_change_hook = command_to_run_on_playback_events
+volume_controller = alsa                                 # or alsa_linear, or softvol
+on_song_change_hook = command_to_run_on_playback_events
 device_name = device_name_in_spotify_connect             # must not contain spaces
 bitrate = 160                                            # or 96, or 320
 cache_path = cache_directory
@@ -78,15 +129,7 @@ normalisation_pregain = -10
 zeroconf_port = port_number                              # the port used to start the Spotify discovery service 
 ```
 
-Every field is optional; `Spotifyd` can even run without a configuration file.
-Options can also be placed in a `[spotifyd]` section which takes priority over
-the `[global]` section. This is useful when you run applications related to
-`Spotifyd` which shares some, but not all, options with `Spotifyd`.
-
-Values can be surrounded by double quotes (") which is useful if the value 
-contains the comment character (#).
-
-**Cache path**
+#### Cache path
 
 The line `cache_path = /cache_directory` defines the cache path, where Spotify's 
 cache-files are stored. These cache-files are used to avoid re-downloading data 
@@ -96,7 +139,7 @@ directory, for example `/mount/disk/spotifyCache`. Spotifyd does not create a
 missing cache path, so the path must exist. The cache path is not expanded by 
 the shell: paths containing e.g. `~/` or `$HOME/` will not work.
 
-**Alternatives to storing your password in the config file**
+#### Alternatives to storing your password in the config file
 
 - **`password_cmd`** config entry
 
@@ -140,7 +183,7 @@ the shell: paths containing e.g. `~/` or `$HOME/` will not work.
   secret-tool store --label='name you choose' application rust-keyring service spotifyd username <your-username>
   ```
 
-**Shell used to run commands indicated by `password_cmd` or `onevent`**
+#### Shell used to run commands indicated by `password_cmd` or `on_song_changed_hook`
 
 If either of these options is given, the shell `spotifyd` will use to run 
 their commands is the shell indicated by the `SHELL` environment variable, if 
@@ -148,102 +191,3 @@ set. If the `SHELL` environment variable is not set, `spotifyd` will use the
 user's default shell, which, on linux and the BSDs, is the shell listed in 
 `/etc/passwd`, and, on macOS, is the shell listed in the output of 
 `dscl . -read /Users/<username> UserShell`.
-
-## Command Line Arguments
-
-`spotifyd --help` gives an up-to-date list of available arguments. The command
-line arguments allows for specifying a PID file, setting a verbose mode, run in
-no-daemon mode, among other things.
-
-## Audio Backend
-
-By default, the audio backend is ALSA, as ALSA is available by default on a lot
-of machines and requires no extra dependencies. There is also support for
-`pulseaudio` and `portaudio`. 
-
-### PulseAudio
-
-To use PulseAudio, compile with the `--features` flag to enable
-it:
-
-```bash
-cargo build --release --features="pulseaudio_backend"
-```
-
-You will need the development package for PulseAudio, as well
-as `build-essential` or the equivalent in your distribution.
-
-### PortAudio
-To use PortAudio (works on OSX), compile with the `--features` flag to enable it:
-
-```bash
-cargo build --release --no-default-features --features="portaudio_backend"
-```
-
-You will need the development package for PortAudio (`brew install portaudio`), as well
-as `build-essential` or the equivalent in your distribution.
-
-
-# Usage
-
-Spotifyd communicates over the Spotify Connect protocol, meaning that it can be
-controlled from the official Spotify client on Android/iOS/Desktop.
-
-For a more lightweight and scriptable alternative, there is
-the [Spotify Connect
-API](https://developer.spotify.com/documentation/web-api/guides/using-connect-web-api/).
-
-## D-Bus MPRIS
-
-Spotifyd implements 
-[D-Bus MPRIS](https://specifications.freedesktop.org/mpris-spec/latest/) which 
-means it can be controlled by some generic media playback controllers such as
-[playerctl](https://github.com/acrisci/playerctl/tree/4cf5ba8ad00f47c8db8af0fd20286b050921a6e1)
-as well as some tools specifically designed for use with the official Spotify
-client such as [sp](https://gist.github.com/wandernauta/6800547) (requires
-changing the DBus service name to spotifyd instead of spotify).
-
-The D-Bus server is currently experimental. Enable the `dbus_mpris` feature when
-compiling to try it out.
-
-## Running as a systemd service
-
-A systemd.service unit file is provided to help run spotifyd as a service on
-systemd-based systems. The file `contrib/spotifyd.service` should be copied to
-either:
-
-    /etc/systemd/user/
-    ~/.config/systemd/user/
-
-Packagers of systemd-based distributions are encouraged to include the file in
-the former location. End-user should prefer the latter.
-
-It should be noted that some targets are not available when running under the
-user directory, such as `network-online.target`.
-
-Control of the daemon is then done via systemd. The following example commands
-will run the service once and enable the service to always run on login in the
-future respectively:
-
-    systemctl --user start spotifyd.service
-    systemctl --user enable spotifyd.service
-
-# Logging
-
-In `--no-daemon` mode, the log is written to standard output, otherwise it is
-written to syslog, and where it's written can be configured in your system
-logger.
-
-The verbose mode adds more information; please enable this mode when submitting
-a bug report.
-
-# Common Issues
-
-* Spotifyd will not work without Spotify Premium
-* The device name cannot contain spaces
-
-# Credits
-
-This project would not have been possible without the amazing reverse
-engineering work done in [librespot](https://github.com/plietar/librespot),
-mostly by [plietar](https://github.com/plietar).
