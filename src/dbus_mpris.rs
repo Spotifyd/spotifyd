@@ -341,7 +341,8 @@ fn create_dbus_server(
         .access(Access::Read)
         .on_get(spotify_api_property!([sp, _device]
                     if let Ok(Some(player)) = sp.current_playback(None) {
-                        if player.device.id == _device.unwrap() {
+                        let device_name = utf8_percent_encode(&player.device.name, NON_ALPHANUMERIC).to_string();
+                        if device_name == _device.unwrap() {
                             if let Ok(Some(track)) = sp.current_user_playing_track() {
                                 if track.is_playing {
                                     "Playing"
