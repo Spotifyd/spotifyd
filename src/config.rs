@@ -235,6 +235,11 @@ pub struct SharedConfigValues {
     #[structopt(long, parse(from_os_str), short, value_name = "string")]
     cache_path: Option<PathBuf>,
 
+    /// Enable to use audio cache
+    #[structopt(long)]
+    #[serde(default, deserialize_with = "de_from_str")]
+    audio_cache: bool,
+
     /// The audio backend to use
     #[structopt(long, short, possible_values = &BACKEND_VALUES, value_name = "string")]
     backend: Option<Backend>,
@@ -341,6 +346,7 @@ impl fmt::Debug for SharedConfigValues {
             .field("use_keyring", &self.use_keyring)
             .field("on_song_change_hook", &self.on_song_change_hook)
             .field("cache_path", &self.cache_path)
+            .field("audio_cache", &self.audio_cache)
             .field("backend", &self.backend)
             .field("volume_controller", &self.volume_controller)
             .field("device", &self.device)
@@ -431,6 +437,7 @@ impl SharedConfigValues {
         // Handles boolean merging.
         self.use_keyring |= other.use_keyring;
         self.volume_normalisation |= other.volume_normalisation;
+        self.audio_cache |= other.audio_cache;
     }
 }
 
@@ -458,6 +465,8 @@ pub(crate) struct SpotifydConfig {
     #[allow(unused)]
     pub(crate) use_keyring: bool,
     pub(crate) cache: Option<Cache>,
+    #[allow(unused)]
+    pub(crate) audio_cache: bool,
     pub(crate) backend: Option<String>,
     pub(crate) audio_device: Option<String>,
     #[allow(unused)]
@@ -476,11 +485,13 @@ pub(crate) struct SpotifydConfig {
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
+    let audio_cache = config.shared_config.audio_cache;
+
     let cache = config
         .shared_config
         .cache_path
         .map(PathBuf::from)
-        .and_then(|path| Some(Cache::new(path, true)));
+        .and_then(|path| Some(Cache::new(path, audio_cache)));
 
     let bitrate: LSBitrate = config
         .shared_config
@@ -542,6 +553,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         password,
         use_keyring: config.shared_config.use_keyring,
         cache,
+        audio_cache,
         backend: Some(backend),
         audio_device: config.shared_config.device,
         control_device: config.shared_config.control,
