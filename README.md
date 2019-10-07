@@ -73,6 +73,7 @@ volume_controller = alsa                                    # or alsa_linear, or
 device_name = device_name_in_spotify_connect             # must not contain spaces
 bitrate = 160                                            # or 96, or 320
 cache_path = cache_directory
+no_audio_cache = true                                    # use credentials-only caching
 volume_normalisation = true
 normalisation_pregain = -10
 zeroconf_port = port_number                              # the port used to start the Spotify discovery service 
