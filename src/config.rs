@@ -321,46 +321,31 @@ impl FileConfig {
     }
 }
 
+fn sanitize_user_cred(debug_login: bool, input_value: &Option<String>) -> Option<&str> {
+    let value = if input_value.is_some() {
+        if debug_login {
+            Some(input_value.as_ref().map(|x| &**x).unwrap())
+        } else {
+            Some("taken out for privacy")
+        }
+    } else {
+        None
+    };
+    return value;
+}
+
 impl fmt::Debug for SharedConfigValues {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let debug_login = self.debug_login;
-        let placeholder = "taken out for privacy";
 
-        // TODO: somehow replace with a appropriate macro.
-        let password_value = if self.password.is_some() {
-            if debug_login {
-                Some(self.password.as_ref().map(|x| &**x).unwrap())
-            } else {
-                Some(placeholder)
-            }
-        } else {
-            None
-        };
-
-        let password_cmd_value = if self.password_cmd.is_some() {
-            if debug_login {
-                Some(self.password_cmd.as_ref().map(|x| &**x).unwrap())
-            } else {
-                Some(placeholder)
-            }
-        } else {
-            None
-        };
-
-        let username_value = if self.username.is_some() {
-            if debug_login {
-                Some(self.username.as_ref().map(|x| &**x).unwrap())
-            } else {
-                Some(placeholder)
-            }
-        } else {
-            None
-        };
+        let username_value = &sanitize_user_cred(debug_login, &self.username);
+        let password_value = &sanitize_user_cred(debug_login, &self.password);
+        let password_cmd_value = &sanitize_user_cred(debug_login, &self.password_cmd);
 
         f.debug_struct("SharedConfigValues")
-            .field("username", &username_value)
-            .field("password", &password_value)
-            .field("password_cmd", &password_cmd_value)
+            .field("username", username_value)
+            .field("password", password_value)
+            .field("password_cmd", password_cmd_value)
             .field("use_keyring", &self.use_keyring)
             .field("debug_login", &self.debug_login)
             .field("on_song_change_hook", &self.on_song_change_hook)
