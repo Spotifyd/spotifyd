@@ -437,7 +437,7 @@ impl SharedConfigValues {
         // Handles boolean merging.
         self.use_keyring |= other.use_keyring;
         self.volume_normalisation |= other.volume_normalisation;
-        self.no_audio_cache |= !(other.no_audio_cache);
+        self.no_audio_cache |= other.no_audio_cache;
     }
 }
 
@@ -483,7 +483,7 @@ pub(crate) struct SpotifydConfig {
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
-    let no_audio_cache = config.shared_config.no_audio_cache;
+    let no_audio_cache = !config.shared_config.no_audio_cache;
 
     let cache = config
         .shared_config
