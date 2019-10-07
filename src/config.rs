@@ -322,16 +322,14 @@ impl FileConfig {
 }
 
 fn sanitize_user_cred(debug_login: bool, input_value: &Option<String>) -> Option<&str> {
-    let value = if input_value.is_some() {
+    if input_value.is_some() {
         if debug_login {
-            Some(input_value.as_ref().map(|x| &**x).unwrap())
+            return Some(input_value.as_ref().map(|x| &**x).unwrap());
         } else {
-            Some("taken out for privacy")
+            return Some("taken out for privacy");
         }
-    } else {
-        None
-    };
-    return value;
+    }
+    return None;
 }
 
 impl fmt::Debug for SharedConfigValues {
