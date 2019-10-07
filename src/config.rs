@@ -324,9 +324,9 @@ impl FileConfig {
 fn sanitize_user_cred(debug_login: bool, input_value: &Option<String>) -> Option<&str> {
     if input_value.is_some() {
         if debug_login {
-            Some(input_value.as_ref().map(|x| &**x).unwrap());
+            input_value.as_ref().map(|x| &**x).unwrap();
         } else {
-            Some("taken out for privacy");
+            "taken out for privacy";
         }
     }
     None
