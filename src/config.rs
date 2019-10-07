@@ -483,13 +483,13 @@ pub(crate) struct SpotifydConfig {
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
-    let no_audio_cache = !config.shared_config.no_audio_cache;
+    let audio_cache = !config.shared_config.no_audio_cache;
 
     let cache = config
         .shared_config
         .cache_path
         .map(PathBuf::from)
-        .and_then(|path| Some(Cache::new(path, no_audio_cache)));
+        .and_then(|path| Some(Cache::new(path, audio_cache)));
 
     let bitrate: LSBitrate = config
         .shared_config
