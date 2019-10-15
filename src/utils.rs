@@ -1,5 +1,6 @@
 use whoami;
 
+use log;
 use std::env;
 
 pub(crate) fn get_shell() -> Option<String> {
@@ -64,12 +65,21 @@ pub(crate) fn get_shell() -> Option<String> {
     None
 }
 
+pub fn contains_whitespace(s: &str) -> bool {
+    let found_space = s.find(|c: char| c.is_whitespace()) != None;
+    if found_space {
+        log::warn!("device name contains whitespace. Set to default!");
+    }
+
+    found_space
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
+    fn test_get_shell() {
         env::set_var("RUST_LOG", "spotifyd=trace");
 
         env_logger::init();
@@ -80,5 +90,12 @@ mod tests {
             env::remove_var("SHELL");
             let _ = get_shell().unwrap();
         }
+    }
+
+    #[test]
+    fn test_contains_whitespace() {
+        assert!(contains_whitespace("hi there"));
+        assert!(contains_whitespace(" hi there "));
+        assert!(!contains_whitespace("hithere"));
     }
 }
