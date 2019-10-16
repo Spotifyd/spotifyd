@@ -1,9 +1,10 @@
 name: Continuous Integration
 
-on: [pull_request]
-  paths:
-    - '**.rs'
-    
+on:
+  pull_request:
+    paths:
+      - '**.rs'
+
 jobs:
   codestyle:
     runs-on: ubuntu-latest
