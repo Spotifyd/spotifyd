@@ -44,7 +44,7 @@ by running the following command:
 cargo install --path .
 ```
 
-This method also allows further configuration by specifing more feature flags
+This method also allows further configuration by specifying more feature flags
 as shown [further down](#command-line-arguments).
 
 The default is to build spotifyd with an ALSA backend, but it is possible
@@ -123,7 +123,7 @@ the shell: paths containing e.g. `~/` or `$HOME/` will not work.
   This features leverages Linux's DBus Secret Service API 
   ([info](https://www.freedesktop.org/wiki/Specifications/secret-storage-spec/))
   in order to forgo the need to store your password directly in the config file. 
-  To use it, complile with the `dbus_keyring` feature and set the `use-keyring` 
+  To use it, compile with the `dbus_keyring` feature and set the `use-keyring` 
   config entry to `true` or pass the `--use-keyring` CLI flag during start to 
   the daemon. Remove the `password` and/or `password_cmd` config entries, which,
   if present, would take priority.
