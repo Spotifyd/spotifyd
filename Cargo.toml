@@ -38,7 +38,7 @@ features = ["with-tremor"]
 git = "https://github.com/librespot-org/librespot.git"
 
 [dev-dependencies]
-env_logger = "0.6"
+env_logger = "0.7"
 
 [features]
 alsa_backend = ["librespot/alsa-backend", "alsa"]
