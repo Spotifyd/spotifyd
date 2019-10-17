@@ -512,7 +512,6 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .shared_config
         .device_name
         .filter(|s| !s.trim().is_empty())
-        .filter(|s| !utils::contains_whitespace(&s))
         .unwrap_or_else(|| format!("{}@{}", "Spotifyd", gethostname().to_string_lossy()));
 
     let device_id = device_id(&device_name);
