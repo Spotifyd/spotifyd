@@ -1,13 +1,13 @@
 use whoami;
 
-use log;
+use log::{warn, trace};
 use std::env;
 
 pub(crate) fn get_shell() -> Option<String> {
     // First look for the user's preferred shell using the SHELL environment
     // variable...
     if let Ok(shell) = env::var("SHELL") {
-        log::trace!("Found shell {:?} using SHELL environment variable.", shell);
+        trace!("Found shell {:?} using SHELL environment variable.", shell);
         return Some(shell);
     }
 
@@ -32,7 +32,7 @@ pub(crate) fn get_shell() -> Option<String> {
             if let Some(user) = iter.nth(0) {
                 if user == username {
                     let shell = iter.nth(5)?;
-                    log::trace!("Found shell {:?} using /etc/passwd.", shell);
+                    trace!("Found shell {:?} using /etc/passwd.", shell);
                     return Some(shell.into());
                 }
             }
@@ -57,7 +57,7 @@ pub(crate) fn get_shell() -> Option<String> {
             // "UserShell: /path/to/shell"
             if stdout.starts_with("UserShell: ") {
                 let shell = stdout.split_whitespace().nth(1)?;
-                log::trace!("Found shell {:?} using dscl command.", shell);
+                trace!("Found shell {:?} using dscl command.", shell);
                 return Some(shell.to_string());
             }
         }
@@ -68,7 +68,7 @@ pub(crate) fn get_shell() -> Option<String> {
 pub fn contains_whitespace(s: &str) -> bool {
     let found_space = s.find(|c: char| c.is_whitespace()) != None;
     if found_space {
-        log::warn!("device name contains whitespace. Set to default!");
+        warn!("device name contains whitespace. Set to default!");
     }
 
     found_space
