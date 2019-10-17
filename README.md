@@ -244,6 +244,7 @@ a bug report.
 
 * Spotifyd will not work without Spotify Premium
 * The device name cannot contain spaces
+* Launching in discovery mode (username and password left empty) makes the daemon undiscoverable from within the app. See #373.
 
 # Credits
 
