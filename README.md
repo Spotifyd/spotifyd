@@ -141,6 +141,7 @@ on_song_change_hook = command_to_run_on_playback_events
 device_name = device_name_in_spotify_connect             # must not contain spaces
 bitrate = 160                                            # or 96, or 320
 cache_path = cache_directory
+no_audio_cache = true                                    # use credentials-only caching
 volume_normalisation = true
 normalisation_pregain = -10
 zeroconf_port = port_number                              # the port used to start the Spotify discovery service 
@@ -169,7 +170,7 @@ The line `cache_path = /cache_directory` defines the cache path, where Spotify's
   This features leverages Linux's DBus Secret Service API 
   ([info](https://www.freedesktop.org/wiki/Specifications/secret-storage-spec/))
   in order to forgo the need to store your password directly in the config file. 
-  To use it, complile with the `dbus_keyring` feature and set the `use-keyring` 
+  To use it, compile with the `dbus_keyring` feature and set the `use-keyring` 
   config entry to `true` or pass the `--use-keyring` CLI flag during start to 
   the daemon. Remove the `password` and/or `password_cmd` config entries, which,
   if present, would take priority.

@@ -21,7 +21,21 @@ use crate::{
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
 lazy_static! {
-    static ref BACKEND_VALUES: Vec<&'static str> = vec!["alsa", "pulseaudio", "portaudio"];
+    static ref BACKEND_VALUES: Vec<&'static str> = {
+        let mut vec = Vec::new();
+
+        if cfg!(feature = "alsa_backend") {
+            vec.push("alsa");
+        }
+        if cfg!(feature = "pulseaudio_backend") {
+            vec.push("pulseaudio");
+        }
+        if cfg!(feature = "portaudio_backend") {
+            vec.push("portaudio");
+        }
+
+        vec
+    };
 }
 
 /// The backend used by librespot
@@ -57,7 +71,16 @@ impl ToString for Backend {
 }
 
 lazy_static! {
-    static ref VOLUME_CONTROLLER_VALUES: Vec<&'static str> = vec!["alsa", "alsa_linear", "softvol"];
+    static ref VOLUME_CONTROLLER_VALUES: Vec<&'static str> = {
+        let mut vec = vec!["softvol"];
+
+        if cfg!(feature = "alsa_backend") {
+            vec.push("alsa");
+            vec.push("alsa_linear");
+        }
+
+        vec
+    };
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
@@ -164,9 +187,9 @@ pub struct CliConfig {
     #[structopt(long)]
     pub verbose: bool,
 
-    /// Process id to launch the daemon on
+    /// Path to PID file.
     #[structopt(long)]
-    pub pid: Option<i32>,
+    pub pid: Option<PathBuf>,
 
     #[structopt(flatten)]
     pub shared_config: SharedConfigValues,
@@ -185,8 +208,12 @@ pub struct SharedConfigValues {
     password: Option<String>,
 
     /// Enables keyring password access
-    #[structopt(long)]
-    #[serde(alias = "use-keyring", default, deserialize_with = "de_from_str")]
+    #[cfg_attr(
+        feature = "dbus_keyring",
+        structopt(long),
+        serde(alias = "use-keyring", default, deserialize_with = "de_from_str")
+    )]
+    #[cfg_attr(not(feature = "dbus_keyring"), structopt(skip), serde(skip))]
     use_keyring: bool,
 
     /// A command that can be used to retrieve the Spotify account password
@@ -207,6 +234,11 @@ pub struct SharedConfigValues {
     /// The cache path used to store credentials and music file artifacts
     #[structopt(long, parse(from_os_str), short, value_name = "string")]
     cache_path: Option<PathBuf>,
+
+    /// Disable the use of audio cache
+    #[structopt(long)]
+    #[serde(default, deserialize_with = "de_from_str")]
+    no_audio_cache: bool,
 
     /// The audio backend to use
     #[structopt(long, short, possible_values = &BACKEND_VALUES, value_name = "string")]
@@ -314,6 +346,7 @@ impl fmt::Debug for SharedConfigValues {
             .field("use_keyring", &self.use_keyring)
             .field("on_song_change_hook", &self.on_song_change_hook)
             .field("cache_path", &self.cache_path)
+            .field("no-audio-cache", &self.no_audio_cache)
             .field("backend", &self.backend)
             .field("volume_controller", &self.volume_controller)
             .field("device", &self.device)
@@ -404,6 +437,7 @@ impl SharedConfigValues {
         // Handles boolean merging.
         self.use_keyring |= other.use_keyring;
         self.volume_normalisation |= other.volume_normalisation;
+        self.no_audio_cache |= other.no_audio_cache;
     }
 }
 
@@ -449,11 +483,13 @@ pub(crate) struct SpotifydConfig {
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
+    let audio_cache = !config.shared_config.no_audio_cache;
+
     let cache = config
         .shared_config
         .cache_path
         .map(PathBuf::from)
-        .and_then(|path| Some(Cache::new(path, true)));
+        .and_then(|path| Some(Cache::new(path, audio_cache)));
 
     let bitrate: LSBitrate = config
         .shared_config
@@ -475,6 +511,8 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let device_name = config
         .shared_config
         .device_name
+        .filter(|s| !s.trim().is_empty())
+        .filter(|s| !s.chars().any(char::is_whitespace))
         .unwrap_or_else(|| format!("{}@{}", "Spotifyd", gethostname().to_string_lossy()));
 
     let device_id = device_id(&device_name);
@@ -483,7 +521,13 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
 
     let pid = config
         .pid
-        .and_then(|f| Some(f.to_string()))
+        .and_then(|f| {
+            Some(
+                f.into_os_string()
+                    .into_string()
+                    .expect("Failed to convert PID file path to valid Unicode"),
+            )
+        })
         .or_else(|| None);
 
     let shell = utils::get_shell().unwrap_or_else(|| {
