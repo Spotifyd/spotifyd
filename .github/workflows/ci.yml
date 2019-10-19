@@ -58,9 +58,9 @@ jobs:
         os: [macos-latest, ubuntu-latest]
         include:
           - os: macos-latest
-            features: portaudio_backend,dbus_keyring
+            features: portaudio_backend,rodio_backend,dbus_keyring
           - os: ubuntu-latest
-            features: alsa_backend,dbus_keyring,dbus_mpris
+            features: alsa_backend,rodio_backend,dbus_keyring,dbus_mpris
 
     steps:
       - name: Installing Rust toolchain
