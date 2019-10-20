@@ -1,8 +1,8 @@
 # Spotifyd <!-- omit in toc -->
 
-[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=Spotifyd/spotifyd)](https://dependabot.com)
-[![Github Actions - CD](https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Deployment/badge.svg)](https://github.com/Spotifyd/spotifyd/actions)
-[![Github Actions - CI](https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Integration/badge.svg)](https://github.com/Spotifyd/spotifyd/actions)
+[![Dependabot Status][dependabot-badge]](https://dependabot.com)
+[![Github Actions - CD][cd-badge]][github-actions]
+[![Github Actions - CI][ci-badge]][github-actions]
 
 > An open source Spotify client running as a UNIX daemon.
 
@@ -18,16 +18,20 @@ Spotifyd streams music just like the official client, but is more lightweight an
       - [Audio Backends](#audio-backends)
         - [PulseAudio](#pulseaudio)
         - [PortAudio](#portaudio)
+      - [Rodio](#rodio)
 - [Configuration](#configuration)
   - [CLI options](#cli-options)
   - [Configuration file](#configuration-file)
+- [Running as a systemd service](#running-as-a-systemd-service)
 - [Contributing](#contributing)
+- [Common issues](#common-issues)
+- [Credits](#credits)
 
 ## Installation
 
 ### Provided binaries
 
-We provide pre-built binaries through Github Actions for the more popular platforms: Linux, macOS and ARMv7. You can find them [here](https://github.com/Spotifyd/spotify/releases). For extra integrity, the files' SHA-512 gets calculated and uploaded as well.
+We provide pre-built binaries through Github Actions for the more popular platforms: Linux, macOS and ARMv7. You can find them [here](https://github.com/Spotifyd/spotify/releases). For extra integrity, the file's SHA-512 gets calculated and uploaded as well.
 
 The provided binaries come in two flavours, `slim` and `full`. Each are compiled with different features. `slim` only contains the platform's most used audio backend, `full` has also all optional features enabled (see [Feature Flags](#feature-flags)).
 
@@ -39,7 +43,8 @@ You can also compile `Spotifyd` yourself, allowing you to make use of feature fl
 
 | Target Platform | Libraries                                            |
 |-----------------|------------------------------------------------------|
-| Linux           | libasound2-dev libssl-dev libpulse-dev libdbus-1-dev |
+| Fedora          | alsa-lib-devel, make, gcc                            |
+| Debian          | libasound2-dev libssl-dev libpulse-dev libdbus-1-dev |
 | macOS           | dbus, pkg-config, portaudio                          |
 
 > __Note:__ The package names for Linux are the ones used on Debian based distributions (like Ubuntu). You will need to adapt the packages for your distribution respectively.
@@ -107,6 +112,16 @@ cargo build --release --no-default-features --features="portaudio_backend"
 
 > __Note:__ It is important that you also pass down `--no-default-features` as macOS doesn't support the `alsa_backend` feature!
 
+##### Rodio
+
+To use Rodio (works on Windows, OSX, Linux), compile with the `--features` flag to enable it:
+
+```bash
+cargo build --release --no-default-features --features="rodio_backend"
+```
+
+On Linux you will need the development package for alsa and make/gcc. (`libasound2-dev`,`build-essential` on debian, `alsa-lib-devel`,`make`,`gcc` on fedora)
+
 ## Configuration
 
 `Spotifyd` is able to run without configuration at all and will assume default values for most of the fields. However, running without configuration will only allow you to connect to it if you're on the same network as the daemon.
@@ -132,9 +147,11 @@ The configuration file has the following format:
 ```ini
 [global]
 # Your Spotify account name.
-username = USER
+username = username
+
 # Your Spotify account password.
-password = PASS
+password = password
+
 # A command that gets executed and can be used to
 # retrieve your password.
 # The command should return the password on stdout.
@@ -142,34 +159,44 @@ password = PASS
 # This is an alternative to the `password` field. Both
 # can't be used simultaneously.
 password_cmd = command_that_writes_password_to_stdout
+
 # If set to true, `spotifyd` tries to look up your
 # password in the system's password storage.
 #
 # This is an alternative to the `password` field. Both
 # can't be used simultaneously.
 use_keyring = true
+
 # The audio backend used to play the your music. To get
 # a list of possible backends, run `spotifyd --help`.
 backend = alsa
+
 # The alsa audio device to stream audio to. To get a
 # list of valid devices, run `aplay -L`,
 device = alsa_audio_device
+
 # The alsa control device. By default this is the same
 # name as the `device` field.
 control = alsa_audio_device
+
 # The alsa mixer used by `spotifyd`.
 mixer = PCM
+
 # The volume controller. Each one behaves different to
 # volume increases. For possible values, run
 # `spotifyd --help`.
 volume_controller = alsa
+
 # A command that gets executed in yur shell after each song changes.
 on_song_change_hook = command_to_run_on_playback_events
+
 # The name that gets displayed under the connect tab on
 # official clients. Spaces are not allowed!
 device_name = device_name_in_spotify_connect
+
 # The audio bitrate. 96, 160 or 320 kbit/s
 bitrate = 160
+
 # The director used to cache audio data. This setting can save
 # a lot of bandwidth when activated, as it will avoid re-downloading
 # audio files when replaying them.
@@ -177,12 +204,16 @@ bitrate = 160
 # Note: The file path does not get expanded. Environment variables and
 # shell placeholders like $HOME or ~ don't work!
 cache_path = cache_directory
+
 # If set to true, audio data does NOT get cached.
 no_audio_cache = true
+
 # If set to true, enables volume normalisation between songs.
 volume_normalisation = true
+
 # The normalisation pregain that is applied for each song.
 normalisation_pregain = -10
+
 # The port `spotifyd` uses to announce its service over the network.
 zeroconf_port = 1234
 ```
@@ -224,13 +255,48 @@ zeroconf_port = 1234
 
 If either of these options is given, the shell `spotifyd` will use to run its commands is the shell indicated by the `SHELL` environment variable, if set. If the `SHELL` environment variable is not set, `spotifyd` will use the user's default shell, which, on Linux and BSD, is the shell listed in `/etc/passwd`. On macOS it is the shell listed in the output of `dscl . -read /Users/<username> UserShell`.
 
+## Running as a systemd service
+
+A `systemd.service` unit file is provided to help run spotifyd as a service on systemd-based systems. The file `contrib/spotifyd.service` should be copied to either:
+
+```
+/etc/systemd/user/
+~/.config/systemd/user/
+```
+
+Packagers of systemd-based distributions are encouraged to include the file in the former location. End-user should prefer the latter. It should be noted that some targets are not available when running under the user directory, such as `network-online.target`.
+
+Control of the daemon is handed over to systemd. The following example commands will run the service once and enable the service to always run on login in the future respectively:
+
+```
+systemctl --user start spotifyd.service
+systemctl --user enable spotifyd.service
+```
+
+## Contributing
+
+We always appreciate help during the development of `spotifyd`! If you are new to programming, open source or Rust in general, take a look at issues tagged with [`good first issue`][good-first-issues]. These normally are easy to resolve and don't take much time to implement.
+
+## Common issues
+
+- Spotifyd will not work without Spotify Premium
+- The device name cannot contain spaces
+- Launching in discovery mode (username and password left empty) makes the daemon undiscoverable from within the app (tracking issue #373)
+
+## Credits
+
+This project would not have been possible without the amazing reverse engineering work done in [librespot](https://github.com/librespot-org/librespot), mostly by [plietar](https://github.com/plietar).
+
 <!-- This section contains all links used within the document. This prevents cluttering and makes reading the raw markdown a lot easier -->
+[github-actions]: https://github.com/Spotifyd/spotifyd/actions
+[good-first-issues]: https://github.com/Spotifyd/spotifyd/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
 [mpris-specification]: https://specifications.freedesktop.org/mpris-spec/latest/
 [pass-homepage]: https://www.passwordstore.org/
 [playerctl-homepage]: https://github.com/acrisci/playerctl/
 [secret-storage-specification]: https://www.freedesktop.org/wiki/Specifications/secret-storage-spec/
 [sp-homepage]: https://gist.github.com/wandernauta/6800547
 
-## Contributing
+[cd-badge]: https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Deployment/badge.svg
+[ci-badge]: https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Integration/badge.svg
+[dependabot-badge]: https://api.dependabot.com/badges/status?host=github&repo=Spotifyd/spotifyd
 
-We always appreciate help during the development of `spotifyd`! If you are new to programming, open source or Rust in general, take a look at issues tagged with `good first issue`. These normally are easy to resolve and don't take much time to implement.
