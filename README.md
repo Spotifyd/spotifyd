@@ -18,7 +18,7 @@ Spotifyd streams music just like the official client, but is more lightweight an
       - [Audio Backends](#audio-backends)
         - [PulseAudio](#pulseaudio)
         - [PortAudio](#portaudio)
-      - [Rodio](#rodio)
+        - [Rodio](#rodio)
 - [Configuration](#configuration)
   - [CLI options](#cli-options)
   - [Configuration file](#configuration-file)
@@ -112,7 +112,7 @@ cargo build --release --no-default-features --features="portaudio_backend"
 
 > __Note:__ It is important that you also pass down `--no-default-features` as macOS doesn't support the `alsa_backend` feature!
 
-##### Rodio
+###### Rodio
 
 To use Rodio (works on Windows, OSX, Linux), compile with the `--features` flag to enable it:
 
@@ -299,4 +299,3 @@ This project would not have been possible without the amazing reverse engineerin
 [cd-badge]: https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Deployment/badge.svg
 [ci-badge]: https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Integration/badge.svg
 [dependabot-badge]: https://api.dependabot.com/badges/status?host=github&repo=Spotifyd/spotifyd
-
