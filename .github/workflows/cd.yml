@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        build_target: [macos, macos-rodio, ubuntu]
         rust: [stable]
         feature: [
           '',                                             # Slim version has no features enabled by default.
@@ -19,11 +19,18 @@ jobs:
         ]
         artifact_type: ['slim', 'full']                   # The build strategy will build both types for each OS specified
         include:
-          - os: macos-latest
+          - build_target: macos
+            os: macos-latest
             artifact_prefix: macos
             audio_backend: portaudio
             target: x86_64-apple-darwin
-          - os: ubuntu-latest
+          - build_target: macos-rodio
+            os: macos-latest
+            artifact_prefix: macos-rodio
+            audio_backend: rodio
+            target: x86_64-apple-darwin
+          - build_target: ubuntu
+            os: ubuntu-latest
             artifact_prefix: linux
             audio_backend: alsa
             target: x86_64-unknown-linux-gnu
