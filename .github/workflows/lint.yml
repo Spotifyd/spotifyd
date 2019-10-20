@@ -1,11 +1,9 @@
-name: Continuous Integration
+name: Continuous Integration - Linting
 
 on:
   pull_request:
     paths:
       - '**.rs'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
 
 jobs:
   codestyle:
@@ -49,38 +47,3 @@ jobs:
         with:
           command: clippy
           args: --all-targets --all-features -- -D warnings
-
-  check:
-    needs: [lint]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest]
-        include:
-          - os: macos-latest
-            features: portaudio_backend,rodio_backend,dbus_keyring
-          - os: ubuntu-latest
-            features: alsa_backend,rodio_backend,dbus_keyring,dbus_mpris
-
-    steps:
-      - name: Installing Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Installing macOS dependencies
-        if: matrix.os == 'macos-latest'
-        run: brew install pkg-config portaudio
-      - name: Installing needed Ubuntu dependencies
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y -qq libasound2-dev libssl-dev libpulse-dev libdbus-1-dev
-      
-      - name: Checking out sources
-        uses: actions/checkout@v1
-      - name: Checking Rust code
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --locked --no-default-features --features ${{ matrix.features }}
