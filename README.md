@@ -162,7 +162,7 @@ no-daemon mode, among other things.
 
 By default, the audio backend is ALSA, as ALSA is available by default on a lot
 of machines and requires no extra dependencies. There is also support for
-`pulseaudio` and `portaudio`. 
+`rodio`, `pulseaudio` and `portaudio`. 
 
 ### PulseAudio
 
@@ -186,6 +186,14 @@ cargo build --release --no-default-features --features="portaudio_backend"
 You will need the development package for PortAudio (`brew install portaudio`), as well
 as `build-essential` or the equivalent in your distribution.
 
+### Rodio
+To use Rodio (works on Windows, OSX, Linux), compile with the `--features` flag to enable it:
+
+```bash
+cargo build --release --no-default-features --features="rodio_backend"
+```
+
+On linux you will need the development package for alsa and make/gcc. (`libasound2-dev`,`build-essential` on debian, `alsa-lib-devel`,`make`,`gcc` on fedora)
 
 # Usage
 
