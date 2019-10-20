@@ -2037,7 +2037,7 @@ dependencies = [
 
 [[package]]
 name = "rspotify"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2363,7 +2363,7 @@ dependencies = [
  "librespot 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "percent-encoding 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rspotify 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rspotify 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_ini 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sha-1 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3294,7 +3294,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum reqwest 0.9.17 (registry+https://github.com/rust-lang/crates.io-index)" = "e57803405f8ea0eb041c1567dac36127e0c8caa1251c843cb03d43fd767b3d50"
 "checksum result 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "194d8e591e405d1eecf28819740abed6d719d1a2db87fc0bcdedee9a26d55560"
 "checksum rpassword 3.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "c34fa7bcae7fca3c8471e8417088bbc3ad9af8066b0ecf4f3c0d98a0d772716e"
-"checksum rspotify 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "dc1fc76d253e15f04c0e059778e91663fa35a513e0665fb6b4111550b75591c5"
+"checksum rspotify 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0503981dfb56b01ad035b0f56413727b0499b11228f4d1baf6d7df0e76832046"
 "checksum rust-argon2 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "4ca4eaef519b494d1f2848fc602d18816fed808a981aedf4f1f00ceb7c9d32cf"
 "checksum rustc-demangle 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)" = "4c691c0e608126e00913e33f0ccf3727d5fc84573623b8d65b2df340b5201783"
 "checksum rustc-serialize 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)" = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
