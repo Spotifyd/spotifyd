@@ -30,6 +30,8 @@ tokio-core = "0.1"
 tokio-io = "0.1"
 tokio-signal = "0.1"
 xdg = "2.2"
+
+[target.'cfg(macos)'.dependencies]
 whoami = "0.5.3"
 
 [dependencies.librespot]

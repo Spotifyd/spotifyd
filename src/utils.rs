@@ -1,67 +1,67 @@
-use whoami;
+use log::trace;
 
 use std::env;
 
 pub(crate) fn get_shell() -> Option<String> {
-    // First look for the user's preferred shell using the SHELL environment
-    // variable...
-    if let Ok(shell) = env::var("SHELL") {
-        log::trace!("Found shell {:?} using SHELL environment variable.", shell);
-        return Some(shell);
-    }
+    let shell = env::var("SHELL").ok().or_else(|| get_shell_ffi());
+    trace!("Found user shell: {:?}", &shell);
 
-    // If the SHELL environment variable is not set and we're on linux or one of the
-    // BSDs, try to obtain the default shell from `/etc/passwd`...
-    #[cfg(not(target_os = "macos"))]
-    {
-        use std::{
-            fs::File,
-            io::{self, BufRead},
-        };
+    shell
+}
 
-        let username = whoami::username();
+#[cfg(target_os = "macos")]
+fn get_shell_ffi() -> Option<String> {
+    use std::process::Command;
 
-        let file = File::open("/etc/passwd").ok()?;
-        let reader = io::BufReader::new(file);
-        // Each line of `/etc/passwd` describes a single user and contains seven
-        // colon-separated fields: "name:password:UID:GID:GECOS:directory:shell"
-        for line in reader.lines() {
-            let line = line.ok()?;
-            let mut iter = line.split(':');
-            if let Some(user) = iter.nth(0) {
-                if user == username {
-                    let shell = iter.nth(5)?;
-                    log::trace!("Found shell {:?} using /etc/passwd.", shell);
-                    return Some(shell.into());
-                }
-            }
+    let username = whoami::username();
+    let output = Command::new("dscl")
+        .args(&[".", "-read", &format!("/Users/{}", username), "UserShell"])
+        .output()
+        .ok()?;
+
+    if output.status.success() {
+        let stdout = std::str::from_utf8(&output.stdout).ok()?;
+        // The output of this dscl command should be:
+        // "UserShell: /path/to/shell"
+        if stdout.starts_with("UserShell: ") {
+            let shell = stdout.split_whitespace().nth(1)?;
+            log::trace!("Found shell {:?} using dscl command.", shell);
+            return Some(shell.to_string());
         }
     }
 
-    // If the SHELL environment variable is not set and on we're on macOS,
-    // query the Directory Service command line utility (dscl) for the user's shell,
-    // as macOS does not use the /etc/passwd file...
-    #[cfg(target_os = "macos")]
-    {
-        use std::process::Command;
-
-        let username = whoami::username();
-        let output = Command::new("dscl")
-            .args(&[".", "-read", &format!("/Users/{}", username), "UserShell"])
-            .output()
-            .ok()?;
-        if output.status.success() {
-            let stdout = std::str::from_utf8(&output.stdout).ok()?;
-            // The output of this dscl command should be:
-            // "UserShell: /path/to/shell"
-            if stdout.starts_with("UserShell: ") {
-                let shell = stdout.split_whitespace().nth(1)?;
-                log::trace!("Found shell {:?} using dscl command.", shell);
-                return Some(shell.to_string());
-            }
-        }
-    }
     None
+}
+
+#[cfg(target_os = "linux")]
+fn get_shell_ffi() -> Option<String> {
+    use libc::{getpwuid_r, geteuid};
+    
+    use std::ffi::CStr;
+    use std::mem;
+    use std::ptr;
+
+    let mut result = ptr::null_mut();
+    
+    unsafe {
+        let amt = match libc::sysconf(libc::_SC_GETPW_R_SIZE_MAX) {
+            n if n < 0 => 512 as usize,
+            n => n as usize,
+        };
+        let mut buf = Vec::with_capacity(amt);
+        let mut passwd: libc::passwd = mem::zeroed();
+
+        match getpwuid_r(geteuid(), &mut passwd, buf.as_mut_ptr(),
+                                buf.capacity() as libc::size_t,
+                                &mut result) {
+            0 if !result.is_null() => {
+                let ptr = passwd.pw_shell as *const _;
+                let username = CStr::from_ptr(ptr).to_str().unwrap().to_owned();
+                Some(username)
+            },
+            _ => None
+        }
+    }
 }
 
 #[cfg(test)]
