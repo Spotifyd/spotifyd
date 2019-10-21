@@ -35,14 +35,14 @@ fn get_shell_ffi() -> Option<String> {
 
 #[cfg(target_os = "linux")]
 fn get_shell_ffi() -> Option<String> {
-    use libc::{getpwuid_r, geteuid};
-    
+    use libc::{geteuid, getpwuid_r};
+
     use std::ffi::CStr;
     use std::mem;
     use std::ptr;
 
     let mut result = ptr::null_mut();
-    
+
     unsafe {
         let amt = match libc::sysconf(libc::_SC_GETPW_R_SIZE_MAX) {
             n if n < 0 => 512 as usize,
@@ -51,15 +51,19 @@ fn get_shell_ffi() -> Option<String> {
         let mut buf = Vec::with_capacity(amt);
         let mut passwd: libc::passwd = mem::zeroed();
 
-        match getpwuid_r(geteuid(), &mut passwd, buf.as_mut_ptr(),
-                                buf.capacity() as libc::size_t,
-                                &mut result) {
+        match getpwuid_r(
+            geteuid(),
+            &mut passwd,
+            buf.as_mut_ptr(),
+            buf.capacity() as libc::size_t,
+            &mut result,
+        ) {
             0 if !result.is_null() => {
                 let ptr = passwd.pw_shell as *const _;
                 let username = CStr::from_ptr(ptr).to_str().unwrap().to_owned();
                 Some(username)
-            },
-            _ => None
+            }
+            _ => None,
         }
     }
 }
