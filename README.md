@@ -146,11 +146,11 @@ The configuration file has the following format:
 
 ```ini
 [global]
-# Your Spotify account name.
-username = username
+# Your Spotify account name (no space after = sign).
+username =username
 
-# Your Spotify account password.
-password = password
+# Your Spotify account password(no space after = sign).
+password =password
 
 # A command that gets executed and can be used to
 # retrieve your password.
