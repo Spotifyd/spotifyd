@@ -11,8 +11,8 @@ pub(crate) fn get_shell() -> Option<String> {
 
 #[cfg(target_os = "macos")]
 fn get_shell_ffi() -> Option<String> {
-    use whoami;
     use std::process::Command;
+    use whoami;
 
     let username = whoami::username();
     let output = Command::new("dscl")
