@@ -3,7 +3,7 @@ use log::trace;
 use std::env;
 
 pub(crate) fn get_shell() -> Option<String> {
-    let shell = env::var("SHELL").ok().or_else(|| get_shell_ffi());
+    let shell = env::var("SHELL").ok().or_else(get_shell_ffi);
     trace!("Found user shell: {:?}", &shell);
 
     shell
