@@ -47,9 +47,9 @@ fn setup_logger(log_target: LogTarget, log_level: LevelFilter) {
 fn main() {
     let mut cli_config: CliConfig = CliConfig::from_args();
 
-    let is_deamon = !cli_config.no_daemon;
+    let is_daemon = !cli_config.no_daemon;
 
-    let log_target = if is_deamon {
+    let log_target = if is_daemon {
         LogTarget::Syslog
     } else {
         LogTarget::Terminal
@@ -68,7 +68,7 @@ fn main() {
     // Returns the old SpotifydConfig struct used within the rest of the daemon.
     let internal_config = config::get_internal_config(cli_config);
 
-    if is_deamon {
+    if is_daemon {
         info!("Daemonizing running instance");
 
         let mut daemonize = Daemonize::new();
