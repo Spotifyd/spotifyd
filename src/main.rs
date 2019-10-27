@@ -38,7 +38,7 @@ fn setup_logger(log_target: LogTarget, log_level: LevelFilter) {
                 pid: 0,
             };
             logger.chain(syslog::unix(log_format).expect("Couldn't initialize logger"))
-        },
+        }
     };
 
     logger.apply().expect("Couldn't initialize logger");
@@ -51,15 +51,15 @@ fn main() {
 
     let log_target = if is_deamon {
         LogTarget::Syslog
-     } else {
+    } else {
         LogTarget::Terminal
-     };
+    };
     let log_level = if cli_config.verbose {
         LevelFilter::Trace
     } else {
         LevelFilter::Info
     };
-    
+
     setup_logger(log_target, log_level);
 
     cli_config.load_config_file_values();
