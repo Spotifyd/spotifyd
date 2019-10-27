@@ -33,6 +33,9 @@ lazy_static! {
         if cfg!(feature = "portaudio_backend") {
             vec.push("portaudio");
         }
+        if cfg!(feature = "rodio_backend") {
+            vec.push("rodio");
+        }
 
         vec
     };
@@ -45,6 +48,7 @@ pub enum Backend {
     Alsa,
     PortAudio,
     PulseAudio,
+    Rodio,
 }
 
 impl FromStr for Backend {
@@ -55,6 +59,7 @@ impl FromStr for Backend {
             "alsa" => Ok(Backend::Alsa),
             "portaudio" => Ok(Backend::PortAudio),
             "pulseaudio" => Ok(Backend::PulseAudio),
+            "rodio" => Ok(Backend::Rodio),
             _ => unreachable!(),
         }
     }
@@ -66,6 +71,7 @@ impl ToString for Backend {
             Backend::Alsa => "alsa".to_string(),
             Backend::PortAudio => "portaudio".to_string(),
             Backend::PulseAudio => "pulseaudio".to_string(),
+            Backend::Rodio => "rodio".to_string(),
         }
     }
 }
@@ -511,6 +517,8 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let device_name = config
         .shared_config
         .device_name
+        .filter(|s| !s.trim().is_empty())
+        .filter(|s| !s.chars().any(char::is_whitespace))
         .unwrap_or_else(|| format!("{}@{}", "Spotifyd", gethostname().to_string_lossy()));
 
     let device_id = device_id(&device_name);

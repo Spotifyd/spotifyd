@@ -20,7 +20,8 @@ use librespot::{
 use log::{info, warn};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use rspotify::spotify::{
-    client::Spotify, oauth2::TokenInfo as RspotifyToken, senum::*, util::datetime_to_timestamp,
+    client::Spotify, model::offset::for_position, oauth2::TokenInfo as RspotifyToken, senum::*,
+    util::datetime_to_timestamp,
 };
 use tokio_core::reactor::Handle;
 
@@ -331,7 +332,7 @@ fn create_dbus_server(
         (),
         spotify_api_method!([sp, device, uri: String]
             if let Ok(uri) = uri {
-                let _ = sp.start_playback(device, None, Some(vec![uri]), None);
+                let _ = sp.start_playback(device, None, Some(vec![uri]), for_position(0), None);
             }
         ),
     );
