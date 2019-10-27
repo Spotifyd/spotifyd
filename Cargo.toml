@@ -11,6 +11,7 @@ daemonize = "0.4"
 dbus = { version = "0.6", optional = true }
 dbus-tokio = { version = "0.2", optional = true }
 failure = "0.1.5"
+fern = { version = "0.5.9", features = ["syslog-4"] }
 futures = "0.1"
 gethostname = "0.2.0"
 hex = "0.4"
@@ -23,9 +24,8 @@ rspotify = "0.6.0"
 serde = { version = "1.0.99", features = ["derive"] }
 serde_ini = "0.2.0"
 sha-1 = "0.8"
-simplelog = "0.7"
 structopt = { git = "https://github.com/TeXitoi/structopt/", rev = "0c888e962d842f2c90c6c290d3a2a40947b37005", features = ["color"] }
-syslog = "4.0.1"
+syslog = "4"
 tokio-core = "0.1"
 tokio-io = "0.1"
 tokio-signal = "0.1"
