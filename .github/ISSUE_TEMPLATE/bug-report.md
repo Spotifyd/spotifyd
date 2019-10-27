@@ -23,6 +23,7 @@ assignees: ''
 **Logs**
 <details><summary>Click to show logs</summary>
 <!-- Please paste your logs below when reporting bugs. Make sure to run spotifyd using the `--verbose` flag  -->
+
 </details>
 
 <!-- if you compiled spotifyd yourself. Alsa backend enabled by default unless compiled with the `--no-default-features` flag -->
@@ -37,6 +38,7 @@ assignees: ''
 **Versions (please complete the following information):**
  - OS: <!-- e.g. Ubuntu 18.04 LTS, Windows 10 -->
  - Spotifyd: <!-- branch, commit hash or release version -->
+- cargo: <!-- cargo --version -->
 
 <!-- **Additional context**
 Add any other context about the problem here. -->
