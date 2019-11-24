@@ -55,7 +55,7 @@ matrix:
 script:
 - rustup component add clippy
 - rustup component add rustfmt
-- RUSTFLAGS="" cargo clippy --all-features --all-targets -- -D warnings
+# - RUSTFLAGS="" cargo clippy --all-features --all-targets -- -D warnings
 - cargo fmt -- --check
 - rustup target add $TARGET
 - cargo build --locked --target=$TARGET --release --features "pulseaudio_backend"
