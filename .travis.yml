@@ -40,13 +40,14 @@ matrix:
       - sudo apt-get download libdbus-1-3:armhf      
       - sudo apt-get download libssl1.0.0:armhf
       - dpkg -x libasound2_*.deb $TRAVIS_BUILD_DIR/deps_root/
-      - dpkg -x libpulse0*.deb $TRAVIS_BUILD_DIR/deps_root/
-      - dpkg -x libpulse-dev*.deb $TRAVIS_BUILD_DIR/deps_root/
+      - dpkg -X libpulse0*.deb $TRAVIS_BUILD_DIR/deps_root/
+      - dpkg -X libpulse-dev*.deb $TRAVIS_BUILD_DIR/deps_root/
       - dpkg -x libssl-dev*.deb $TRAVIS_BUILD_DIR/deps_root/
-      - dpkg -x libjson-c2*.deb $TRAVIS_BUILD_DIR/deps_root/      
-      - dpkg -x libdbus-1*.deb $TRAVIS_BUILD_DIR/deps_root/      
+      - dpkg -X libjson-c2*.deb $TRAVIS_BUILD_DIR/deps_root/      
+      - dpkg -X libdbus-1*.deb $TRAVIS_BUILD_DIR/deps_root/      
       - dpkg -x libssl1.0.0*.deb $TRAVIS_BUILD_DIR/deps_root/
       - dpkg -x libasound2-dev*.deb $TRAVIS_BUILD_DIR/deps_root/
+      - find $TRAVIS_BUILD_DIR/deps_root/
     - name: "x86 Build"
       env:
       - TARGET=x86_64-unknown-linux-gnu
