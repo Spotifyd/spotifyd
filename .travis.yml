@@ -10,8 +10,8 @@ matrix:
     - name: "ARM Build"
       env: 
       - TARGET=arm-unknown-linux-gnueabihf
-      - RUSTFLAGS="-C linker=arm-linux-gnueabihf-gcc -L/usr/arm-linux-gnueabihf/lib -L$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf"
-#      - RUSTFLAGS="-C linker=arm-linux-gnueabihf-gcc -L/usr/arm-linux-gnueabihf/lib -L$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf -L$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf/pulseaudio -L$TRAVIS_BUILD_DIR/deps_root/lib/arm-linux-gnueabihf"
+#      - RUSTFLAGS="-C linker=arm-linux-gnueabihf-gcc -L/usr/arm-linux-gnueabihf/lib -L$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf"
+      - RUSTFLAGS="-C linker=arm-linux-gnueabihf-gcc -L/usr/arm-linux-gnueabihf/lib -L$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf -L$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf/pulseaudio -L$TRAVIS_BUILD_DIR/deps_root/lib/arm-linux-gnueabihf"
       - LIBRARY_PATH="$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf:$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf/pulseaudio:$TRAVIS_BUILD_DIR/deps_root/lib/arm-linux-gnueabihf"
       - PKG_CONFIG_ALLOW_CROSS=1
       - OPENSSL_DIR=$TRAVIS_BUILD_DIR/deps_root/usr
