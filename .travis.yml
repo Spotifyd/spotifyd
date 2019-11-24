@@ -50,8 +50,6 @@ matrix:
       - dpkg -x libssl1.0.0*.deb $TRAVIS_BUILD_DIR/deps_root/
       - dpkg -x libasound2-dev*.deb $TRAVIS_BUILD_DIR/deps_root/
       - find $TRAVIS_BUILD_DIR/deps_root/
-      - find /usr/lib/
-      - find /lib
     - name: "x86 Build"
       env:
       - TARGET=x86_64-unknown-linux-gnu
