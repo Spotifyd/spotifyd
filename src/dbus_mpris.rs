@@ -417,7 +417,7 @@ fn create_dbus_server(
             if let Ok(Some(pos)) =
                 sp.current_playback(None)
                 .map(|maybe_player| maybe_player.and_then(|p| p.progress_ms)) {
-                i64::from(pos)
+                i64::from(pos) * 1000
             } else {
                 0
             }
