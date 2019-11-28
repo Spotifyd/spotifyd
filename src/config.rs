@@ -495,7 +495,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .shared_config
         .cache_path
         .map(PathBuf::from)
-        .map(|path| Cache::new(path, audio_cache));
+        .and_then(|path| Some(Cache::new(path, audio_cache)));
 
     let bitrate: LSBitrate = config
         .shared_config
@@ -527,10 +527,12 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
 
     let pid = config
         .pid
-        .map(|f| {
-            f.into_os_string()
-                .into_string()
-                .expect("Failed to convert PID file path to valid Unicode")
+        .and_then(|f| {
+            Some(
+                f.into_os_string()
+                    .into_string()
+                    .expect("Failed to convert PID file path to valid Unicode"),
+            )
         })
         .or_else(|| None);
 
