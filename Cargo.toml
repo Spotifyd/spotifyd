@@ -30,7 +30,7 @@ tokio-core = "0.1"
 tokio-io = "0.1"
 tokio-signal = "0.1"
 xdg = "2.2"
-whoami = "0.5.3"
+whoami = "0.6.0"
 
 [dependencies.librespot]
 default-features = false
