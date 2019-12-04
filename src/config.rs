@@ -558,23 +558,22 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
             None => info!("No password_cmd specified"),
         }
     }
-    let proxy_url = config.shared_config.proxy.or(None).map(
-                |s| {
-                    match Url::parse(&s) {
-                        Ok(url) => {
-                            if url.scheme() != "http" {
-                                error!("Only HTTP proxies are supported!");
-                                return None;
-                            }
-                            Some(url)
-                        },
-                        Err(err) => {
-                            error!("Invalid proxy URL: {}", err);
-                            None
-                        }
+    let mut proxy_url = None;
+    match config.shared_config.proxy{
+        Some(s) => {
+            match Url::parse(&s) {
+                Ok(url) => {
+                    if url.scheme() != "http" {
+                        error!("Only HTTP proxies are supported!");
+                    } else {
+                        proxy_url = Some(url);
                     }
                 },
-            ).unwrap();
+                Err(err) => error!("Invalid proxy URL: {}", err)
+            }
+        },
+        None => info!("No proxy specified"),
+    }
     SpotifydConfig {
         username: config.shared_config.username,
         password,
