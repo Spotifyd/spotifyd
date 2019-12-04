@@ -9,6 +9,7 @@ use serde::{de, Deserialize};
 use sha1::{Digest, Sha1};
 use structopt::{clap::AppSettings, StructOpt};
 use xdg;
+use url::{Url};
 
 use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
 
@@ -287,6 +288,10 @@ pub struct SharedConfigValues {
     /// The port used for the Spotify Connect discovery
     #[structopt(long, value_name = "number")]
     zeroconf_port: Option<u16>,
+
+    /// The proxy used to connect to spotify's servers
+    #[structopt(long, short, value_name="string")]
+    proxy: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -363,6 +368,7 @@ impl fmt::Debug for SharedConfigValues {
             .field("volume_normalisation", &self.volume_normalisation)
             .field("normalisation_pregain", &self.normalisation_pregain)
             .field("zeroconf_port", &self.zeroconf_port)
+            .field("proxy", &self.proxy)
             .finish()
     }
 }
@@ -437,7 +443,8 @@ impl SharedConfigValues {
             device,
             volume_controller,
             cache_path,
-            on_song_change_hook
+            on_song_change_hook,
+            proxy
         );
 
         // Handles boolean merging.
@@ -551,7 +558,22 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
             None => info!("No password_cmd specified"),
         }
     }
-
+    let mut proxy_url = None;
+    match config.shared_config.proxy{
+        Some(s) => {
+            match Url::parse(&s) {
+                Ok(url) => {
+                    if url.scheme() != "http" {
+                        error!("Only HTTP proxies are supported!");
+                    } else {
+                        proxy_url = Some(url);
+                    }
+                },
+                Err(err) => error!("Invalid proxy URL: {}", err)
+            }
+        },
+        None => info!("No proxy specified"),
+    }
     SpotifydConfig {
         username: config.shared_config.username,
         password,
@@ -571,7 +593,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         session_config: SessionConfig {
             user_agent: version::version_string(),
             device_id,
-            proxy: None,
+            proxy: proxy_url,
             ap_port: Some(443),
         },
         onevent: config.shared_config.on_song_change_hook,
