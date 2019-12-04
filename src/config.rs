@@ -493,7 +493,6 @@ pub(crate) struct SpotifydConfig {
     pub(crate) pid: Option<String>,
     pub(crate) shell: String,
     pub(crate) zeroconf_port: Option<u16>,
-//   pub(crate) proxy: Option<url::Url>,
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
