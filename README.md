@@ -216,6 +216,9 @@ normalisation_pregain = -10
 
 # The port `spotifyd` uses to announce its service over the network.
 zeroconf_port = 1234
+
+# The proxy `spotifyd` will use to connect to spotify.
+proxy = http://proxy.example.org:8080
 ```
 
 #### Alternatives to storing your password in the config file <!-- omit in toc -->
