@@ -69,7 +69,8 @@ script:
 - cargo fmt -- --check
 - rustup target add $TARGET
 # - cargo build --locked --target=$TARGET --release --features "pulseaudio_backend"
-- cargo build --target=$TARGET --release --features "pulseaudio_backend"
+# - cargo build --target=$TARGET --release --features "pulseaudio_backend"
+- cargo build --target=$TARGET --release
 - zip -j spotifyd-`date --iso-8601`-$SHORT_TARGET-slim.zip target/$TARGET/release/spotifyd
 - if [ $SHORT_TARGET = "x86" ]; then cargo build --target=$TARGET --release --features "pulseaudio_backend"; fi
 - if [ $SHORT_TARGET = "x86" ]; then zip -j spotifyd-`date --iso-8601`-$SHORT_TARGET-pulseaudio.zip target/$TARGET/release/spotifyd; fi
