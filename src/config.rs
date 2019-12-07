@@ -8,8 +8,8 @@ use log::{error, info};
 use serde::{de, Deserialize};
 use sha1::{Digest, Sha1};
 use structopt::{clap::AppSettings, StructOpt};
+use url::Url;
 use xdg;
-use url::{Url};
 
 use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
 
@@ -290,7 +290,7 @@ pub struct SharedConfigValues {
     zeroconf_port: Option<u16>,
 
     /// The proxy used to connect to spotify's servers
-    #[structopt(long, short, value_name="string")]
+    #[structopt(long, short, value_name = "string")]
     proxy: Option<String>,
 }
 
@@ -559,18 +559,16 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         }
     }
     let mut proxy_url = None;
-    match config.shared_config.proxy{
-        Some(s) => {
-            match Url::parse(&s) {
-                Ok(url) => {
-                    if url.scheme() != "http" {
-                        error!("Only HTTP proxies are supported!");
-                    } else {
-                        proxy_url = Some(url);
-                    }
-                },
-                Err(err) => error!("Invalid proxy URL: {}", err)
+    match config.shared_config.proxy {
+        Some(s) => match Url::parse(&s) {
+            Ok(url) => {
+                if url.scheme() != "http" {
+                    error!("Only HTTP proxies are supported!");
+                } else {
+                    proxy_url = Some(url);
+                }
             }
+            Err(err) => error!("Invalid proxy URL: {}", err),
         },
         None => info!("No proxy specified"),
     }
