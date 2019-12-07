@@ -67,7 +67,5 @@ deploy:
   file_glob: true
   file: "spotifyd*zip"
   skip_cleanup: true
-  on: [push, pull_request]
-    paths: '**.rs'
     branch: master
     tags: true
