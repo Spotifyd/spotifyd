@@ -22,7 +22,8 @@ assignees: ''
 
 **Logs**
 <details><summary>Click to show logs</summary>
-<!-- Please paste your logs below when reporting bugs. Make sure to run spotifyd using the `--verbose` flag  -->
+<!-- PLEASE PASTE YOUR LOGS BELOW THIS LINE WHEN REPORTING BUGS. Make sure to run spotifyd using the `--verbose` flag -->
+<!-- They have to be betwenn the `/summary` and the `/details` HTML tags -->  
 
 </details>
 
