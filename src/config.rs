@@ -290,7 +290,7 @@ pub struct SharedConfigValues {
     zeroconf_port: Option<u16>,
 
     /// The proxy used to connect to spotify's servers
-    #[structopt(long, short, value_name = "string")]
+    #[structopt(long, value_name = "string")]
     proxy: Option<String>,
 }
 
