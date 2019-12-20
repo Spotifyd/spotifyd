@@ -335,8 +335,7 @@ fn create_dbus_server(
                 let device_name = device.unwrap_or("".to_owned());
                 let device_id = match sp.device() {
                     Ok(device_payload) => {
-                        match device_payload.devices.into_iter().find(|d| 
-                            d.is_active && d.name == device_name) {
+                        match device_payload.devices.into_iter().find(|d| d.is_active && d.name == device_name) {
                             Some(device) => Some(device.id),
                             None => None,
                         }
