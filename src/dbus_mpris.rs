@@ -332,7 +332,21 @@ fn create_dbus_server(
         (),
         spotify_api_method!([sp, device, uri: String]
             if let Ok(uri) = uri {
-                let _ = sp.start_playback(device, None, Some(vec![uri]), for_position(0), None);
+                let device_name = device.unwrap_or("".to_owned());
+                let device_id = match sp.device() {
+                    Ok(device_payload) => {
+                        match device_payload.devices.into_iter().find(|d| 
+                            d.is_active && d.name == device_name) {
+                            Some(device) => Some(device.id),
+                            None => None,
+                        }
+                    },
+                    Err(_) => None,
+                };
+                let _ = match uri.contains("spotify:track") {
+                    true => sp.start_playback(device_id, None, Some(vec![uri]), for_position(0), None),
+                    false => sp.start_playback(device_id, Some(uri), None, for_position(0), None),
+                };
             }
         ),
     );
