@@ -44,6 +44,7 @@ You can also compile `Spotifyd` yourself, allowing you to make use of feature fl
 | Target Platform | Libraries                                            |
 |-----------------|------------------------------------------------------|
 | Fedora          | alsa-lib-devel, make, gcc                            |
+| openSUSE        | alsa-devel, make, gcc                                |
 | Debian          | libasound2-dev libssl-dev libpulse-dev libdbus-1-dev |
 | macOS           | dbus, pkg-config, portaudio                          |
 
