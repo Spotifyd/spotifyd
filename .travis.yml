@@ -10,9 +10,9 @@ matrix:
     - name: "ARM Build"
       env: 
       - TARGET=arm-unknown-linux-gnueabihf
-      - RUSTFLAGS="-C linker=arm-linux-gnueabihf-gcc -L/usr/arm-linux-gnueabihf/lib -L$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf"
+      - CROSS_COMPILE=arm-linux-gnueabihf-
+      - RUSTFLAGS="-C linker=arm-linux-gnueabihf-gcc"
       - PKG_CONFIG_ALLOW_CROSS=1
-      - OPENSSL_DIR=$TRAVIS_BUILD_DIR/deps_root/usr
       - OPENSSL_LIB_DIR=$TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf
       - OPENSSL_INCLUDE_DIR=$TRAVIS_BUILD_DIR/deps_root/usr/include/arm-linux-gnueabihf
       - SHORT_TARGET=armv6
@@ -32,11 +32,11 @@ matrix:
       - sudo apt-get download libasound2:armhf
       - sudo apt-get download libasound2-dev:armhf
       - sudo apt-get download libssl-dev:armhf
-      - sudo apt-get download libssl1.0.0:armhf
       - dpkg -x libasound2_*.deb $TRAVIS_BUILD_DIR/deps_root/
       - dpkg -x libssl-dev*.deb $TRAVIS_BUILD_DIR/deps_root/
-      - dpkg -x libssl1.0.0*.deb $TRAVIS_BUILD_DIR/deps_root/
       - dpkg -x libasound2-dev*.deb $TRAVIS_BUILD_DIR/deps_root/
+      - sudo cp -r $TRAVIS_BUILD_DIR/deps_root/usr/lib/arm-linux-gnueabihf/* /usr/arm-linux-gnueabihf/lib/
+      - echo -e "\n[target.arm-unknown-linux-gnueabihf.alsa]\nrustc-link-search = [\"/usr/arm-linux-gnueabihf/lib\"]\nrustc-link-lib = [\"asound\"]\n" > ~/.cargo/config
     - name: "x86 Build"
       env:
       - TARGET=x86_64-unknown-linux-gnu
@@ -60,14 +60,14 @@ script:
 - if [ $SHORT_TARGET = "x86" ]; then cargo build --target=$TARGET --release --features "pulseaudio_backend"; fi
 - if [ $SHORT_TARGET = "x86" ]; then zip -j spotifyd-`date --iso-8601`-$SHORT_TARGET-pulseaudio.zip target/$TARGET/release/spotifyd; fi
 
-deploy:
-  provider: releases
-  api_key:
-    secure: TwIv65LDHIBOgOsafV/wio+EwoG0pg5sFZZvEgNIV5J++zJoxaI35DH1/frKB6S4J2HhEKDojc7Np4tEgNUCOj+qZ51ma85SYr3SzVOg2n/TUI7lg/Gb13n6qd1AfTA2SsTryuGIvS7p4BaYSRtGXUuOghZg+7qdgl+zKeXiLnY=
-  file_glob: true
-  file: "spotifyd*zip"
-  skip_cleanup: true
-  on: [push, pull_request]
-    paths: '**.rs'
-    branch: master
-    tags: true
+#deploy:
+#  provider: releases
+#  api_key:
+#    secure: TwIv65LDHIBOgOsafV/wio+EwoG0pg5sFZZvEgNIV5J++zJoxaI35DH1/frKB6S4J2HhEKDojc7Np4tEgNUCOj+qZ51ma85SYr3SzVOg2n/TUI7lg/Gb13n6qd1AfTA2SsTryuGIvS7p4BaYSRtGXUuOghZg+7qdgl+zKeXiLnY=
+#  file_glob: true
+#  file: "spotifyd*zip"
+#  skip_cleanup: true
+#  on: [push, pull_request]
+#    paths: '**.rs'
+#    branch: master
+#    tags: true
