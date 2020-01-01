@@ -187,7 +187,7 @@ mixer = PCM
 # `spotifyd --help`.
 volume_controller = alsa
 
-# A command that gets executed in yur shell after each song changes.
+# A command that gets executed in your shell after each song changes.
 on_song_change_hook = command_to_run_on_playback_events
 
 # The name that gets displayed under the connect tab on
