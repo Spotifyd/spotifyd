@@ -2506,7 +2506,7 @@ dependencies = [
 
 [[package]]
 name = "spotifyd"
-version = "0.2.20"
+version = "0.2.21"
 dependencies = [
  "alsa 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
