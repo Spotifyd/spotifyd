@@ -2,8 +2,9 @@
 authors = ["Simon Persson <simon@flaskpost.org>", "Sven Lechner <sven.lechner@rwth-aachen.de>"]
 edition = "2018"
 name = "spotifyd"
-version = "0.2.22"
+version = "0.2.23"
 license = "GPL-3.0-only"
+description = "A spotify daemon"
 
 [dependencies]
 alsa = { version = "0.3", optional = true }
