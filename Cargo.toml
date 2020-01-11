@@ -12,7 +12,7 @@ dbus = { version = "0.6", optional = true }
 dbus-tokio = { version = "0.2", optional = true }
 failure = "0.1.6"
 fern = { version = "0.5.9", features = ["syslog-4"] }
-futures = "0.1"
+futures = "0.3"
 gethostname = "0.2.0"
 hex = "0.4"
 keyring = { version = "0.7.1", optional = true }
