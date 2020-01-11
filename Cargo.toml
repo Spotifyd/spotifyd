@@ -24,7 +24,7 @@ rspotify = "0.7.0"
 serde = { version = "1.0.103", features = ["derive"] }
 serde_ini = "0.2.0"
 sha-1 = "0.8"
-structopt = { git = "https://github.com/TeXitoi/structopt/", rev = "0c888e962d842f2c90c6c290d3a2a40947b37005", features = ["color"] }
+structopt = "0.3.7"
 syslog = "4"
 tokio-core = "0.1"
 tokio-io = "0.1"
@@ -32,11 +32,7 @@ tokio-signal = "0.1"
 url = "1.7"
 xdg = "2.2"
 whoami = "0.6.0"
-
-[dependencies.librespot]
-default-features = false
-features = ["with-tremor"]
-git = "https://github.com/librespot-org/librespot.git"
+librespot = { version = "0.1", default-features = false, features = ["with-tremor"] }
 
 [dev-dependencies]
 env_logger = "0.7"

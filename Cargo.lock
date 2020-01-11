@@ -1191,7 +1191,7 @@ dependencies = [
 [[package]]
 name = "librespot"
 version = "0.1.0"
-source = "git+https://github.com/librespot-org/librespot.git#295bda7e489715b9e6c27a262f9a4fcd12fb7632"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1199,12 +1199,12 @@ dependencies = [
  "getopts 0.2.21 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper 0.11.27 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-audio 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
- "librespot-connect 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
- "librespot-core 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
- "librespot-metadata 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
- "librespot-playback 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
- "librespot-protocol 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
+ "librespot-audio 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-connect 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-metadata 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-playback 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-protocol 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-bigint 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf 2.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1221,14 +1221,14 @@ dependencies = [
 [[package]]
 name = "librespot-audio"
 version = "0.1.0"
-source = "git+https://github.com/librespot-org/librespot.git#295bda7e489715b9e6c27a262f9a4fcd12fb7632"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "aes-ctr 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "bit-set 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "lewton 0.9.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-core 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
+ "librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "librespot-tremor 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-bigint 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1239,7 +1239,7 @@ dependencies = [
 [[package]]
 name = "librespot-connect"
 version = "0.1.0"
-source = "git+https://github.com/librespot-org/librespot.git#295bda7e489715b9e6c27a262f9a4fcd12fb7632"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "aes-ctr 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1248,9 +1248,9 @@ dependencies = [
  "hmac 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper 0.11.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "libmdns 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-core 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
- "librespot-playback 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
- "librespot-protocol 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
+ "librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-playback 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-protocol 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-bigint 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf 2.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1266,7 +1266,7 @@ dependencies = [
 [[package]]
 name = "librespot-core"
 version = "0.1.0"
-source = "git+https://github.com/librespot-org/librespot.git#295bda7e489715b9e6c27a262f9a4fcd12fb7632"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "aes 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1279,7 +1279,7 @@ dependencies = [
  "hyper 0.11.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper-proxy 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-protocol 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
+ "librespot-protocol 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-bigint 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-integer 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1303,12 +1303,12 @@ dependencies = [
 [[package]]
 name = "librespot-metadata"
 version = "0.1.0"
-source = "git+https://github.com/librespot-org/librespot.git#295bda7e489715b9e6c27a262f9a4fcd12fb7632"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-core 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
- "librespot-protocol 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
+ "librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-protocol 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "linear-map 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf 2.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1316,7 +1316,7 @@ dependencies = [
 [[package]]
 name = "librespot-playback"
 version = "0.1.0"
-source = "git+https://github.com/librespot-org/librespot.git#295bda7e489715b9e6c27a262f9a4fcd12fb7632"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "alsa 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1324,9 +1324,9 @@ dependencies = [
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
  "libpulse-sys 0.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-audio 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
- "librespot-core 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
- "librespot-metadata 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
+ "librespot-audio 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-metadata 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "portaudio-rs 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rodio 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1335,7 +1335,7 @@ dependencies = [
 [[package]]
 name = "librespot-protocol"
 version = "0.1.0"
-source = "git+https://github.com/librespot-org/librespot.git#295bda7e489715b9e6c27a262f9a4fcd12fb7632"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "protobuf 2.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf-codegen 2.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1806,12 +1806,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "proc-macro-error"
-version = "0.2.6"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "proc-macro-error-attr 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "proc-macro2 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustversion 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "proc-macro-error-attr"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "proc-macro2 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustversion 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn-mid 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2223,6 +2237,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustversion"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "proc-macro2 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "ryu"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2498,14 +2522,14 @@ dependencies = [
  "keyring 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot 0.1.0 (git+https://github.com/librespot-org/librespot.git)",
+ "librespot 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "percent-encoding 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rspotify 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_ini 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sha-1 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "structopt 0.3.2 (git+https://github.com/TeXitoi/structopt/?rev=0c888e962d842f2c90c6c290d3a2a40947b37005)",
+ "structopt 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "syslog 4.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-core 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-io 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2595,20 +2619,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "structopt"
-version = "0.3.2"
-source = "git+https://github.com/TeXitoi/structopt/?rev=0c888e962d842f2c90c6c290d3a2a40947b37005#0c888e962d842f2c90c6c290d3a2a40947b37005"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "structopt-derive 0.3.2 (git+https://github.com/TeXitoi/structopt/?rev=0c888e962d842f2c90c6c290d3a2a40947b37005)",
+ "structopt-derive 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "structopt-derive"
-version = "0.3.2"
-source = "git+https://github.com/TeXitoi/structopt/?rev=0c888e962d842f2c90c6c290d3a2a40947b37005#0c888e962d842f2c90c6c290d3a2a40947b37005"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro-error 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "proc-macro-error 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2637,6 +2661,16 @@ dependencies = [
  "proc-macro2 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicode-xid 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "syn-mid"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "proc-macro2 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -3415,13 +3449,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum libm 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "7fc7aa29613bd6a620df431842069224d8bc9011086b1db4c0e0cd47fa03ec9a"
 "checksum libmdns 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "fa04490b2ddac499769cfd1e59e68326c6d52dced8aa262512ad3c82cefba374"
 "checksum libpulse-sys 0.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9bb11b06faf883500c1b625cf4453e6c7737e9df9c7ba01df3f84b22b083e4ac"
-"checksum librespot 0.1.0 (git+https://github.com/librespot-org/librespot.git)" = "<none>"
-"checksum librespot-audio 0.1.0 (git+https://github.com/librespot-org/librespot.git)" = "<none>"
-"checksum librespot-connect 0.1.0 (git+https://github.com/librespot-org/librespot.git)" = "<none>"
-"checksum librespot-core 0.1.0 (git+https://github.com/librespot-org/librespot.git)" = "<none>"
-"checksum librespot-metadata 0.1.0 (git+https://github.com/librespot-org/librespot.git)" = "<none>"
-"checksum librespot-playback 0.1.0 (git+https://github.com/librespot-org/librespot.git)" = "<none>"
-"checksum librespot-protocol 0.1.0 (git+https://github.com/librespot-org/librespot.git)" = "<none>"
+"checksum librespot 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9b898b98d9e8e50a6a75b39ba1237ff2d39a7423048e4b257275164ed6ffef00"
+"checksum librespot-audio 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "518f859a94432e13bc6f8ef14aad1085c2b3c70f3abd9fa780506851b51e192c"
+"checksum librespot-connect 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "17d2bfd4cfb0e7de098b271301af90ae9a840a497aef0e53411c5c8be05f5593"
+"checksum librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a8230494726537ba5959a072498922a39497197ccdf57a33e3d582ff3b8dadcf"
+"checksum librespot-metadata 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c4ea84a3664b6202dc2bc3eecf5f88275b14428168c72f7db2dddddd47bf37f7"
+"checksum librespot-playback 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "62ecbb002a13ce5b9adc0162d8634db848afda42a751bba28314262360414ca9"
+"checksum librespot-protocol 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "06f9fcd68bad5f3a9efc910be3e78ba176cd6fc23bd1ea4e5427ae12ebb98f05"
 "checksum librespot-tremor 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b155a7dc4e4d272e01c37a1b85c1ee1bee7f04980ad4a7784c1a6e0f2de5929b"
 "checksum linear-map 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bfae20f6b19ad527b550c223fddc3077a547fc70cda94b9b566575423fd303ee"
 "checksum lock_api 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "79b2de95ecb4691949fea4716ca53cdbcfccb2c612e19644a8bad05edcf9f47b"
@@ -3472,7 +3506,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum portaudio-rs 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "fc0e6b38f00fae9dde9a9832a2b54405988c6dcaf2870e6f9551546b447bbd7f"
 "checksum portaudio-sys 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "5194a4fa953b4ffd851c320ef6f0484cd7278cb7169ea9d6c433e49b23f7b7f5"
 "checksum ppv-lite86 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "74490b50b9fbe561ac330df47c08f3f33073d2d00c150f719147d7c54522fa1b"
-"checksum proc-macro-error 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "aeccfe4d5d8ea175d5f0e4a2ad0637e0f4121d63bd99d356fb1f39ab2e7c6097"
+"checksum proc-macro-error 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "53c98547ceaea14eeb26fcadf51dc70d01a2479a7839170eae133721105e4428"
+"checksum proc-macro-error-attr 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)" = "c2bf5d493cf5d3e296beccfd61794e445e830dfc8070a9c248ad3ee071392c6c"
 "checksum proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)" = "cf3d2011ab5c909338f7887f4fc896d35932e29146c12c8d01da6b22a80ba759"
 "checksum proc-macro2 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)" = "0319972dcae462681daf4da1adeeaa066e3ebd29c69be96c6abb1259d2ee2bcc"
 "checksum protobuf 2.10.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6563a657a014b771e7f69f06447d88d8fbb5a215ffc4cab724afb3acedcc7701"
@@ -3517,6 +3552,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum rustc-hash 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7540fc8b0c49f096ee9c961cda096467dce8084bec6bdca2fc83895fd9b28cb8"
 "checksum rustc-serialize 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)" = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
 "checksum rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
+"checksum rustversion 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "3a0538bd897e17257b0128d2fd95c2ed6df939374073a36166051a79e2eb7986"
 "checksum ryu 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "bfa8506c1de11c9c4e4c38863ccbe02a305c8188e85a05a784c9e11e1c3910c8"
 "checksum safemem 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ef703b7cb59335eae2eb93ceb664c0eb7ea6bf567079d843e09420219668e072"
 "checksum same-file 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
@@ -3557,11 +3593,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum string 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d24114bfcceb867ca7f71a0d3fe45d45619ec47a6fbfa98cb14e14250bfa5d6d"
 "checksum strsim 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bb4f380125926a99e52bc279241539c018323fab05ad6368b56f93d9369ff550"
 "checksum strsim 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
-"checksum structopt 0.3.2 (git+https://github.com/TeXitoi/structopt/?rev=0c888e962d842f2c90c6c290d3a2a40947b37005)" = "<none>"
-"checksum structopt-derive 0.3.2 (git+https://github.com/TeXitoi/structopt/?rev=0c888e962d842f2c90c6c290d3a2a40947b37005)" = "<none>"
+"checksum structopt 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)" = "884ae79d6aad1e738f4a70dff314203fd498490a63ebc4d03ea83323c40b7b72"
+"checksum structopt-derive 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0a97f829a34a0a9d5b353a881025a23b8c9fd09d46be6045df6b22920dbd7a93"
 "checksum subtle 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2d67a5a62ba6e01cb2192ff309324cb4875d0c451d55fe2319433abe7a05a8ee"
 "checksum syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)" = "9ca4b3b69a77cbe1ffc9e198781b7acb0c7365a883670e8f1c1bc66fba79a5c5"
 "checksum syn 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)" = "1e4ff033220a41d1a57d8125eab57bf5263783dfdcc18688b1dacc6ce9651ef8"
+"checksum syn-mid 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9fd3937748a7eccff61ba5b90af1a20dbf610858923a9192ea0ecb0cb77db1d0"
 "checksum synstructure 0.12.3 (registry+https://github.com/rust-lang/crates.io-index)" = "67656ea1dc1b41b1451851562ea232ec2e5a80242139f7e679ceccfb5d61f545"
 "checksum syslog 4.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "a0641142b4081d3d44beffa4eefd7346a228cdf91ed70186db2ca2cef762d327"
 "checksum take 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b157868d8ac1f56b64604539990685fa7611d8fa9e5476cf0c02cf34d32917c5"
