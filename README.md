@@ -44,6 +44,7 @@ You can also compile `Spotifyd` yourself, allowing you to make use of feature fl
 | Target Platform | Libraries                                            |
 |-----------------|------------------------------------------------------|
 | Fedora          | alsa-lib-devel, make, gcc                            |
+| openSUSE        | alsa-devel, make, gcc                                |
 | Debian          | libasound2-dev libssl-dev libpulse-dev libdbus-1-dev |
 | macOS           | dbus, pkg-config, portaudio                          |
 
@@ -187,7 +188,7 @@ mixer = PCM
 # `spotifyd --help`.
 volume_controller = alsa
 
-# A command that gets executed in yur shell after each song changes.
+# A command that gets executed in your shell after each song changes.
 on_song_change_hook = command_to_run_on_playback_events
 
 # The name that gets displayed under the connect tab on
@@ -216,6 +217,9 @@ normalisation_pregain = -10
 
 # The port `spotifyd` uses to announce its service over the network.
 zeroconf_port = 1234
+
+# The proxy `spotifyd` will use to connect to spotify.
+proxy = http://proxy.example.org:8080
 ```
 
 #### Alternatives to storing your password in the config file <!-- omit in toc -->

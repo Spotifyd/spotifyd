@@ -15,7 +15,12 @@ impl AlsaMixer {
         let mixer = alsa::mixer::Mixer::new(&self.device, false)?;
 
         let selem_id = alsa::mixer::SelemId::new(&*self.mixer, 0);
-        let elem = mixer.find_selem(&selem_id).ok_or("Couldn't find selem.")?;
+        let elem = mixer.find_selem(&selem_id).ok_or_else(|| {
+            format!(
+                "Couldn't find selem with name '{}'.",
+                selem_id.get_name().unwrap_or("unnamed")
+            )
+        })?;
 
         let (min, max) = elem.get_playback_volume_range();
 
