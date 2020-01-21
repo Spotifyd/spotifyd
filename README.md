@@ -31,7 +31,7 @@ Spotifyd streams music just like the official client, but is more lightweight an
 
 ### Provided binaries
 
-We provide pre-built binaries through Github Actions for the more popular platforms: Linux, macOS and ARMv7. You can find them [here](https://github.com/Spotifyd/spotifyd/releases). For extra integrity, the file's SHA-512 gets calculated and uploaded as well.
+We provide pre-built binaries through GitHub Actions for the more popular platforms: Linux, macOS and ARMv7. You can find them [here](https://github.com/Spotifyd/spotifyd/releases). For extra integrity, the file's SHA-512 gets calculated and uploaded as well.
 
 The provided binaries come in two flavours, `slim` and `full`. Each are compiled with different features. `slim` only contains the platform's most used audio backend, `full` has also all optional features enabled (see [Feature Flags](#feature-flags)).
 
