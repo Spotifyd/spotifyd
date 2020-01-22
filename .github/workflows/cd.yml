@@ -7,18 +7,18 @@ on:
 
 jobs:
   publish:
-    name: Publishing for ${{ matrix.os }}
+    name: Publishing ${{ matrix.build_target }}-${{ matrix.artifact_type }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        build_target: [macos, macos-rodio, ubuntu]
+        build_target: [macos, macos-rodio, linux]
         rust: [stable]
-        feature: [
-          '',                                             # Slim version has no features enabled by default.
-          'dbus_keyring,dbus_mpris'                       # Full version has all OS compatible features enabled
-        ]
-        artifact_type: ['slim', 'full']                   # The build strategy will build both types for each OS specified
+        artifact_type: ['slim', 'full']         # The build strategy will build both types for each OS specified
         include:
+          - artifact_type: 'slim'               # Slim version has no features enabled by default.
+            feature: ''
+          - artifact_type: 'full'
+            feature: 'dbus_keyring,dbus_mpris'  # Full version has all OS compatible features enabled
           - build_target: macos
             os: macos-latest
             artifact_prefix: macos
@@ -29,7 +29,7 @@ jobs:
             artifact_prefix: macos-rodio
             audio_backend: rodio
             target: x86_64-apple-darwin
-          - build_target: ubuntu
+          - build_target: linux
             os: ubuntu-latest
             artifact_prefix: linux
             audio_backend: alsa
