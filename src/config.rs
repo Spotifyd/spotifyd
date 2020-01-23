@@ -202,8 +202,8 @@ pub struct CliConfig {
     pub shared_config: SharedConfigValues,
 }
 
-/// A struct that holds all allowed config fields.
-/// The actual config file is made up of two sections, spotifyd and global.
+// A struct that holds all allowed config fields.
+// The actual config file is made up of two sections, spotifyd and global.
 #[derive(Clone, Default, Deserialize, PartialEq, StructOpt)]
 pub struct SharedConfigValues {
     /// The Spotify account user name
