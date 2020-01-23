@@ -617,7 +617,7 @@ mod tests {
         assert!(spotifyd_section != global_section, true);
 
         let file_config = FileConfig {
-            global: Some(global_section.clone()),
+            global: Some(global_section),
             spotifyd: Some(spotifyd_section.clone()),
         };
         let merged_config = file_config.get_merged_sections().unwrap();

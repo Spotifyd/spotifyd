@@ -297,7 +297,7 @@ fn create_dbus_server(
     };
 
     let method_stop = {
-        let local_spirc = spirc.clone();
+        let local_spirc = spirc;
         f.amethod("Stop", (), move |m| {
             // TODO: add real stop implementation.
             local_spirc.pause();
@@ -609,7 +609,7 @@ fn create_dbus_server(
         .expect("Failed to create async dbus connection");
 
     let server = ATreeServer::new(
-        connection.clone(),
+        connection,
         Box::new(tree),
         async_connection
             .messages()
