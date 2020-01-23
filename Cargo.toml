@@ -31,7 +31,7 @@ tokio-io = "0.1"
 tokio-signal = "0.1"
 url = "1.7"
 xdg = "2.2"
-whoami = "0.6.0"
+whoami = "0.7.0"
 librespot = { version = "0.1", default-features = false, features = ["with-tremor"] }
 
 [dev-dependencies]
