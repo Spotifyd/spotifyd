@@ -444,6 +444,7 @@ impl SharedConfigValues {
             volume_controller,
             cache_path,
             on_song_change_hook,
+            zeroconf_port,
             proxy
         );
 
