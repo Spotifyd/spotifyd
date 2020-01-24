@@ -39,6 +39,11 @@ jobs:
             artifact_prefix: linux-armhf
             audio_backend: alsa
             target: arm-unknown-linux-gnueabihf
+          - build_target: linux-armv6
+            os: ubuntu-18.04
+            artifact_prefix: linux-armv6
+            audio_backend: alsa
+            target: arm-unknown-linux-gnueabihf
         exclude:
           - build_target: linux-armv6
             artifact_type: 'full'               # Raspberry Pi toolchain is too old for dbus/systemd
@@ -58,7 +63,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y -qq libasound2-dev libssl-dev libpulse-dev libdbus-1-dev
-      - name: Installing needed Ubuntu armhf dependencies (slim)
+      - name: Installing needed Ubuntu armhf dependencies
         if: matrix.os == 'ubuntu-18.04' && matrix.build_target == 'linux-armhf'
         run: |
           sudo mkdir -p /build/sysroot
@@ -70,19 +75,30 @@ jobs:
           sudo dpkg -x libssl-dev*.deb /build/sysroot/
           sudo dpkg -x libssl1.1*.deb /build/sysroot/
           sudo dpkg -x libasound2-dev*.deb /build/sysroot/
-      - name: Installing needed Ubuntu armv6 dependencies (slim)
+          echo "::set-env name=PKG_CONFIG_ALLOW_CROSS::1"
+          echo "::set-env name=RUSTFLAGS::-C linker=arm-linux-gnueabihf-gcc -L/usr/arm-linux-gnueabihf/lib -L/build/sysroot/usr/lib/arm-linux-gnueabihf -L/build/sysroot/lib/arm-linux-gnueabihf"
+          echo "::set-env name=C_INCLUDE_PATH::/build/sysroot/usr/include"
+          echo "::set-env name=OPENSSL_LIB_DIR::/build/sysroot/usr/lib/arm-linux-gnueabihf"
+          echo "::set-env name=OPENSSL_INCLUDE_DIR::/build/sysroot/usr/include/arm-linux-gnueabihf"
+      - name: Installing needed Ubuntu armv6 dependencies
         if: matrix.os == 'ubuntu-18.04' && matrix.build_target == 'linux-armv6'
         run: |
           sudo mkdir -p /build/sysroot
           echo "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ bionic main" | sudo tee -a /etc/apt/sources.list
           sudo apt-get update
           sudo apt-get install -y -qq git
-          git -C /build clone --depth=1 https://github.com/raspberrypi/tools.git
+          sudo git -C /build clone --depth=1 https://github.com/raspberrypi/tools.git
           sudo apt-get download libasound2:armhf libasound2-dev:armhf libssl-dev:armhf libssl1.1:armhf
           sudo dpkg -x libasound2_*.deb /build/sysroot/
           sudo dpkg -x libssl-dev*.deb /build/sysroot/
           sudo dpkg -x libssl1.1*.deb /build/sysroot/
           sudo dpkg -x libasound2-dev*.deb /build/sysroot/
+          echo "::add-path::/build/tools/arm-bcm2708/arm-linux-gnueabihf/bin"
+          echo "::set-env name=PKG_CONFIG_ALLOW_CROSS::1"
+          echo "::set-env name=RUSTFLAGS::-C linker=/build/tools/arm-bcm2708/arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc -L/build/tools/arm-bcm2708/arm-linux-gnueabihf/arm-linux-gnueabihf/sysroot/lib -L/build/tools/arm-bcm2708/arm-linux-gnueabihf/arm-linux-gnueabihf/sysroot/usr/lib -L/build/sysroot/usr/lib/arm-linux-gnueabihf -L/build/sysroot/lib/arm-linux-gnueabihf"
+          echo "::set-env name=C_INCLUDE_PATH::/build/sysroot/usr/include"
+          echo "::set-env name=OPENSSL_LIB_DIR::/build/sysroot/usr/lib/arm-linux-gnueabihf"
+          echo "::set-env name=OPENSSL_INCLUDE_DIR::/build/sysroot/usr/include/arm-linux-gnueabihf"
       - name: Installing needed Ubuntu armhf dependencies (full)
         if: matrix.os == 'ubuntu-18.04' && matrix.build_target == 'linux-armhf' && matrix.artifact_type == 'full'
         run: |
@@ -95,49 +111,23 @@ jobs:
           sudo dpkg -x liblzma5_*.deb /build/sysroot/
           sudo dpkg -x liblz4-1_*.deb /build/sysroot/
           sudo dpkg -x libgpg-error0_*.deb /build/sysroot/
-          sudo rm /build/sysroot/usr/lib/arm-linux-gnueabihf/libdbus-1.so
-          sudo ln -rs /build/sysroot/lib/arm-linux-gnueabihf/libdbus-1.so.3 /build/sysroot/usr/lib/arm-linux-gnueabihf/libdbus-1.so
+          sudo cp -r /build/sysroot/lib/* /build/sysroot/usr/lib/
+          sudo ln -frs /build/sysroot/lib/arm-linux-gnueabihf/libdbus-1.so.3 /build/sysroot/lib/arm-linux-gnueabihf/libdbus-1.so
           sudo ln -rs /build/sysroot/lib/arm-linux-gnueabihf/libgcrypt.so.20 /build/sysroot/lib/arm-linux-gnueabihf/libgcrypt.so
           sudo ln -rs /build/sysroot/lib/arm-linux-gnueabihf/libgpg-error.so.0 /build/sysroot/lib/arm-linux-gnueabihf/libgpg-error.so
           sudo ln -rs /build/sysroot/lib/arm-linux-gnueabihf/liblzma.so.5 /build/sysroot/lib/arm-linux-gnueabihf/liblzma.so
           sudo ln -rs /build/sysroot/lib/arm-linux-gnueabihf/libsystemd.so.0 /build/sysroot/lib/arm-linux-gnueabihf/libsystemd.so
           sudo ln -rs /build/sysroot/usr/lib/arm-linux-gnueabihf/liblz4.so.1 /build/sysroot/usr/lib/arm-linux-gnueabihf/liblz4.so
-          mkdir -p .cargo
-          echo -e '[target.arm-unknown-linux-gnueabihf.dbus]\nrustc-link-lib = ["dbus-1", "gcrypt", "gpg-error", "lz4", "lzma", "systemd"]' >> .cargo/config
+          sudo mkdir -p /.cargo
+          echo -e '[target.arm-unknown-linux-gnueabihf.dbus]\nrustc-link-lib = ["dbus-1", "gcrypt", "gpg-error", "lz4", "lzma", "systemd"]' | sudo tee -a /.cargo/config
       - name: Checking out sources
         uses: actions/checkout@v1
       - name: Running cargo build
-        if: matrix.target != 'arm-unknown-linux-gnueabihf'
         uses: actions-rs/cargo@v1
         with:
           command: build
           toolchain: ${{ matrix.rust }}
           args: --locked --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}_backend"
-      - name: Running cargo cross build (armhf)
-        if: matrix.build_target == 'linux-armhf'
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          toolchain: ${{ matrix.rust }}
-          args: --locked --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}_backend"
-        env:
-          RUSTFLAGS: "-C linker=arm-linux-gnueabihf-gcc -L/usr/arm-linux-gnueabihf/lib -L/build/sysroot/usr/lib/arm-linux-gnueabihf -L/build/sysroot/lib/arm-linux-gnueabihf"
-          PKG_CONFIG_ALLOW_CROSS: 1
-          OPENSSL_LIB_DIR: /build/sysroot/usr/lib/arm-linux-gnueabihf
-          OPENSSL_INCLUDE_DIR: /build/sysroot/usr/include/arm-linux-gnueabihf
-      - name: Running cargo cross build (armv6)
-        if: matrix.build_target == 'linux-armv6'
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          toolchain: ${{ matrix.rust }}
-          args: --locked --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}_backend"
-        env:
-          PATH: "/build/tools/arm-bcm2708/arm-linux-gnueabihf/bin:$PATH"
-          RUSTFLAGS: "-C linker=/build/tools/arm-bcm2708/arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc -L/build/tools/arm-bcm2708/arm-linux-gnueabihf/arm-linux-gnueabihf/sysroot/lib -L/build/tools/arm-bcm2708/arm-linux-gnueabihf/arm-linux-gnueabihf/sysroot/usr/lib -L/build/deps_root/usr/lib/arm-linux-gnueabihf -L/build/deps_root/lib/arm-linux-gnueabihf"
-          PKG_CONFIG_ALLOW_CROSS: 1
-          OPENSSL_LIB_DIR: /build/sysroot/usr/lib/arm-linux-gnueabihf
-          OPENSSL_INCLUDE_DIR: /build/sysroot/usr/include/arm-linux-gnueabihf
       - name: Packaging final binary
         shell: bash
         run: |
