@@ -2,6 +2,8 @@
 authors = ["Simon Persson <simon@flaskpost.org>", "Sven Lechner <sven.lechner@rwth-aachen.de>"]
 edition = "2018"
 name = "spotifyd"
+description = "A Spotify daemon"
+license = "GPL-3.0-only"
 version = "0.2.24"
 
 [dependencies]
