@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        build_target: [macos, macos-rodio, linux, linux-armhf]
+        build_target: [macos, macos-rodio, linux, linux-armhf, linux-armv6]
         rust: [stable]
         artifact_type: ['slim', 'full']         # The build strategy will build both types for each OS specified
         include:
@@ -39,6 +39,9 @@ jobs:
             artifact_prefix: linux-armhf
             audio_backend: alsa
             target: arm-unknown-linux-gnueabihf
+        exclude:
+          - build_target: linux-armv6
+            artifact_type: 'full'               # Raspberry Pi toolchain is too old for dbus/systemd
 
     steps:
       - name: Installing Rust toolchain
@@ -62,6 +65,19 @@ jobs:
           echo "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ bionic main" | sudo tee -a /etc/apt/sources.list
           sudo apt-get update
           sudo apt-get install -y -qq gcc-arm-linux-gnueabihf libc6-armhf-cross libc6-dev-armhf-cross
+          sudo apt-get download libasound2:armhf libasound2-dev:armhf libssl-dev:armhf libssl1.1:armhf
+          sudo dpkg -x libasound2_*.deb /build/sysroot/
+          sudo dpkg -x libssl-dev*.deb /build/sysroot/
+          sudo dpkg -x libssl1.1*.deb /build/sysroot/
+          sudo dpkg -x libasound2-dev*.deb /build/sysroot/
+      - name: Installing needed Ubuntu armv6 dependencies (slim)
+        if: matrix.os == 'ubuntu-18.04' && matrix.build_target == 'linux-armv6'
+        run: |
+          sudo mkdir -p /build/sysroot
+          echo "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ bionic main" | sudo tee -a /etc/apt/sources.list
+          sudo apt-get update
+          sudo apt-get install -y -qq git
+          git -C /build clone --depth=1 https://github.com/raspberrypi/tools.git
           sudo apt-get download libasound2:armhf libasound2-dev:armhf libssl-dev:armhf libssl1.1:armhf
           sudo dpkg -x libasound2_*.deb /build/sysroot/
           sudo dpkg -x libssl-dev*.deb /build/sysroot/
@@ -97,8 +113,8 @@ jobs:
           command: build
           toolchain: ${{ matrix.rust }}
           args: --locked --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}_backend"
-      - name: Running cargo cross build
-        if: matrix.target == 'arm-unknown-linux-gnueabihf'
+      - name: Running cargo cross build (armhf)
+        if: matrix.build_target == 'linux-armhf'
         uses: actions-rs/cargo@v1
         with:
           command: build
@@ -106,6 +122,19 @@ jobs:
           args: --locked --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}_backend"
         env:
           RUSTFLAGS: "-C linker=arm-linux-gnueabihf-gcc -L/usr/arm-linux-gnueabihf/lib -L/build/sysroot/usr/lib/arm-linux-gnueabihf -L/build/sysroot/lib/arm-linux-gnueabihf"
+          PKG_CONFIG_ALLOW_CROSS: 1
+          OPENSSL_LIB_DIR: /build/sysroot/usr/lib/arm-linux-gnueabihf
+          OPENSSL_INCLUDE_DIR: /build/sysroot/usr/include/arm-linux-gnueabihf
+      - name: Running cargo cross build (armv6)
+        if: matrix.build_target == 'linux-armv6'
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          toolchain: ${{ matrix.rust }}
+          args: --locked --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}_backend"
+        env:
+          PATH: "/build/tools/arm-bcm2708/arm-linux-gnueabihf/bin:$PATH"
+          RUSTFLAGS: "-C linker=/build/tools/arm-bcm2708/arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc -L/build/tools/arm-bcm2708/arm-linux-gnueabihf/arm-linux-gnueabihf/sysroot/lib -L/build/tools/arm-bcm2708/arm-linux-gnueabihf/arm-linux-gnueabihf/sysroot/usr/lib -L/build/deps_root/usr/lib/arm-linux-gnueabihf -L/build/deps_root/lib/arm-linux-gnueabihf"
           PKG_CONFIG_ALLOW_CROSS: 1
           OPENSSL_LIB_DIR: /build/sysroot/usr/lib/arm-linux-gnueabihf
           OPENSSL_INCLUDE_DIR: /build/sysroot/usr/include/arm-linux-gnueabihf
