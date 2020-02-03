@@ -5,6 +5,10 @@ sudo: required
 os: linux
 dist: xenial
 
+branches:
+  only:
+  - /.*/
+
 matrix:
   include:
     - name: "ARM Build"
