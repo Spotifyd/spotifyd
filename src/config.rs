@@ -132,21 +132,18 @@ pub enum DeviceType {
     AudioDongle = 8,
 }
 
-impl FromStr for DeviceType {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use self::DeviceType::*;
-        match s.to_lowercase().as_ref() {
-            "computer" => Ok(Computer),
-            "tablet" => Ok(Tablet),
-            "smartphone" => Ok(Smartphone),
-            "speaker" => Ok(Speaker),
-            "tv" => Ok(TV),
-            "avr" => Ok(AVR),
-            "stb" => Ok(STB),
-            "audiodongle" => Ok(AudioDongle),
-            _ => unreachable!(),
+impl From<LSDeviceType> for DeviceType {
+    fn from(item: LSDeviceType) -> Self {
+        match item {
+            LSDeviceType::Unknown => DeviceType::Unknown,
+            LSDeviceType::Computer => DeviceType::Computer,
+            LSDeviceType::Tablet => DeviceType::Tablet,
+            LSDeviceType::Smartphone => DeviceType::Smartphone,
+            LSDeviceType::Speaker => DeviceType::Speaker,
+            LSDeviceType::TV => DeviceType::TV,
+            LSDeviceType::AVR => DeviceType::AVR,
+            LSDeviceType::STB => DeviceType::STB,
+            LSDeviceType::AudioDongle => DeviceType::AudioDongle,
         }
     }
 }
@@ -164,6 +161,15 @@ impl From<&DeviceType> for LSDeviceType {
             DeviceType::STB => LSDeviceType::STB,
             DeviceType::AudioDongle => LSDeviceType::AudioDongle,
         }
+    }
+}
+
+impl FromStr for DeviceType {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let dt = LSDeviceType::from_str(s).unwrap();
+        Ok(dt.into())
     }
 }
 
