@@ -117,7 +117,7 @@ lazy_static! {
         "computer", "tablet", "smartphone", "speaker", "tv", "avr", "stb", "audiodongle"];
 }
 
-/// Spotify's device type (copied from it's config.rs)
+// Spotify's device type (copied from it's config.rs)
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
 #[serde(rename_all = "snake_case")]
 pub enum DeviceType {
