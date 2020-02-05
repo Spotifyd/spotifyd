@@ -86,7 +86,9 @@ pub(crate) fn initial_state(
 
     let zeroconf_port = config.zeroconf_port.unwrap_or(0);
 
+    println!("device_type in: {:?}", config.device_type);
     let device_type: DeviceType = DeviceType::from_str(&config.device_type).unwrap_or(DeviceType::default());
+    println!("device_type out: {:?}", device_type);
 
     #[allow(clippy::or_fun_call)]
     let discovery_stream = discovery(
