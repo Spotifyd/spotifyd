@@ -22,7 +22,7 @@ Spotifyd streams music just like the official client, but is more lightweight an
 - [Configuration](#configuration)
   - [CLI options](#cli-options)
   - [Configuration file](#configuration-file)
-- [Running as a systemd service](#running-as-a-systemd-service)
+- [Running as a system service](#running-as-a-system-service)
 - [Common issues](#common-issues)
 - [Contributing](#contributing)
 - [Credits](#credits)
