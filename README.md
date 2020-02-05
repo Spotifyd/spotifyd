@@ -22,7 +22,7 @@ Spotifyd streams music just like the official client, but is more lightweight an
 - [Configuration](#configuration)
   - [CLI options](#cli-options)
   - [Configuration file](#configuration-file)
-- [Running as a systemd service](#running-as-a-systemd-service)
+- [Running as a system service](#running-as-a-system-service)
 - [Common issues](#common-issues)
 - [Contributing](#contributing)
 - [Credits](#credits)
@@ -174,11 +174,11 @@ backend = alsa
 
 # The alsa audio device to stream audio to. To get a
 # list of valid devices, run `aplay -L`,
-device = alsa_audio_device
+device = alsa_audio_device  # omit for macOS
 
 # The alsa control device. By default this is the same
 # name as the `device` field.
-control = alsa_audio_device
+control = alsa_audio_device  # omit for macOS
 
 # The alsa mixer used by `spotifyd`.
 mixer = PCM
@@ -186,7 +186,7 @@ mixer = PCM
 # The volume controller. Each one behaves different to
 # volume increases. For possible values, run
 # `spotifyd --help`.
-volume_controller = alsa
+volume_controller = alsa  # use softvol for macOS
 
 # A command that gets executed in your shell after each song changes.
 on_song_change_hook = command_to_run_on_playback_events
@@ -259,7 +259,9 @@ proxy = http://proxy.example.org:8080
 
 If either of these options is given, the shell `spotifyd` will use to run its commands is the shell indicated by the `SHELL` environment variable, if set. If the `SHELL` environment variable is not set, `spotifyd` will use the user's default shell, which, on Linux and BSD, is the shell listed in `/etc/passwd`. On macOS it is the shell listed in the output of `dscl . -read /Users/<username> UserShell`.
 
-## Running as a systemd service
+## Running as a system service
+
+### on Linux
 
 A `systemd.service` unit file is provided to help run spotifyd as a service on systemd-based systems. The file `contrib/spotifyd.service` should be copied to either:
 
@@ -276,6 +278,57 @@ Control of the daemon is handed over to systemd. The following example commands 
 systemctl --user start spotifyd.service
 systemctl --user enable spotifyd.service
 ```
+
+
+### on macOS
+
+On macOS the system wide and per-user daemon/agent manager is known as `launchd`. Interfacing with `launchd` is performed through `launchctl`.
+
+In order to use `spotifyd` as a service on macOS one must specify a `.plist` that represents the service, and place it in `/Library/LaunchDaemons`.
+
+Here is a .plist which works with macOS Catalina 10.15.3:
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>Label</key>
+		<string>rustlang.spotifyd</string>
+		<key>ProgramArguments</key>
+		<array>
+			<string>/usr/local/bin/spotifyd</string>
+			<string>--config-path=/users/YourUserName/.config/spotifyd/spotifyd.conf</string>
+			<string>--no-daemon</string>
+		</array>
+		<key>UserName</key>
+		<string>YourUserName</string>
+		<key>KeepAlive</key>
+		<true/>
+		<key>ThrottleInterval</key>
+		<integer>30</integer>
+	</dict>
+</plist>
+```
+
+
+Once present in the `/Library/LaunchDaemons` directory, the .plist must be loaded and started with the following commands.
+
+`sudo launchctl load -w /Library/LaunchDaemons/rustlang.spotifyd.plist`
+
+
+`sudo launchctl start /Library/LaunchDaemons/rustlang.spotifyd.plist`
+
+One may also unload/stop the service in a similar fashion replacing load/start with unload/stop.
+
+Note:
+
+* You should update "YourUserName" with your actual username for macOS (or remove "UserName" to run as root.
+
+
+* The string, <string>--no-daemon</string> is needed as launchd won't receive a PID for the process and will lose its remit over spotifyd. So it's best to include it, there will be no difference in use, nor will you see any log output.
+
+* macOS tries to start the daemon immediately on boot, and spotifyd fails if Wifi isn't connected. So one must have a keep alive (which retries if it fails to launch on boot), that retries after 30 seconds, which is enough for wifi etc to come up.
 
 ## Common issues
 
