@@ -174,11 +174,11 @@ backend = alsa
 
 # The alsa audio device to stream audio to. To get a
 # list of valid devices, run `aplay -L`,
-device = alsa_audio_device
+device = alsa_audio_device  # omit for macOS
 
 # The alsa control device. By default this is the same
 # name as the `device` field.
-control = alsa_audio_device
+control = alsa_audio_device  # omit for macOS
 
 # The alsa mixer used by `spotifyd`.
 mixer = PCM
@@ -186,7 +186,7 @@ mixer = PCM
 # The volume controller. Each one behaves different to
 # volume increases. For possible values, run
 # `spotifyd --help`.
-volume_controller = alsa
+volume_controller = alsa  # use softvol for macOS
 
 # A command that gets executed in your shell after each song changes.
 on_song_change_hook = command_to_run_on_playback_events
