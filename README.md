@@ -315,6 +315,8 @@ Here is a .plist which works with macOS Catalina 10.15.3:
 Once present in the `/Library/LaunchDaemons` directory, the .plist must be loaded and started with the following commands.
 
 `sudo launchctl load -w /Library/LaunchDaemons/rustlang.spotifyd.plist`
+
+
 `sudo launchctl start /Library/LaunchDaemons/rustlang.spotifyd.plist`
 
 One may also unload/stop the service in a similar fashion replacing load/start with unload/stop.
