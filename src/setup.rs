@@ -20,6 +20,8 @@ use tokio_signal::ctrl_c;
 
 use std::{io, process::exit};
 
+use std::str::FromStr;
+
 #[cfg(feature = "alsa_backend")]
 use crate::alsa_mixer;
 use crate::{config, main_loop};
@@ -84,12 +86,14 @@ pub(crate) fn initial_state(
 
     let zeroconf_port = config.zeroconf_port.unwrap_or(0);
 
+    let device_type: DeviceType = DeviceType::from_str(&config.device_type).unwrap_or(DeviceType::default());
+
     #[allow(clippy::or_fun_call)]
     let discovery_stream = discovery(
         &handle,
         ConnectConfig {
             name: config.device_name.clone(),
-            device_type: DeviceType::default(),
+            device_type: device_type,
             volume: mixer().volume(),
             linear_volume,
         },
@@ -156,6 +160,7 @@ pub(crate) fn initial_state(
         linear_volume,
         running_event_program: None,
         shell: config.shell,
+        device_type: device_type,
     }
 }
 
