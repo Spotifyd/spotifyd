@@ -166,7 +166,7 @@ impl Future for MainLoopState {
                 let (spirc, spirc_task) = Spirc::new(
                     ConnectConfig {
                         name: self.spotifyd_state.device_name.clone(),
-                        device_type: self.device_type.clone(),
+                        device_type: self.device_type,
                         volume: mixer.volume(),
                         linear_volume: self.linear_volume,
                     },
