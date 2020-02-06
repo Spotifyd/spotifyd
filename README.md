@@ -220,6 +220,11 @@ zeroconf_port = 1234
 
 # The proxy `spotifyd` will use to connect to spotify.
 proxy = http://proxy.example.org:8080
+
+# The displayed device type in Spotify clients.
+# Can be unknown, computer, tablet, smartphone, speaker, tv,
+# avr (Audio/Video Receiver), stb (Set-Top Box), and audiodongle.
+device_type = speaker
 ```
 
 #### Alternatives to storing your password in the config file <!-- omit in toc -->
