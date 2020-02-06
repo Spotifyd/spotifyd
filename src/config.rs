@@ -1,7 +1,7 @@
 use gethostname::gethostname;
 use lazy_static::lazy_static;
 use librespot::{
-    core::{cache::Cache, config::SessionConfig, config::DeviceType as LSDeviceType, version},
+    core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version},
     playback::config::{Bitrate as LSBitrate, PlayerConfig},
 };
 use log::{error, info};
@@ -114,7 +114,15 @@ impl FromStr for VolumeController {
 
 lazy_static! {
     static ref DEVICETYPE_VALUES: Vec<&'static str> = vec![
-        "computer", "tablet", "smartphone", "speaker", "tv", "avr", "stb", "audiodongle"];
+        "computer",
+        "tablet",
+        "smartphone",
+        "speaker",
+        "tv",
+        "avr",
+        "stb",
+        "audiodongle"
+    ];
 }
 
 // Spotify's device type (copied from it's config.rs)
@@ -680,7 +688,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         pid,
         shell,
         zeroconf_port: config.shared_config.zeroconf_port,
-        device_type
+        device_type,
     }
 }
 
