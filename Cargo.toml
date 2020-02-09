@@ -23,7 +23,7 @@ lazy_static = "1.4.0"
 libc = "0.2.66"
 log = "0.4.6"
 percent-encoding = "2.1.0"
-rspotify = "0.7.0"
+rspotify = "0.8.0"
 serde = { version = "1.0.103", features = ["derive"] }
 serde_ini = "0.2.0"
 sha-1 = "0.8"
