@@ -1,5 +1,7 @@
 use log::trace;
 use std::env;
+#[cfg(target_os = "macos")]
+use whoami;
 
 #[cfg(target_os = "linux")]
 fn get_shell_ffi() -> Option<String> {
@@ -43,7 +45,6 @@ fn get_shell_ffi() -> Option<String> {
 #[cfg(target_os = "macos")]
 fn get_shell_ffi() -> Option<String> {
     use std::process::Command;
-    use whoami;
 
     trace!("Retrieving user shell through Directory Discovery Services");
 
@@ -62,6 +63,8 @@ fn get_shell_ffi() -> Option<String> {
             return Some(shell.to_string());
         }
     }
+
+    None
 }
 
 pub(crate) fn get_shell() -> Option<String> {
@@ -93,7 +96,7 @@ mod tests {
     fn test_ffi_discovery() {
         init_logger();
 
-        let shell = get_shell();
+        let shell = get_shell_ffi();
         assert_eq!(shell.is_some(), true);
     }
 }

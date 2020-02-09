@@ -36,7 +36,7 @@ url = "1.7"
 xdg = "2.2"
 librespot = { version = "0.1", default-features = false, features = ["with-tremor"] }
 
-[target.'cfg(macos)'.dependencies]
+[target."cfg(target_os = \"macos\")".dependencies]
 whoami = "0.7.0"
 
 [dev-dependencies]
