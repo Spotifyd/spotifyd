@@ -98,6 +98,7 @@ pub(crate) struct MainLoopState {
     pub(crate) linear_volume: bool,
     pub(crate) running_event_program: Option<Child>,
     pub(crate) shell: String,
+    pub(crate) device_type: DeviceType,
 }
 
 impl Future for MainLoopState {
@@ -165,7 +166,7 @@ impl Future for MainLoopState {
                 let (spirc, spirc_task) = Spirc::new(
                     ConnectConfig {
                         name: self.spotifyd_state.device_name.clone(),
-                        device_type: DeviceType::default(),
+                        device_type: self.device_type,
                         volume: mixer.volume(),
                         linear_volume: self.linear_volume,
                     },
