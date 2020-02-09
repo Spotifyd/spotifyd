@@ -1203,7 +1203,7 @@ dependencies = [
 
 [[package]]
 name = "librespot"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1212,12 +1212,12 @@ dependencies = [
  "getopts 0.2.21 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper 0.11.27 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-audio 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-connect 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-metadata 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-playback 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-protocol 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-audio 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-connect 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-core 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-metadata 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-playback 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-protocol 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-bigint 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf 2.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1233,15 +1233,16 @@ dependencies = [
 
 [[package]]
 name = "librespot-audio"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "aes-ctr 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "bit-set 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "lewton 0.9.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-core 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "librespot-tremor 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-bigint 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1251,7 +1252,7 @@ dependencies = [
 
 [[package]]
 name = "librespot-connect"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "aes-ctr 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1261,9 +1262,9 @@ dependencies = [
  "hmac 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper 0.11.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "libmdns 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-playback 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-protocol 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-core 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-playback 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-protocol 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-bigint 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf 2.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1278,7 +1279,7 @@ dependencies = [
 
 [[package]]
 name = "librespot-core"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "aes 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1292,7 +1293,7 @@ dependencies = [
  "hyper 0.11.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper-proxy 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-protocol 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-protocol 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-bigint 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-integer 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1315,20 +1316,21 @@ dependencies = [
 
 [[package]]
 name = "librespot-metadata"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-protocol 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-core 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-protocol 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "linear-map 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf 2.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "librespot-playback"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "alsa 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1337,17 +1339,18 @@ dependencies = [
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
  "libpulse-sys 0.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-audio 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot-metadata 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-audio 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-core 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot-metadata 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "portaudio-rs 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rodio 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "shell-words 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "librespot-protocol"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "protobuf 2.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2434,6 +2437,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "shell-words"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "shlex"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2530,7 +2538,7 @@ dependencies = [
  "keyring 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
- "librespot 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librespot 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "percent-encoding 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rspotify 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3478,13 +3486,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum libm 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "7fc7aa29613bd6a620df431842069224d8bc9011086b1db4c0e0cd47fa03ec9a"
 "checksum libmdns 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "fa04490b2ddac499769cfd1e59e68326c6d52dced8aa262512ad3c82cefba374"
 "checksum libpulse-sys 0.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9bb11b06faf883500c1b625cf4453e6c7737e9df9c7ba01df3f84b22b083e4ac"
-"checksum librespot 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9b898b98d9e8e50a6a75b39ba1237ff2d39a7423048e4b257275164ed6ffef00"
-"checksum librespot-audio 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "518f859a94432e13bc6f8ef14aad1085c2b3c70f3abd9fa780506851b51e192c"
-"checksum librespot-connect 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "17d2bfd4cfb0e7de098b271301af90ae9a840a497aef0e53411c5c8be05f5593"
-"checksum librespot-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a8230494726537ba5959a072498922a39497197ccdf57a33e3d582ff3b8dadcf"
-"checksum librespot-metadata 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c4ea84a3664b6202dc2bc3eecf5f88275b14428168c72f7db2dddddd47bf37f7"
-"checksum librespot-playback 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "62ecbb002a13ce5b9adc0162d8634db848afda42a751bba28314262360414ca9"
-"checksum librespot-protocol 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "06f9fcd68bad5f3a9efc910be3e78ba176cd6fc23bd1ea4e5427ae12ebb98f05"
+"checksum librespot 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2a9318f20778c0f6b2862cc6eb0e9d8d3b5825dcad6b728d268e391254cf7c36"
+"checksum librespot-audio 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2360549085c3456fe6d3929e74055923e3b2e1535aaf97140050d783c15854d5"
+"checksum librespot-connect 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "552cea81308f4ece3b67502727815d897df6c440c73b2877ec35c1e7f1057b7d"
+"checksum librespot-core 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "9f1d5b789c672f72e1de35186dc9e441ea7c62d230eedd81ab54d452c9f36aad"
+"checksum librespot-metadata 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ed423878eb7d83cba1157ce1a87da057bb973bea54795985d21c6976a9f62860"
+"checksum librespot-playback 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0dc72074a2d84529b2fdbfb936ba1eb40f14cd8bc5ee049ae1a9c20f80f7ad0d"
+"checksum librespot-protocol 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "32699c309d05fd54c85f908f9a725a0fa401658e638117ce638478ff2252dc8d"
 "checksum librespot-tremor 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b155a7dc4e4d272e01c37a1b85c1ee1bee7f04980ad4a7784c1a6e0f2de5929b"
 "checksum linear-map 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bfae20f6b19ad527b550c223fddc3077a547fc70cda94b9b566575423fd303ee"
 "checksum lock_api 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "79b2de95ecb4691949fea4716ca53cdbcfccb2c612e19644a8bad05edcf9f47b"
@@ -3603,6 +3611,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum sha-1 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)" = "f7d94d0bede923b3cea61f3f1ff57ff8cdfd77b400fb8f9998949e0cf04163df"
 "checksum sha2 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "27044adfd2e1f077f649f59deb9490d3941d674002f7d062870a60ebe9bd47a0"
 "checksum shannon 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "7ea5b41c9427b56caa7b808cb548a04fb50bb5b9e98590b53f28064ff4174561"
+"checksum shell-words 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "39acde55a154c4cd3ae048ac78cc21c25f3a0145e44111b523279113dce0d94a"
 "checksum shlex 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7fdf1b9db47230893d76faad238fd6097fd6d6a9245cd7a4d90dbd639536bbd2"
 "checksum signal-hook 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)" = "7a9c17dd3ba2d36023a5c9472ecddeda07e27fd0b05436e8c1e0c8f178185652"
 "checksum signal-hook-registry 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "94f478ede9f64724c5d173d7bb56099ec3e2d9fc2774aac65d34b8b890405f41"
