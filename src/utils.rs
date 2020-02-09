@@ -22,14 +22,17 @@ fn get_shell_ffi() -> Option<String> {
             &mut passwd,
             buf.as_mut_ptr(),
             buf.capacity() as libc::size_t,
-            &mut result
+            &mut result,
         ) {
             0 if !result.is_null() => {
                 let ptr = passwd.pw_shell as *const _;
-                let shell = CStr::from_ptr(ptr).to_str().expect("Failed to retrieve shell").to_owned();
+                let shell = CStr::from_ptr(ptr)
+                    .to_str()
+                    .expect("Failed to retrieve shell")
+                    .to_owned();
                 Some(shell)
             }
-            _ => None
+            _ => None,
         }
     }
 }
@@ -56,7 +59,7 @@ fn get_shell_ffi() -> Option<String> {
         // "UserShell: /path/to/shell"
         if stdout.starts_with("UserShell: ") {
             let shell = stdout.split_whitespace().nth(1)?;
-            return Some(shell.to_string())
+            return Some(shell.to_string());
         }
     }
 }
