@@ -34,7 +34,7 @@ tokio-io = "0.1"
 tokio-signal = "0.1"
 url = "1.7"
 xdg = "2.2"
-librespot = { version = "0.1", default-features = false, features = ["with-tremor"] }
+librespot = { version = "0.1.1", default-features = false, features = ["with-tremor"] }
 
 [target."cfg(target_os = \"macos\")".dependencies]
 whoami = "0.7.0"
