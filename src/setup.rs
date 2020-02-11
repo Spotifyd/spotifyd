@@ -73,6 +73,7 @@ pub(crate) fn initial_state(
     let player_config = config.player_config;
     let session_config = config.session_config;
     let backend = config.backend.clone();
+    let autoplay = config.autoplay;
     let device_id = session_config.device_id.clone();
 
     #[cfg(feature = "alsa_backend")]
@@ -92,6 +93,7 @@ pub(crate) fn initial_state(
     let discovery_stream = discovery(
         &handle,
         ConnectConfig {
+            autoplay,
             name: config.device_name.clone(),
             device_type,
             volume: mixer().volume(),
@@ -161,6 +163,7 @@ pub(crate) fn initial_state(
         running_event_program: None,
         shell: config.shell,
         device_type,
+        autoplay,
     }
 }
 

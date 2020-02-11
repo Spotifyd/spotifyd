@@ -95,6 +95,7 @@ pub(crate) struct MainLoopState {
     pub(crate) player_config: PlayerConfig,
     pub(crate) session_config: SessionConfig,
     pub(crate) handle: Handle,
+    pub(crate) autoplay: bool,
     pub(crate) linear_volume: bool,
     pub(crate) running_event_program: Option<Child>,
     pub(crate) shell: String,
@@ -165,6 +166,7 @@ impl Future for MainLoopState {
 
                 let (spirc, spirc_task) = Spirc::new(
                     ConnectConfig {
+                        autoplay: self.autoplay,
                         name: self.spotifyd_state.device_name.clone(),
                         device_type: self.device_type,
                         volume: mixer.volume(),

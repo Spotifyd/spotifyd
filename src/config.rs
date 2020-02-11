@@ -372,6 +372,11 @@ pub struct SharedConfigValues {
     /// The device type shown to clients
     #[structopt(long, possible_values = &DEVICETYPE_VALUES, value_name = "string")]
     device_type: Option<DeviceType>,
+
+    /// Autoplay on connect
+    #[structopt(long)]
+    #[serde(default, deserialize_with = "de_from_str")]
+    autoplay: bool,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -577,6 +582,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) shell: String,
     pub(crate) zeroconf_port: Option<u16>,
     pub(crate) device_type: String,
+    pub(crate) autoplay: bool,
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
@@ -615,6 +621,8 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let device_id = device_id(&device_name);
 
     let normalisation_pregain = config.shared_config.normalisation_pregain.unwrap_or(0.0f32);
+
+    let autoplay = config.shared_config.autoplay;
 
     let device_type = config
         .shared_config
@@ -689,6 +697,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         shell,
         zeroconf_port: config.shared_config.zeroconf_port,
         device_type,
+        autoplay,
     }
 }
 
