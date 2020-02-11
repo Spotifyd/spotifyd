@@ -2,6 +2,8 @@
 
 ## Setup
 
+__Important:__ Make sure to install the provided git hooks by running `setup-dev-workspace.sh`! 
+
 ### Install Rust
 
 It is recommended to install rust through [rustup](https://rustup.rs). System package managers often have outdated versions of Rust or don't include rustfmt/clippy.

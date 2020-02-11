@@ -1,0 +1,49 @@
+#!/bin/sh
+# Author: Sven Lechner (SirWindfield)
+# License: GPLv3
+
+require_clean_work_tree() {
+    # Update index
+    git update-index -q --ignore-submodules --refresh
+    err=0
+
+    # Disallow unstaged changes in the working tree
+    if ! git diff-files --quiet --ignore-submodules --; then
+        echo >&2 "Cannot commit: you have unstaged changes."
+        git diff-files --name-status -r --ignore-submodules -- >&2
+        err=1
+    fi
+
+    if [ $err = 1 ]; then
+        echo >&2 "Please stage or stash them."
+        exit 1
+    fi
+}
+
+echo "→ Checking for local changes..."
+require_clean_work_tree
+
+echo "→ Formatting Rust code..."
+cargo fmt
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+for path in $(git diff --name-only --cached); do
+    git update-index --add $path
+done
+
+echo "→ Building pre-commit build artifacts..."
+cargo check --quiet --no-default-features --features "rodio_backend,dbus_keyring"
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+cargo build --quiet --no-default-features --features "rodio_backend,dbus_keyring"
+
+# Linting is only done with the rodio backend and the keyring feature as those should be 
+# compilable for every supported platform without external library needs. 
+echo "→ Linting Rust code..."
+cargo clippy --no-default-features --features "rodio_backend,dbus_keyring" -- -D warnings
+
+echo "→ Testing Rust code..."
+cargo test --no-default-features --features "rodio_backend,dbus_keyring"
