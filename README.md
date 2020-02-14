@@ -258,7 +258,11 @@ device_type = speaker
   secret-tool store --label='name you choose' application rust-keyring service spotifyd username <your-username>
   ```
 
-  You can use the keychain GUI on macOS to add an item respectively.
+  You can use the keychain GUI on macOS to add an item respectively, or with the built-in `security` tool:
+  
+  ```bash
+  security add-generic-password -s spotifyd -D rust-keyring -a <your username> -w
+  ```
 
 #### Shell used to run commands indicated by `password_cmd` or `on_song_changed_hook` <!-- omit in toc -->
 
