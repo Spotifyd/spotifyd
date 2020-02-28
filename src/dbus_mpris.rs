@@ -25,7 +25,7 @@ use rspotify::spotify::{
 };
 use tokio_core::reactor::Handle;
 
-use std::{collections::HashMap, rc::Rc, thread};
+use std::{collections::HashMap, env, rc::Rc, thread};
 
 pub struct DbusServer {
     session: Session,
@@ -94,7 +94,10 @@ impl Future for DbusServer {
                     got_new_token = true;
                 }
             } else {
-                self.token_request = Some(get_token(&self.session, CLIENT_ID, SCOPE));
+                // This is more meant as a fast hotfix than anything else!
+                let client_id =
+                    env::var("SPOTIFYD_CLIENT_ID").unwrap_or_else(|_| CLIENT_ID.to_string());
+                self.token_request = Some(get_token(&self.session, &client_id, SCOPE));
             }
         } else if let Some(ref mut fut) = self.dbus_future {
             return fut.poll();
