@@ -38,7 +38,7 @@ pub struct DbusServer {
 }
 
 const CLIENT_ID: &str = "2c1ea588dfbc4a989e2426f8385297c3";
-const SCOPE: &str = "user-read-playback-state,user-read-private,user-read-birthdate,\
+const SCOPE: &str = "user-read-playback-state,user-read-private,\
                      user-read-email,playlist-read-private,user-library-read,user-library-modify,\
                      user-top-read,playlist-read-collaborative,playlist-modify-public,\
                      playlist-modify-private,user-follow-read,user-follow-modify,\
