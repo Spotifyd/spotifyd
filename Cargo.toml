@@ -8,7 +8,7 @@ license = "GPL-3.0-only"
 version = "0.2.24"
 
 [dependencies]
-alsa = { version = "0.3", optional = true }
+alsa = { version = "0.4", optional = true }
 chrono = "0.4"
 daemonize = "0.4"
 dbus = { version = "0.6", optional = true }
