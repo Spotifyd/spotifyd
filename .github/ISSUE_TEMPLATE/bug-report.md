@@ -38,7 +38,7 @@ assignees: ''
 
 **Versions (please complete the following information):**
  - OS: <!-- e.g. Ubuntu 18.04 LTS, Windows 10 -->
- - Spotifyd: <!-- branch, commit hash or release version -->
+ - Spotifyd: <!-- commit hash or release version -->
 - cargo: <!-- cargo --version -->
 
 <!-- **Additional context**
