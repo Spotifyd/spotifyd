@@ -645,7 +645,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     });
 
     let mut password = config.shared_config.password;
-    if password.is_none() && config.shared_config.password_cmd.is_some() {
+    if password.is_none() {
         info!("No password specified. Checking password_cmd");
 
         match config.shared_config.password_cmd {
