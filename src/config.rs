@@ -489,7 +489,7 @@ impl CliConfig {
             .filter_map(Option::Some)
             .map(|x| x.unwrap())
             .map(|mut l: String| {
-                let last_index = l.rfind('#').unwrap_or_else(|| l.len());
+                let last_index = l.rfind(" #").unwrap_or_else(|| l.len());
                 l.drain(..last_index).collect()
             })
             // The password field takes the whole value as the password. We need to remove the space between
