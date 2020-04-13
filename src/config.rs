@@ -5,13 +5,14 @@ use librespot::{
     playback::config::{Bitrate as LSBitrate, PlayerConfig},
 };
 use log::{error, info};
-use serde::{de, Deserialize};
+use serde::Deserialize;
+use serde_repr::Deserialize_repr;
 use sha1::{Digest, Sha1};
 use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
 use xdg;
 
-use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
+use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
 
 use crate::{
     error::{Error as CrateError, ParseError},
@@ -193,14 +194,12 @@ lazy_static! {
 }
 
 /// Spotify's audio bitrate
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize_repr, PartialEq, StructOpt)]
+#[repr(u16)]
 pub enum Bitrate {
-    #[serde(rename = "96")]
-    Bitrate96,
-    #[serde(rename = "160")]
-    Bitrate160,
-    #[serde(rename = "320")]
-    Bitrate320,
+    Bitrate96 = 96,
+    Bitrate160 = 160,
+    Bitrate320 = 320,
 }
 
 impl FromStr for Bitrate {
@@ -224,30 +223,6 @@ impl Into<LSBitrate> for Bitrate {
             Bitrate::Bitrate320 => LSBitrate::Bitrate320,
         }
     }
-}
-
-struct BoolFromStr;
-
-impl<'de> de::Visitor<'de> for BoolFromStr {
-    type Value = bool;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a string containing \"true\" or \"false\"")
-    }
-
-    fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        bool::from_str(s).map_err(serde::de::Error::custom)
-    }
-}
-
-fn de_from_str<'de, D>(deserializer: D) -> Result<bool, D::Error>
-where
-    D: de::Deserializer<'de>,
-{
-    deserializer.deserialize_str(BoolFromStr)
 }
 
 #[derive(Debug, Default, StructOpt)]
@@ -294,7 +269,7 @@ pub struct SharedConfigValues {
     #[cfg_attr(
         feature = "dbus_keyring",
         structopt(long),
-        serde(alias = "use-keyring", default, deserialize_with = "de_from_str")
+        serde(alias = "use-keyring", default)
     )]
     #[cfg_attr(not(feature = "dbus_keyring"), structopt(skip), serde(skip))]
     use_keyring: bool,
@@ -320,7 +295,7 @@ pub struct SharedConfigValues {
 
     /// Disable the use of audio cache
     #[structopt(long)]
-    #[serde(default, deserialize_with = "de_from_str")]
+    #[serde(default)]
     no_audio_cache: bool,
 
     /// The audio backend to use
@@ -354,7 +329,7 @@ pub struct SharedConfigValues {
 
     /// Enable to normalize the volume during playback
     #[structopt(long)]
-    #[serde(default, deserialize_with = "de_from_str")]
+    #[serde(default)]
     volume_normalisation: bool,
 
     /// A custom pregain applied before sending the audio to the output device
@@ -375,7 +350,7 @@ pub struct SharedConfigValues {
 
     /// Autoplay on connect
     #[structopt(long)]
-    #[serde(default, deserialize_with = "de_from_str")]
+    #[serde(default)]
     autoplay: bool,
 }
 
@@ -461,44 +436,23 @@ impl fmt::Debug for SharedConfigValues {
 
 impl CliConfig {
     pub fn load_config_file_values(&mut self) {
-        let config_file_path = self.config_path.clone().or_else(get_config_file);
+        let config_file_path = match self.config_path.clone().or_else(get_config_file) {
+            Some(p) => p,
+            None => {
+                info!("No config file specified. Running with default values");
+                return;
+            }
+        };
+        info!("Loading config from {:?}", &config_file_path);
 
-        if config_file_path.is_none() {
-            info!("No config file specified. Running with default values");
-            return;
-        }
-        let unwrapped_config_file_path = config_file_path.unwrap();
-        info!("Loading config from {:?}", &unwrapped_config_file_path);
-
-        let config_file = fs::File::open(&unwrapped_config_file_path);
-        if config_file.is_err() {
-            info!(
-                "Failed to open config file at {:?}",
-                &unwrapped_config_file_path
-            );
-            return;
-        }
-
-        let bufreader = std::io::BufReader::new(config_file.unwrap());
-        // serde_ini doesn't support inline comments. We treat every hashtag as a comment starter and everything that follows
-        // it as not part of the key's value.
-        // The method below will filter out any errors that occur.
-        // TODO: Is there a cleaner way to do this? One with less allocations.
-        let comment_free_lines: Vec<String> = bufreader
-            .lines()
-            .filter_map(Option::Some)
-            .map(|x| x.unwrap())
-            .map(|mut l: String| {
-                let last_index = l.rfind(" #").unwrap_or_else(|| l.len());
-                l.drain(..last_index).collect()
-            })
-            // The password field takes the whole value as the password. We need to remove the space between
-            // the password and the # character.
-            .map(|l: String| l.trim().to_string())
-            .collect();
-
-        let comment_free_content = comment_free_lines.join("\n");
-        let config_content: FileConfig = serde_ini::from_str(&comment_free_content).unwrap();
+        let content = match std::fs::read_to_string(config_file_path) {
+            Ok(s) => s,
+            Err(e) => {
+                error!("Failed reading from config file: {}", e);
+                return;
+            }
+        };
+        let config_content: FileConfig = toml::from_str(&content).unwrap();
 
         // The call to get_merged_sections consumes the FileConfig!
         if let Some(merged_sections) = config_content.get_merged_sections() {
