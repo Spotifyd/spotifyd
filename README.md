@@ -125,9 +125,7 @@ On Linux you will need the development package for alsa and make/gcc. (`libasoun
 
 ## Configuration
 
-`Spotifyd` is able to run without configuration at all and will assume default values for most of the fields. However, running without configuration will only allow you to connect to it if you're on the same network as the daemon.
-
-> __Note:__ This is currently not possible anymore and under investigation. For more information and updates, take a look at #366.
+`Spotifyd` is able to run without configuration at all and will assume default values for most of the fields. However, running without configuration will only allow you to connect to it via Spotify Connect if you're on the same network as the daemon.
 
 ### CLI options
 
@@ -343,7 +341,6 @@ Note:
 
 - Spotifyd will not work without Spotify Premium
 - The device name cannot contain spaces
-- Launching in discovery mode (username and password left empty) makes the daemon undiscoverable from within the app (tracking issue #373)
 
 ## Contributing
 
