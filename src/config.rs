@@ -448,10 +448,11 @@ impl CliConfig {
         let content = match std::fs::read_to_string(config_file_path) {
             Ok(s) => s,
             Err(e) => {
-                error!("Failed reading from config file: {}", e);
+                info!("Failed reading config file: {}", e);
                 return;
             }
         };
+
         let config_content: FileConfig = toml::from_str(&content).unwrap();
 
         // The call to get_merged_sections consumes the FileConfig!
