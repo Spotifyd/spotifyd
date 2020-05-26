@@ -266,26 +266,39 @@ device_type = speaker
 
 If either of these options is given, the shell `spotifyd` will use to run its commands is the shell indicated by the `SHELL` environment variable, if set. If the `SHELL` environment variable is not set, `spotifyd` will use the user's default shell, which, on Linux and BSD, is the shell listed in `/etc/passwd`. On macOS it is the shell listed in the output of `dscl . -read /Users/<username> UserShell`.
 
-## Running as a system service
+## Running as a service
 
 ### on Linux
 
-A `systemd.service` unit file is provided to help run spotifyd as a service on systemd-based systems. The file `contrib/spotifyd.service` should be copied to either:
+A `systemd` unit file is provided to run `Spotifyd` as an user service on systemd-based systems. The service unit assume the `spotifyd` binary is copied to `/usr/local/bin`. Adjust the `ExecStart` path as needed.
+
+To make the service available for the current desktop user, the file `contrib/systemd/user/spotifyd.service` should be copied to the following location:
 
 ```
-/etc/systemd/user/
-~/.config/systemd/user/
+$HOME/.config/systemd/user/
 ```
 
-Packagers of systemd-based distributions are encouraged to include the file in the former location. End-user should prefer the latter. It should be noted that some targets are not available when running under the user directory, such as `network-online.target`.
-
-Control of the daemon is handed over to systemd. The following example commands will run the service once and enable the service to always run on login in the future respectively:
+Control of the daemon is handed over to systemd. The following commands will run the service immediately and enable the service to always run on login in the future respectively:
 
 ```
 systemctl --user start spotifyd.service
 systemctl --user enable spotifyd.service
 ```
 
+As an alternative for advanced use cases, to run the service even without an active user session, the file `contrib/systemd/system/spotifyd.service` should be copied to the following location:
+
+```
+/etc/systemd/system/
+```
+
+Running the service in this fashion requires the appropriate sound backend to be ready for playback from the system manager. `Pulseaudio` users can [learn more about this mode][pulseaudio-systemwide].
+
+Execute the following commands to run the service system-wide:
+
+```
+systemctl start spotifyd.service
+systemctl enable spotifyd.service
+```
 
 ### on macOS
 
@@ -362,3 +375,4 @@ This project would not have been possible without the amazing reverse engineerin
 [cd-badge]: https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Deployment/badge.svg
 [ci-badge]: https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Integration/badge.svg
 [dependabot-badge]: https://api.dependabot.com/badges/status?host=github&repo=Spotifyd/spotifyd
+[pulseaudio-systemwide]: https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/WhatIsWrongWithSystemWide/
