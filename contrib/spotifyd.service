@@ -3,11 +3,10 @@ Description=A spotify playing daemon
 Documentation=https://github.com/Spotifyd/spotifyd
 Wants=sound.target
 After=sound.target
-Wants=network-online.target
-After=network-online.target
 
 [Service]
-ExecStart=/usr/bin/spotifyd --no-daemon
+Type=exec
+ExecStart=/usr/local/bin/spotifyd --no-daemon
 Restart=always
 RestartSec=12
 
