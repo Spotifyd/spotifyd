@@ -399,6 +399,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "c_linked_list"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4964518bd3b4a8190e832886cdc0da9794f12e8e6c1613a9e90ff331c4c8724b"
+
+[[package]]
 name = "cc"
 version = "1.0.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1105,6 +1111,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "get_if_addrs"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "abddb55a898d32925f3148bd281174a68eeb68bbfd9a5938a57b18f506ee4ef7"
+dependencies = [
+ "c_linked_list",
+ "get_if_addrs-sys",
+ "libc",
+ "winapi 0.2.8",
+]
+
+[[package]]
+name = "get_if_addrs-sys"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d04f9fb746cf36b191c00f3ede8bde9c8e64f9f4b05ae2694a9ccf5e3f5ab48"
+dependencies = [
+ "gcc",
+ "libc",
+]
+
+[[package]]
 name = "gethostname"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1223,6 +1251,17 @@ checksum = "c1441c6b1e930e2817404b5046f1f989899143a12bf92de603b69f4e0aee1e15"
 dependencies = [
  "crypto-mac 0.10.0",
  "digest 0.9.0",
+]
+
+[[package]]
+name = "hostname"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c731c3e10504cc8ed35cfe2f1db4c9274c3d35fa486e3b31df46f068ef3e867"
+dependencies = [
+ "libc",
+ "match_cfg",
+ "winapi 0.3.8",
 ]
 
 [[package]]
@@ -1492,23 +1531,20 @@ checksum = "7fc7aa29613bd6a620df431842069224d8bc9011086b1db4c0e0cd47fa03ec9a"
 
 [[package]]
 name = "libmdns"
-version = "0.2.4"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa04490b2ddac499769cfd1e59e68326c6d52dced8aa262512ad3c82cefba374"
+checksum = "966e0f9cc15be41e9dbfcd74fd9c04cf69d3c0ec43fc56aa28f5e4da4e545c38"
 dependencies = [
  "byteorder",
  "futures 0.1.29",
- "kernel32-sys",
- "libc",
+ "get_if_addrs",
+ "hostname",
  "log 0.4.8",
  "multimap",
  "net2",
- "nix 0.10.0",
  "quick-error",
- "rand 0.5.6",
- "socket2 0.2.4",
+ "rand 0.7.3",
  "tokio-core",
- "winapi 0.2.8",
 ]
 
 [[package]]
@@ -1522,9 +1558,9 @@ dependencies = [
 
 [[package]]
 name = "librespot"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a9318f20778c0f6b2862cc6eb0e9d8d3b5825dcad6b728d268e391254cf7c36"
+checksum = "c9de5f3110cf89c5b9ac715a895a0b2274d8dc449a93998d548714dae9b7290e"
 dependencies = [
  "base64 0.10.1",
  "env_logger 0.6.2",
@@ -1553,9 +1589,9 @@ dependencies = [
 
 [[package]]
 name = "librespot-audio"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2360549085c3456fe6d3929e74055923e3b2e1535aaf97140050d783c15854d5"
+checksum = "1bb21228db5a87fdc2774cd4b3fe32e898a4a1f4957c82e9faa196cca71bf839"
 dependencies = [
  "aes-ctr",
  "bit-set",
@@ -1573,9 +1609,9 @@ dependencies = [
 
 [[package]]
 name = "librespot-connect"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "552cea81308f4ece3b67502727815d897df6c440c73b2877ec35c1e7f1057b7d"
+checksum = "4f4bf51df1c33e4faa1cf558b075c175704b53362d90f819ed86e89463c34ed2"
 dependencies = [
  "aes-ctr",
  "base64 0.10.1",
@@ -1601,9 +1637,9 @@ dependencies = [
 
 [[package]]
 name = "librespot-core"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f1d5b789c672f72e1de35186dc9e441ea7c62d230eedd81ab54d452c9f36aad"
+checksum = "2c8bd9161067ffcae878cd9224562b8c8d0ca254f15db255eabe58df4ba258d0"
 dependencies = [
  "aes 0.3.2",
  "base64 0.10.1",
@@ -1639,9 +1675,9 @@ dependencies = [
 
 [[package]]
 name = "librespot-metadata"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed423878eb7d83cba1157ce1a87da057bb973bea54795985d21c6976a9f62860"
+checksum = "0553a4be36640aba59cc40ce1f34c87f70203b87209beebebea4c5253c8dba13"
 dependencies = [
  "byteorder",
  "futures 0.1.29",
@@ -1654,9 +1690,9 @@ dependencies = [
 
 [[package]]
 name = "librespot-playback"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0dc72074a2d84529b2fdbfb936ba1eb40f14cd8bc5ee049ae1a9c20f80f7ad0d"
+checksum = "56df0417db5f1b5932c2443d853fd79bdbd509f6dfb399af9c8ce57bb6065c76"
 dependencies = [
  "alsa 0.2.2",
  "byteorder",
@@ -1675,10 +1711,11 @@ dependencies = [
 
 [[package]]
 name = "librespot-protocol"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32699c309d05fd54c85f908f9a725a0fa401658e638117ce638478ff2252dc8d"
+checksum = "40c202de42b184e368250648602fddacddcc675bb2699aae1b59f07170157e01"
 dependencies = [
+ "glob",
  "protobuf",
  "protobuf-codegen",
  "protobuf-codegen-pure",
@@ -1728,6 +1765,12 @@ checksum = "14b6052be84e6b71ab17edffc2eeabf5c2c3ae1fdb464aae35ac50c67a44e1f7"
 dependencies = [
  "cfg-if 0.1.10",
 ]
+
+[[package]]
+name = "match_cfg"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffbee8634e0d45d258acb448e7eaab3fce7a0a467395d4d9f228e3c1f01fb2e4"
 
 [[package]]
 name = "matches"
@@ -1851,15 +1894,15 @@ version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "396aa0f2003d7df8395cb93e09871561ccc3e785f0acb369170e8cc74ddf9226"
 dependencies = [
- "socket2 0.3.11",
+ "socket2",
  "winapi 0.3.8",
 ]
 
 [[package]]
 name = "multimap"
-version = "0.4.0"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2eb04b9f127583ed176e163fb9ec6f3e793b87e21deedd5734a69386a18a0151"
+checksum = "1255076139a83bb467426e7f8d0134968a8118844faa755985e077cf31850333"
 dependencies = [
  "serde",
 ]
@@ -1918,20 +1961,6 @@ checksum = "a2c5afeb0198ec7be8569d666644b574345aad2e95a53baf3a532da3e0f3fb32"
 dependencies = [
  "bitflags 0.9.1",
  "cfg-if 0.1.10",
- "libc",
- "void",
-]
-
-[[package]]
-name = "nix"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7fd5681d13fda646462cfbd4e5f2051279a89a544d50eb98c365b507246839f"
-dependencies = [
- "bitflags 1.2.1",
- "bytes 0.4.12",
- "cfg-if 0.1.10",
- "gcc",
  "libc",
  "void",
 ]
@@ -2353,24 +2382,24 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.10.0"
+version = "2.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6563a657a014b771e7f69f06447d88d8fbb5a215ffc4cab724afb3acedcc7701"
+checksum = "8e86d370532557ae7573551a1ec8235a0f8d6cb276c7c9e6aa490b511c447485"
 
 [[package]]
 name = "protobuf-codegen"
-version = "2.10.0"
+version = "2.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f1bbc6db30d5d3e730b6e2326e9a64a75ca9c80d6427d6f054dc8cacc79d225"
+checksum = "de113bba758ccf2c1ef816b127c958001b7831136c9bc3f8e9ec695ac4e82b0c"
 dependencies = [
  "protobuf",
 ]
 
 [[package]]
 name = "protobuf-codegen-pure"
-version = "2.10.0"
+version = "2.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db5473ffa23d2ea3b9046764f1a22149791967aad946b6cbd99601e720afc4d0"
+checksum = "2d1a4febc73bf0cada1d77c459a0c8e5973179f1cfd5b0f1ab789d45b17b6440"
 dependencies = [
  "protobuf",
  "protobuf-codegen",
@@ -3045,19 +3074,6 @@ name = "smallvec"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "44e59e0c9fa00817912ae6e4e6e3c4fe04455e75699d06eedc7d85917ed8e8f4"
-
-[[package]]
-name = "socket2"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36b4896961171cd3317c7e9603d88f379f8c6e45342212235d356496680c68fd"
-dependencies = [
- "cfg-if 0.1.10",
- "kernel32-sys",
- "libc",
- "winapi 0.2.8",
- "ws2_32-sys",
-]
 
 [[package]]
 name = "socket2"

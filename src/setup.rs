@@ -9,7 +9,7 @@ use librespot::{
     core::{
         authentication::get_credentials,
         cache::Cache,
-        config::{ConnectConfig, DeviceType},
+        config::{ConnectConfig, DeviceType, VolumeCtrl},
         session::Session,
     },
     playback::{
@@ -73,13 +73,17 @@ pub(crate) fn initial_state(
     let device_id = session_config.device_id.clone();
 
     #[cfg(feature = "alsa_backend")]
-    let linear_volume = matches!(
+    let volume_ctrl = if matches!(
         config.volume_controller,
         config::VolumeController::AlsaLinear
-    );
+    ) {
+        VolumeCtrl::Linear
+    } else {
+        VolumeCtrl::default()
+    };
 
     #[cfg(not(feature = "alsa_backend"))]
-    let linear_volume = false;
+    let volume_ctrl = VolumeCtrl::default();
 
     let zeroconf_port = config.zeroconf_port.unwrap_or(0);
 
@@ -93,7 +97,7 @@ pub(crate) fn initial_state(
             name: config.device_name.clone(),
             device_type,
             volume: mixer().volume(),
-            linear_volume,
+            volume_ctrl: volume_ctrl.clone(),
         },
         device_id,
         zeroconf_port,
@@ -156,7 +160,7 @@ pub(crate) fn initial_state(
         session_config,
         handle,
         initial_volume: config.initial_volume,
-        linear_volume,
+        volume_ctrl,
         running_event_program: None,
         shell: config.shell,
         device_type,
