@@ -1,5 +1,8 @@
 [package]
-authors = ["Simon Persson <simon@flaskpost.org>", "Sven Lechner <sven.lechner@rwth-aachen.de>"]
+authors = [
+    "Simon Persson <simon@flaskpost.org>",
+    "Sven Lechner <sven.lechner@rwth-aachen.de>"
+]
 edition = "2018"
 name = "spotifyd"
 description = "A Spotify daemon"
@@ -10,7 +13,6 @@ version = "0.2.24"
 [dependencies]
 alsa = { version = "0.3", optional = true }
 chrono = "0.4"
-daemonize = "0.4"
 dbus = { version = "0.6", optional = true }
 dbus-tokio = { version = "0.2", optional = true }
 failure = "0.1.7"
@@ -27,14 +29,19 @@ rspotify = "0.8.0"
 serde = { version = "1.0.111", features = ["derive"] }
 serde_ini = "0.2.0"
 sha-1 = "0.8"
-structopt = "0.3.14"
-syslog = "4"
+structopt = "0.3.11"
 tokio-core = "0.1"
 tokio-io = "0.1"
 tokio-signal = "0.1"
 url = "1.7"
-xdg = "2.2"
-librespot = { version = "0.1.1", default-features = false, features = ["with-tremor"] }
+directories = "2.0.2"
+librespot = { version = "0.1.1", default-features = false, features = [
+    "with-tremor"
+] }
+
+[target."cfg(unix)".dependencies]
+daemonize = "0.4"
+syslog = "4"
 
 [target."cfg(target_os = \"macos\")".dependencies]
 whoami = "0.8.1"
@@ -53,11 +60,7 @@ rodio_backend = ["librespot/rodio-backend"]
 
 [package.metadata.deb]
 depends = "$auto, systemd, pulseaudio"
-features = [
-    "pulseaudio_backend",
-    "dbus_keyring",
-    "dbus_mpris",
-]
+features = ["pulseaudio_backend", "dbus_keyring", "dbus_mpris"]
 assets = [
     ["target/release/spotifyd", "usr/bin/", "755"],
     ["README.md", "usr/share/doc/spotifyd/README", "644"],

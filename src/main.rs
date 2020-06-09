@@ -1,6 +1,5 @@
-#![cfg(unix)]
-
 use crate::config::CliConfig;
+#[cfg(unix)]
 use daemonize::Daemonize;
 use log::{error, info, trace, LevelFilter};
 use std::panic;
@@ -20,6 +19,7 @@ mod utils;
 
 enum LogTarget {
     Terminal,
+    #[cfg(unix)]
     Syslog,
 }
 
@@ -28,6 +28,7 @@ fn setup_logger(log_target: LogTarget, log_level: LevelFilter) {
 
     let logger = match log_target {
         LogTarget::Terminal => logger.chain(std::io::stdout()),
+        #[cfg(unix)]
         LogTarget::Syslog => {
             let log_format = syslog::Formatter3164 {
                 facility: syslog::Facility::LOG_DAEMON,
@@ -48,7 +49,14 @@ fn main() {
     let is_daemon = !cli_config.no_daemon;
 
     let log_target = if is_daemon {
-        LogTarget::Syslog
+        #[cfg(unix)]
+        {
+            LogTarget::Syslog
+        }
+        #[cfg(target_os = "windows")]
+        {
+            LogTarget::Terminal
+        }
     } else {
         LogTarget::Terminal
     };
@@ -65,18 +73,25 @@ fn main() {
 
     // Returns the old SpotifydConfig struct used within the rest of the daemon.
     let internal_config = config::get_internal_config(cli_config);
+    println!(
+        "{:?} {:?}",
+        internal_config.username, internal_config.password
+    );
 
-    if is_daemon {
-        info!("Daemonizing running instance");
+    #[cfg(unix)]
+    {
+        if is_daemon {
+            info!("Daemonizing running instance");
 
-        let mut daemonize = Daemonize::new();
-        if let Some(pid) = internal_config.pid.as_ref() {
-            daemonize = daemonize.pid_file(pid);
+            let mut daemonize = Daemonize::new();
+            if let Some(pid) = internal_config.pid.as_ref() {
+                daemonize = daemonize.pid_file(pid);
+            }
+            match daemonize.start() {
+                Ok(_) => info!("Detached from shell, now running in background."),
+                Err(e) => error!("Something went wrong while daemonizing: {}", e),
+            };
         }
-        match daemonize.start() {
-            Ok(_) => info!("Detached from shell, now running in background."),
-            Err(e) => error!("Something went wrong while daemonizing: {}", e),
-        };
     }
 
     panic::set_hook(Box::new(|panic_info| {

@@ -1,8 +1,3 @@
-use crate::{
-    error::{Error as CrateError, ParseError},
-    process::run_program,
-    utils,
-};
 use gethostname::gethostname;
 use lazy_static::lazy_static;
 use librespot::{
@@ -15,6 +10,12 @@ use sha1::{Digest, Sha1};
 use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
+
+use crate::{
+    error::{Error as CrateError, ParseError},
+    process::run_program,
+    utils,
+};
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
@@ -559,16 +560,22 @@ impl SharedConfigValues {
 
 pub(crate) fn get_config_file() -> Option<PathBuf> {
     let etc_conf = format!("/etc/{}", CONFIG_FILE_NAME);
-    let xdg_dirs = xdg::BaseDirectories::with_prefix("spotifyd").ok()?;
-    xdg_dirs.find_config_file(CONFIG_FILE_NAME).or_else(|| {
-        fs::metadata(&*etc_conf).ok().and_then(|meta| {
-            if meta.is_file() {
-                Some(etc_conf.into())
-            } else {
-                None
-            }
-        })
-    })
+    let dirs = directories::BaseDirs::new()?;
+    let mut path = dirs.config_dir().to_path_buf();
+    path.push("spotifyd");
+    path.push(CONFIG_FILE_NAME);
+
+    if path.exists() {
+        Some(path)
+    } else {
+        let path: PathBuf = etc_conf.into();
+
+        if path.exists() {
+            Some(path)
+        } else {
+            None
+        }
+    }
 }
 
 fn device_id(name: &str) -> String {
@@ -618,7 +625,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let backend = config
         .shared_config
         .backend
-        .unwrap_or(Backend::Alsa)
+        .unwrap_or(Backend::Rodio)
         .to_string();
 
     let volume_controller = config
