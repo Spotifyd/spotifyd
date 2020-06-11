@@ -1,4 +1,3 @@
-use alsa;
 use librespot::playback::mixer::{AudioFilter, Mixer, MixerConfig};
 use log::error;
 use std::error::Error;

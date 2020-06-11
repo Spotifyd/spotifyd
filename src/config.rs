@@ -15,7 +15,6 @@ use sha1::{Digest, Sha1};
 use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
-use xdg;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
