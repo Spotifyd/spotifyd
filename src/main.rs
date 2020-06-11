@@ -25,7 +25,6 @@ mod utils;
 
 enum LogTarget {
     Terminal,
-    #[cfg(unix)]
     Syslog,
 }
 
@@ -57,6 +56,15 @@ fn setup_logger(log_target: LogTarget, verbose: bool) -> eyre::Result<()> {
                     .map_err(|e| eyre!("Couldn't connect to syslog instance: {}", e))?,
             )
         }
+        #[cfg(target_os = "windows")]
+        LogTarget::Syslog => logger.chain(
+            std::fs::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(".spotifyd.log")
+                .expect("Couldn't initialize logger"),
+        ),
     };
 
     logger.apply().wrap_err("Couldn't initialize logger")
@@ -79,7 +87,14 @@ fn main() -> eyre::Result<()> {
             LogTarget::Terminal
         }
     } else {
-        LogTarget::Terminal
+        #[cfg(unix)]
+        {
+            LogTarget::Terminal
+        }
+        #[cfg(target_os = "windows")]
+        {
+            LogTarget::Syslog
+        }
     };
 
     setup_logger(log_target, cli_config.verbose)?;
@@ -98,16 +113,12 @@ fn main() -> eyre::Result<()> {
 
     // Returns the old SpotifydConfig struct used within the rest of the daemon.
     let internal_config = config::get_internal_config(cli_config);
-    println!(
-        "{:?} {:?}",
-        internal_config.username, internal_config.password
-    );
 
-    #[cfg(unix)]
-    {
-        if is_daemon {
-            info!("Daemonizing running instance");
+    if is_daemon {
+        info!("Daemonizing running instance");
 
+        #[cfg(unix)]
+        {
             let mut daemonize = Daemonize::new();
             if let Some(pid) = internal_config.pid.as_ref() {
                 daemonize = daemonize.pid_file(pid);
@@ -116,6 +127,23 @@ fn main() -> eyre::Result<()> {
                 Ok(_) => info!("Detached from shell, now running in background."),
                 Err(e) => error!("Something went wrong while daemonizing: {}", e),
             };
+        }
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            use std::process::{exit, Command};
+
+            let mut args = std::env::args().collect::<Vec<_>>();
+            args.remove(0);
+            args.push("--no-daemon".to_string());
+
+            Command::new(std::env::current_exe().unwrap())
+                .args(args)
+                .creation_flags(8 /* DETACHED_PROCESS */)
+                .spawn()
+                .expect("Couldn't spawn daemon");
+
+            exit(0);
         }
     }
 

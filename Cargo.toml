@@ -37,6 +37,9 @@ librespot-connect = { version = "0.4" }
 toml = "0.7"
 color-eyre = "0.6"
 
+[target."cfg(target_os = \"windows\")".dependencies]
+windows-service = "0.2.0"
+
 [target."cfg(unix)".dependencies]
 daemonize = "0.5"
 syslog = "6"
