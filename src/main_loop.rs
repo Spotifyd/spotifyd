@@ -1,3 +1,6 @@
+#[cfg(feature = "dbus_mpris")]
+use crate::dbus_mpris::DbusServer;
+use crate::process::{spawn_program_on_event, Child};
 use futures::{self, Async, Future, Poll, Stream};
 use librespot::{
     connect::{
@@ -17,14 +20,9 @@ use librespot::{
     },
 };
 use log::error;
+use std::{io, rc::Rc};
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
-
-use std::{io, rc::Rc};
-
-#[cfg(feature = "dbus_mpris")]
-use crate::dbus_mpris::DbusServer;
-use crate::process::{spawn_program_on_event, Child};
 
 pub struct LibreSpotConnection {
     connection: Box<dyn Future<Item = Session, Error = io::Error>>,

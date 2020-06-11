@@ -1,3 +1,6 @@
+#[cfg(feature = "alsa_backend")]
+use crate::alsa_mixer;
+use crate::{config, main_loop};
 use futures::{self, Future};
 #[cfg(feature = "dbus_keyring")]
 use keyring::Keyring;
@@ -15,16 +18,10 @@ use librespot::{
     },
 };
 use log::{error, info};
+use std::str::FromStr;
+use std::{io, process::exit};
 use tokio_core::reactor::Handle;
 use tokio_signal::ctrl_c;
-
-use std::{io, process::exit};
-
-use std::str::FromStr;
-
-#[cfg(feature = "alsa_backend")]
-use crate::alsa_mixer;
-use crate::{config, main_loop};
 
 pub(crate) fn initial_state(
     handle: Handle,
