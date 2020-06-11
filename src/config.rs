@@ -283,8 +283,18 @@ pub struct CliConfig {
 #[derive(Clone, Default, Deserialize, PartialEq, StructOpt)]
 pub struct SharedConfigValues {
     /// The Spotify account user name
-    #[structopt(long, short, value_name = "string")]
+    #[structopt(conflicts_with = "username_cmd", long, short, value_name = "string")]
     username: Option<String>,
+
+    /// A command that can be used to retrieve the Spotify account username
+    #[structopt(
+        conflicts_with = "username",
+        long,
+        short = "U",
+        value_name = "string",
+        visible_alias = "username_cmd"
+    )]
+    username_cmd: Option<String>,
 
     /// The Spotify account password
     #[structopt(conflicts_with = "password_cmd", long, short, value_name = "string")]
@@ -435,8 +445,15 @@ impl fmt::Debug for SharedConfigValues {
             None
         };
 
+        let username_cmd_value = if self.username_cmd.is_some() {
+            Some(&placeholder)
+        } else {
+            None
+        };
+
         f.debug_struct("SharedConfigValues")
             .field("username", &username_value)
+            .field("username_cmd", &username_cmd_value)
             .field("password", &password_value)
             .field("password_cmd", &password_cmd_value)
             .field("use_keyring", &self.use_keyring)
@@ -519,6 +536,7 @@ impl SharedConfigValues {
         merge!(
             backend,
             username,
+            username_cmd,
             password,
             password_cmd,
             normalisation_pregain,
@@ -644,8 +662,20 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         "sh".to_string()
     });
 
+    let mut username = config.shared_config.username;
+    if username.is_none() {
+        info!("No username specified. Checking username_cmd");
+        match config.shared_config.username_cmd {
+            Some(ref cmd) => match run_program(&shell, cmd) {
+                Ok(s) => username = Some(s.trim().to_string()),
+                Err(e) => error!("{}", CrateError::subprocess_with_err(&shell, cmd, e)),
+            },
+            None => info!("No username_cmd specified"),
+        }
+    }
+
     let mut password = config.shared_config.password;
-    if password.is_none() && config.shared_config.password_cmd.is_some() {
+    if password.is_none() {
         info!("No password specified. Checking password_cmd");
 
         match config.shared_config.password_cmd {
@@ -671,7 +701,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         None => info!("No proxy specified"),
     }
     SpotifydConfig {
-        username: config.shared_config.username,
+        username,
         password,
         use_keyring: config.shared_config.use_keyring,
         cache,
