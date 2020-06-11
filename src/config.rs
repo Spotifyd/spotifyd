@@ -9,7 +9,6 @@ use serde::{de, Deserialize};
 use sha1::{Digest, Sha1};
 use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
-use xdg;
 
 use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
 
