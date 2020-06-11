@@ -39,6 +39,8 @@ The provided binaries come in two flavours, `slim` and `full`. Each are compiled
 
 You can also compile `Spotifyd` yourself, allowing you to make use of feature flags. `Spotifyd` is written in Rust. You can download the toolchain (compiler and package manager) over at [rustup.rs](https://rustup.rs). Follow their instructions to get started.
 
+> __Note:__ Please make sure that you compile the package using the most recent `stable` verison of Rust available throug `rustup`. Some distro versions are quite outdated and might result in compilation errors.
+
 `Spotifyd` might require additional libraries during build and runtime, depending on your platform and the way to compile it (static or dynamic). The following table shows the libraries needed for each OS respectively.
 
 | Target Platform | Libraries                                            |
