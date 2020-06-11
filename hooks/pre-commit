@@ -24,8 +24,7 @@ echo "→ Checking for local changes..."
 require_clean_work_tree
 
 echo "→ Formatting Rust code..."
-cargo fmt
-if [ $? -ne 0 ]; then
+if ! cargo fmt; then
     exit 1
 fi
 
@@ -34,8 +33,7 @@ for path in $(git diff --name-only --cached); do
 done
 
 echo "→ Building pre-commit build artifacts..."
-cargo check --quiet --no-default-features --features "rodio_backend,dbus_keyring"
-if [ $? -ne 0 ]; then
+if ! cargo check --quiet --no-default-features --features "rodio_backend,dbus_keyring"; then
     exit 1
 fi
 cargo build --quiet --no-default-features --features "rodio_backend,dbus_keyring"
