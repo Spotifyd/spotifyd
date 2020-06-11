@@ -1,13 +1,11 @@
 #![cfg(unix)]
 
+use crate::config::CliConfig;
 use daemonize::Daemonize;
 use log::{error, info, trace, LevelFilter};
+use std::panic;
 use structopt::StructOpt;
 use tokio_core::reactor::Core;
-
-use std::panic;
-
-use crate::config::CliConfig;
 
 #[cfg(feature = "alsa_backend")]
 mod alsa_mixer;

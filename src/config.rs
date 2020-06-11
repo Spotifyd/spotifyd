@@ -1,3 +1,8 @@
+use crate::{
+    error::{Error as CrateError, ParseError},
+    process::run_program,
+    utils,
+};
 use gethostname::gethostname;
 use lazy_static::lazy_static;
 use librespot::{
@@ -7,16 +12,9 @@ use librespot::{
 use log::{error, info};
 use serde::{de, Deserialize};
 use sha1::{Digest, Sha1};
+use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
-
-use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
-
-use crate::{
-    error::{Error as CrateError, ParseError},
-    process::run_program,
-    utils,
-};
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
