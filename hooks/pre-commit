@@ -30,7 +30,7 @@ if [ $? -ne 0 ]; then
 fi
 
 for path in $(git diff --name-only --cached); do
-    git update-index --add $path
+    git update-index --add "$path"
 done
 
 echo "→ Building pre-commit build artifacts..."
