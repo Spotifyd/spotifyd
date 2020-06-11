@@ -27,7 +27,7 @@ rspotify = "0.8.0"
 serde = { version = "1.0.103", features = ["derive"] }
 serde_ini = "0.2.0"
 sha-1 = "0.8"
-structopt = "0.3.11"
+structopt = "0.3.14"
 syslog = "4"
 tokio-core = "0.1"
 tokio-io = "0.1"
@@ -50,3 +50,16 @@ default = ["alsa_backend"]
 portaudio_backend = ["librespot/portaudio-backend"]
 pulseaudio_backend = ["librespot/pulseaudio-backend"]
 rodio_backend = ["librespot/rodio-backend"]
+
+[package.metadata.deb]
+depends = "$auto, systemd, pulseaudio"
+features = [
+    "pulseaudio_backend",
+    "dbus_keyring",
+    "dbus_mpris",
+]
+assets = [
+    ["target/release/spotifyd", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/spotifyd/README", "644"],
+    ["contrib/spotifyd.service", "etc/systemd/user/", "644"],
+]

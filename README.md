@@ -62,6 +62,23 @@ To install the resulting binary, run
 cargo install --path .
 ```
 
+#### Building a Debian package
+
+You can use the `cargo-deb` create in order to build a Debian package from source.
+Install it by:
+```
+$ cargo install cargo-deb
+```
+
+Then you can build and install the Debian package with:
+```
+$ cargo deb --install
+```
+
+Note, that when building a Debian package, the `--release` is passed to the
+build command already and you do not need to specify it yourself.  See for the
+flags that are set by default in `Cargo.toml`.
+
 #### Feature Flags
 
 `Spotifyd` is split into a base package plus additional features that can be toggled on or off during compilation. Those can be split into two groups: The audio backend features that are responsible for playing back the music and additional functionality features, which enhance your experience using `spotifyd`.
@@ -257,7 +274,7 @@ device_type = speaker
   ```
 
   You can use the keychain GUI on macOS to add an item respectively, or with the built-in `security` tool:
-  
+
   ```bash
   security add-generic-password -s spotifyd -D rust-keyring -a <your username> -w
   ```
