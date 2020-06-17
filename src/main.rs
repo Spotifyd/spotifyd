@@ -57,14 +57,21 @@ fn setup_logger(log_target: LogTarget, verbose: bool) -> eyre::Result<()> {
             )
         }
         #[cfg(target_os = "windows")]
-        LogTarget::Syslog => logger.chain(
-            std::fs::OpenOptions::new()
-                .write(true)
-                .create(true)
-                .truncate(true)
-                .open(".spotifyd.log")
-                .expect("Couldn't initialize logger"),
-        ),
+        LogTarget::Syslog => {
+            let dirs = directories::BaseDirs::new().unwrap();
+            let mut log_file = dirs.config_dir().to_path_buf();
+            log_file.push("spotifyd");
+            log_file.push(".spotifyd.log");
+
+            logger.chain(
+                std::fs::OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .truncate(true)
+                    .open(log_file)
+                    .expect("Couldn't initialize logger"),
+            )
+        }
     };
 
     logger.apply().wrap_err("Couldn't initialize logger")
@@ -93,7 +100,11 @@ fn main() -> eyre::Result<()> {
         }
         #[cfg(target_os = "windows")]
         {
-            LogTarget::Syslog
+            if std::env::var("SPOTIFYD_CHILD").is_ok() {
+                LogTarget::Syslog
+            } else {
+                LogTarget::Terminal
+            }
         }
     };
 
@@ -139,6 +150,7 @@ fn main() -> eyre::Result<()> {
 
             Command::new(std::env::current_exe().unwrap())
                 .args(args)
+                .env("SPOTIFYD_CHILD", "1")
                 .creation_flags(8 /* DETACHED_PROCESS */)
                 .spawn()
                 .expect("Couldn't spawn daemon");
