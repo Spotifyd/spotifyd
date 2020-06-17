@@ -39,9 +39,6 @@ librespot = { version = "0.1.1", default-features = false, features = [
     "with-tremor"
 ] }
 
-[target."cfg(target_os = \"windows\")".dependencies]
-windows-service = "0.2.0"
-
 [target."cfg(unix)".dependencies]
 daemonize = "0.4"
 syslog = "4"

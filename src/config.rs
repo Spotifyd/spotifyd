@@ -600,6 +600,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) player_config: PlayerConfig,
     pub(crate) session_config: SessionConfig,
     pub(crate) onevent: Option<String>,
+    #[allow(unused)]
     pub(crate) pid: Option<String>,
     pub(crate) shell: String,
     pub(crate) zeroconf_port: Option<u16>,
