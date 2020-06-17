@@ -33,3 +33,5 @@ tags
 *.rustfmt
 
 .idea
+# Windows logs
+*.log

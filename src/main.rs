@@ -1,6 +1,5 @@
-#![cfg(unix)]
-
 use crate::config::CliConfig;
+#[cfg(unix)]
 use daemonize::Daemonize;
 use log::{error, info, trace, LevelFilter};
 use std::panic;
@@ -28,6 +27,7 @@ fn setup_logger(log_target: LogTarget, log_level: LevelFilter) {
 
     let logger = match log_target {
         LogTarget::Terminal => logger.chain(std::io::stdout()),
+        #[cfg(unix)]
         LogTarget::Syslog => {
             let log_format = syslog::Formatter3164 {
                 facility: syslog::Facility::LOG_DAEMON,
@@ -36,6 +36,22 @@ fn setup_logger(log_target: LogTarget, log_level: LevelFilter) {
                 pid: 0,
             };
             logger.chain(syslog::unix(log_format).expect("Couldn't initialize logger"))
+        }
+        #[cfg(target_os = "windows")]
+        LogTarget::Syslog => {
+            let dirs = directories::BaseDirs::new().unwrap();
+            let mut log_file = dirs.config_dir().to_path_buf();
+            log_file.push("spotifyd");
+            log_file.push(".spotifyd.log");
+
+            logger.chain(
+                std::fs::OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .truncate(true)
+                    .open(log_file)
+                    .expect("Couldn't initialize logger"),
+            )
         }
     };
 
@@ -48,9 +64,27 @@ fn main() {
     let is_daemon = !cli_config.no_daemon;
 
     let log_target = if is_daemon {
-        LogTarget::Syslog
+        #[cfg(unix)]
+        {
+            LogTarget::Syslog
+        }
+        #[cfg(target_os = "windows")]
+        {
+            LogTarget::Terminal
+        }
     } else {
-        LogTarget::Terminal
+        #[cfg(unix)]
+        {
+            LogTarget::Terminal
+        }
+        #[cfg(target_os = "windows")]
+        {
+            if std::env::var("SPOTIFYD_CHILD").is_ok() {
+                LogTarget::Syslog
+            } else {
+                LogTarget::Terminal
+            }
+        }
     };
     let log_level = if cli_config.verbose {
         LevelFilter::Trace
@@ -69,14 +103,35 @@ fn main() {
     if is_daemon {
         info!("Daemonizing running instance");
 
-        let mut daemonize = Daemonize::new();
-        if let Some(pid) = internal_config.pid.as_ref() {
-            daemonize = daemonize.pid_file(pid);
+        #[cfg(unix)]
+        {
+            let mut daemonize = Daemonize::new();
+            if let Some(pid) = internal_config.pid.as_ref() {
+                daemonize = daemonize.pid_file(pid);
+            }
+            match daemonize.start() {
+                Ok(_) => info!("Detached from shell, now running in background."),
+                Err(e) => error!("Something went wrong while daemonizing: {}", e),
+            };
         }
-        match daemonize.start() {
-            Ok(_) => info!("Detached from shell, now running in background."),
-            Err(e) => error!("Something went wrong while daemonizing: {}", e),
-        };
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            use std::process::{exit, Command};
+
+            let mut args = std::env::args().collect::<Vec<_>>();
+            args.remove(0);
+            args.push("--no-daemon".to_string());
+
+            Command::new(std::env::current_exe().unwrap())
+                .args(args)
+                .env("SPOTIFYD_CHILD", "1")
+                .creation_flags(8 /* DETACHED_PROCESS */)
+                .spawn()
+                .expect("Couldn't spawn daemon");
+
+            exit(0);
+        }
     }
 
     panic::set_hook(Box::new(|panic_info| {
