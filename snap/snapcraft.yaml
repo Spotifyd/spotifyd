@@ -1,4 +1,5 @@
 name: spotifyd
+base: core18
 adopt-info: spotifyd
 summary: A spotify daemon
 description: |
@@ -25,6 +26,7 @@ parts:
       - libpulse-dev
       - pkg-config
     stage-packages:
+      - libasound2
       - libpulse0
     override-pull: |
       snapcraftctl pull
