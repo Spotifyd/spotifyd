@@ -37,7 +37,7 @@ xdg = "2.2"
 librespot = { version = "0.1.1", default-features = false, features = ["with-tremor"] }
 
 [target."cfg(target_os = \"macos\")".dependencies]
-whoami = "0.8.1"
+whoami = "0.8.2"
 
 [dev-dependencies]
 env_logger = "0.7"
