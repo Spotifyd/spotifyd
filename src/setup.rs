@@ -156,6 +156,7 @@ pub(crate) fn initial_state(
         player_config,
         session_config,
         handle,
+        initial_volume: config.initial_volume,
         linear_volume,
         running_event_program: None,
         shell: config.shell,

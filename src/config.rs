@@ -9,7 +9,7 @@ use librespot::{
     core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version},
     playback::config::{Bitrate as LSBitrate, PlayerConfig},
 };
-use log::{error, info};
+use log::{error, warn, info};
 use serde::{de, Deserialize};
 use sha1::{Digest, Sha1};
 use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
@@ -359,6 +359,10 @@ pub struct SharedConfigValues {
     #[structopt(long, short = "B", possible_values = &BITRATE_VALUES, value_name = "number")]
     bitrate: Option<Bitrate>,
 
+    /// Initial volume between 0 and 100
+    #[structopt(long, value_name = "initial_volume")]
+    initial_volume: Option<String>,
+
     /// Enable to normalize the volume during playback
     #[structopt(long)]
     #[serde(default, deserialize_with = "de_from_str")]
@@ -464,6 +468,7 @@ impl fmt::Debug for SharedConfigValues {
             .field("mixer", &self.mixer)
             .field("device_name", &self.device_name)
             .field("bitrate", &self.bitrate)
+            .field("initial_volume", &self.initial_volume)
             .field("volume_normalisation", &self.volume_normalisation)
             .field("normalisation_pregain", &self.normalisation_pregain)
             .field("zeroconf_port", &self.zeroconf_port)
@@ -538,6 +543,7 @@ impl SharedConfigValues {
             password_cmd,
             normalisation_pregain,
             bitrate,
+            initial_volume,
             device_name,
             mixer,
             control,
@@ -589,6 +595,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) mixer: Option<String>,
     #[allow(unused)]
     pub(crate) volume_controller: VolumeController,
+    pub(crate) initial_volume: Option<u16>,
     pub(crate) device_name: String,
     pub(crate) player_config: PlayerConfig,
     pub(crate) session_config: SessionConfig,
@@ -625,6 +632,16 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .shared_config
         .volume_controller
         .unwrap_or(VolumeController::SoftVolume);
+
+    let initial_volume: Option<u16> = config
+        .shared_config
+        .initial_volume
+        .map(|input| { match input.parse::<i16>() {
+            Ok(v) if 0 <= v && v <= 100 => Some(v),
+            _ => { warn!("Could not parse initial_volume (must be in the range 0-100)"); None }
+        }})
+        .flatten()
+        .map(|volume| (volume as i32 * 0xFFFF / 100) as u16);
 
     let device_name = config
         .shared_config
@@ -707,6 +724,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         control_device: config.shared_config.control,
         mixer: config.shared_config.mixer,
         volume_controller,
+        initial_volume: initial_volume,
         device_name,
         player_config: PlayerConfig {
             bitrate,
