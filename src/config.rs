@@ -9,7 +9,7 @@ use librespot::{
     core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version},
     playback::config::{Bitrate as LSBitrate, PlayerConfig},
 };
-use log::{error, warn, info};
+use log::{error, info, warn};
 use serde::{de, Deserialize};
 use sha1::{Digest, Sha1};
 use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
@@ -636,10 +636,13 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let initial_volume: Option<u16> = config
         .shared_config
         .initial_volume
-        .map(|input| { match input.parse::<i16>() {
+        .map(|input| match input.parse::<i16>() {
             Ok(v) if 0 <= v && v <= 100 => Some(v),
-            _ => { warn!("Could not parse initial_volume (must be in the range 0-100)"); None }
-        }})
+            _ => {
+                warn!("Could not parse initial_volume (must be in the range 0-100)");
+                None
+            }
+        })
         .flatten()
         .map(|volume| (volume as i32 * 0xFFFF / 100) as u16);
 
