@@ -168,7 +168,7 @@ impl Future for MainLoopState {
                         autoplay: self.autoplay,
                         name: self.spotifyd_state.device_name.clone(),
                         device_type: self.device_type,
-                        volume: self.initial_volume.unwrap_or(mixer.volume()),
+                        volume: self.initial_volume.unwrap_or_else(|| mixer.volume()),
                         linear_volume: self.linear_volume,
                     },
                     session.clone(),

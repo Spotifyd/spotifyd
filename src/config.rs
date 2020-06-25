@@ -727,7 +727,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         control_device: config.shared_config.control,
         mixer: config.shared_config.mixer,
         volume_controller,
-        initial_volume: initial_volume,
+        initial_volume,
         device_name,
         player_config: PlayerConfig {
             bitrate,
