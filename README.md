@@ -215,7 +215,7 @@ device_name = device_name_in_spotify_connect
 # The audio bitrate. 96, 160 or 320 kbit/s
 bitrate = 160
 
-# The director used to cache audio data. This setting can save
+# The directory used to cache audio data. This setting can save
 # a lot of bandwidth when activated, as it will avoid re-downloading
 # audio files when replaying them.
 #
