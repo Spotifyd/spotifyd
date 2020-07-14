@@ -18,10 +18,10 @@ use librespot::{
     },
 };
 use log::{info, warn};
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
-use rspotify::spotify::{
-    client::Spotify, model::offset::for_position, oauth2::TokenInfo as RspotifyToken, senum::*,
-    util::datetime_to_timestamp,
+use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
+use rspotify::{
+    blocking::client::Spotify, model::offset::for_position, oauth2::TokenInfo as RspotifyToken,
+    senum::*, util::datetime_to_timestamp,
 };
 use std::{collections::HashMap, env, rc::Rc, thread};
 use tokio_core::reactor::Handle;
@@ -98,7 +98,8 @@ impl Future for DbusServer {
                     env::var("SPOTIFYD_CLIENT_ID").unwrap_or_else(|_| CLIENT_ID.to_string());
                 self.token_request = Some(get_token(&self.session, &client_id, SCOPE));
             }
-        } else if let Some(ref mut fut) = self.dbus_future {
+        }
+        if let Some(ref mut fut) = self.dbus_future {
             return fut.poll();
         }
 
@@ -335,9 +336,10 @@ fn create_dbus_server(
         spotify_api_method!([sp, device, uri: String]
             if let Ok(uri) = uri {
                 let device_name = device.unwrap_or_else(|| "".to_owned());
+                let device_name = percent_decode_str(&device_name).decode_utf8().unwrap();
                 let device_id = match sp.device() {
                     Ok(device_payload) => {
-                        match device_payload.devices.into_iter().find(|d| d.is_active && d.name == device_name) {
+                        match device_payload.devices.into_iter().find(|d| d.name == device_name) {
                             Some(device) => Some(device.id),
                             None => None,
                         }
@@ -358,7 +360,7 @@ fn create_dbus_server(
         .property::<String, _>("PlaybackStatus", ())
         .access(Access::Read)
         .on_get(spotify_api_property!([sp, _device]
-                    if let Ok(Some(player)) = sp.current_playback(None) {
+                    if let Ok(Some(player)) = sp.current_playback(None, None) {
                         let device_name = utf8_percent_encode(&player.device.name, NON_ALPHANUMERIC).to_string();
                         if device_name == _device.unwrap() {
                             if let Ok(Some(track)) = sp.current_user_playing_track() {
@@ -381,7 +383,7 @@ fn create_dbus_server(
         .property::<bool, _>("Shuffle", ())
         .access(Access::Read)
         .on_get(spotify_api_property!([sp, _device]
-            if let Ok(Some(player)) = sp.current_playback(None) {
+            if let Ok(Some(player)) = sp.current_playback(None, None) {
                 player.shuffle_state
             } else {
                 false
@@ -416,7 +418,7 @@ fn create_dbus_server(
         .property::<String, _>("LoopStatus", ())
         .access(Access::Read)
         .on_get(spotify_api_property!([sp, _device]
-            if let Ok(Some(player)) = sp.current_playback(None) {
+            if let Ok(Some(player)) = sp.current_playback(None, None) {
                 match player.repeat_state {
                     RepeatState::Off => "None",
                     RepeatState::Track => "Track",
@@ -432,7 +434,7 @@ fn create_dbus_server(
         .access(Access::Read)
         .on_get(spotify_api_property!([sp, _device]
             if let Ok(Some(pos)) =
-                sp.current_playback(None)
+                sp.current_playback(None, None)
                 .map(|maybe_player| maybe_player.and_then(|p| p.progress_ms)) {
                 i64::from(pos) * 1000
             } else {
