@@ -61,7 +61,7 @@ cargo build --release
 To install the resulting binary, run
 
 ```bash
-cargo install --path .
+cargo install --path . --locked
 ```
 
 #### Building a Debian package
