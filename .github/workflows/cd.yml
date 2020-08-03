@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        build_target: [macos, macos-rodio, linux, linux-armhf, linux-armv6]
+        build_target: [macos, macos-rodio, linux, linux-aarch64, linux-armhf, linux-armv6]
         rust: [stable]
         artifact_type: ['slim', 'full']         # The build strategy will build both types for each OS specified
         include:
@@ -34,6 +34,11 @@ jobs:
             artifact_prefix: linux
             audio_backend: alsa
             target: x86_64-unknown-linux-gnu
+          - build_target: linux-aarch64
+            os: ubuntu-18.04
+            artifact_prefix: linux-aarch64
+            audio_backend: alsa
+            target: aarch64-unknown-linux-gnu
           - build_target: linux-armhf
             os: ubuntu-18.04
             artifact_prefix: linux-armhf
@@ -63,6 +68,23 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y -qq libasound2-dev libssl-dev libpulse-dev libdbus-1-dev
+      - name: Installing needed Ubuntu aarch64 dependencies
+        if: matrix.os == 'ubuntu-18.04' && matrix.build_target == 'linux-aarch64'
+        run: |
+          sudo mkdir -p /build/sysroot
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ bionic main" | sudo tee -a /etc/apt/sources.list
+          sudo apt-get update
+          sudo apt-get install -y -qq gcc-aarch64-linux-gnu libc6-arm64-cross libc6-dev-arm64-cross
+          sudo apt-get download libasound2:arm64 libasound2-dev:arm64 libssl-dev:arm64 libssl1.1:arm64
+          sudo dpkg -x libasound2_*.deb /build/sysroot/
+          sudo dpkg -x libssl-dev*.deb /build/sysroot/
+          sudo dpkg -x libssl1.1*.deb /build/sysroot/
+          sudo dpkg -x libasound2-dev*.deb /build/sysroot/
+          echo "::set-env name=PKG_CONFIG_ALLOW_CROSS::1"
+          echo "::set-env name=RUSTFLAGS::-C linker=aarch64-linux-gnu-gcc -L/usr/aarch64-linux-gnu/lib/ -L/build/sysroot/usr/lib/aarch64-linux-gnu/ -L/build/sysroot/lib/aarch64-linux-gnu/"
+          echo "::set-env name=C_INCLUDE_PATH::/build/sysroot/usr/include"
+          echo "::set-env name=OPENSSL_LIB_DIR::/build/sysroot/usr/lib/aarch64-linux-gnu"
+          echo "::set-env name=OPENSSL_INCLUDE_DIR::/build/sysroot/usr/include/aarch64-linux-gnu"
       - name: Installing needed Ubuntu armhf dependencies
         if: matrix.os == 'ubuntu-18.04' && matrix.build_target == 'linux-armhf'
         run: |
