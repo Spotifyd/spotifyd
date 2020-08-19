@@ -76,7 +76,6 @@ impl Future for DbusServer {
     type Item = ();
 
     fn poll(&mut self) -> Poll<(), ()> {
-        let mut got_new_token = false;
         if self.is_token_expired() {
             if let Some(ref mut fut) = self.token_request {
                 if let Async::Ready(token) = fut.poll().unwrap() {
@@ -90,7 +89,7 @@ impl Future for DbusServer {
                         self.spirc.clone(),
                         self.device_name.clone(),
                     ));
-                    got_new_token = true;
+                    self.token_request = None;
                 }
             } else {
                 // This is more meant as a fast hotfix than anything else!
@@ -101,10 +100,6 @@ impl Future for DbusServer {
         }
         if let Some(ref mut fut) = self.dbus_future {
             return fut.poll();
-        }
-
-        if got_new_token {
-            self.token_request = None;
         }
 
         Ok(Async::NotReady)
