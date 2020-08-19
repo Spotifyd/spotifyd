@@ -387,7 +387,7 @@ This project would not have been possible without the amazing reverse engineerin
 [good-first-issues]: https://github.com/Spotifyd/spotifyd/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
 [mpris-specification]: https://specifications.freedesktop.org/mpris-spec/latest/
 [pass-homepage]: https://www.passwordstore.org/
-[playerctl-homepage]: https://github.com/acrisci/playerctl/
+[playerctl-homepage]: https://github.com/altdesktop/playerctl
 [secret-storage-specification]: https://www.freedesktop.org/wiki/Specifications/secret-storage-spec/
 [sp-homepage]: https://gist.github.com/wandernauta/6800547
 
