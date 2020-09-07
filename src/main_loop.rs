@@ -1,3 +1,6 @@
+#[cfg(feature = "dbus_mpris")]
+use crate::dbus_mpris::DbusServer;
+use crate::process::{spawn_program_on_event, Child};
 use futures::{self, Async, Future, Poll, Stream};
 use librespot::{
     connect::{
@@ -17,14 +20,9 @@ use librespot::{
     },
 };
 use log::error;
+use std::{io, rc::Rc};
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
-
-use std::{io, rc::Rc};
-
-#[cfg(feature = "dbus_mpris")]
-use crate::dbus_mpris::DbusServer;
-use crate::process::{spawn_program_on_event, Child};
 
 pub struct LibreSpotConnection {
     connection: Box<dyn Future<Item = Session, Error = io::Error>>,
@@ -97,6 +95,7 @@ pub(crate) struct MainLoopState {
     pub(crate) handle: Handle,
     pub(crate) autoplay: bool,
     pub(crate) linear_volume: bool,
+    pub(crate) initial_volume: Option<u16>,
     pub(crate) running_event_program: Option<Child>,
     pub(crate) shell: String,
     pub(crate) device_type: DeviceType,
@@ -169,7 +168,7 @@ impl Future for MainLoopState {
                         autoplay: self.autoplay,
                         name: self.spotifyd_state.device_name.clone(),
                         device_type: self.device_type,
-                        volume: mixer.volume(),
+                        volume: self.initial_volume.unwrap_or_else(|| mixer.volume()),
                         linear_volume: self.linear_volume,
                     },
                     session.clone(),

@@ -1,3 +1,8 @@
+use crate::{
+    error::{Error as CrateError, ParseError},
+    process::run_program,
+    utils,
+};
 use gethostname::gethostname;
 use lazy_static::lazy_static;
 use librespot::{
@@ -8,6 +13,7 @@ use log::{error, info};
 use serde::Deserialize;
 use serde_repr::Deserialize_repr;
 use sha1::{Digest, Sha1};
+use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
 use xdg;
@@ -258,8 +264,18 @@ pub struct CliConfig {
 #[derive(Clone, Default, Deserialize, PartialEq, StructOpt)]
 pub struct SharedConfigValues {
     /// The Spotify account user name
-    #[structopt(long, short, value_name = "string")]
+    #[structopt(conflicts_with = "username_cmd", long, short, value_name = "string")]
     username: Option<String>,
+
+    /// A command that can be used to retrieve the Spotify account username
+    #[structopt(
+        conflicts_with = "username",
+        long,
+        short = "U",
+        value_name = "string",
+        visible_alias = "username_cmd"
+    )]
+    username_cmd: Option<String>,
 
     /// The Spotify account password
     #[structopt(conflicts_with = "password_cmd", long, short, value_name = "string")]
@@ -326,6 +342,10 @@ pub struct SharedConfigValues {
     /// The bitrate of the streamed audio data
     #[structopt(long, short = "B", possible_values = &BITRATE_VALUES, value_name = "number")]
     bitrate: Option<Bitrate>,
+
+    /// Initial volume between 0 and 100
+    #[structopt(long, value_name = "initial_volume")]
+    initial_volume: Option<String>,
 
     /// Enable to normalize the volume during playback
     #[structopt(long)]
@@ -410,8 +430,15 @@ impl fmt::Debug for SharedConfigValues {
             None
         };
 
+        let username_cmd_value = if self.username_cmd.is_some() {
+            Some(&placeholder)
+        } else {
+            None
+        };
+
         f.debug_struct("SharedConfigValues")
             .field("username", &username_value)
+            .field("username_cmd", &username_cmd_value)
             .field("password", &password_value)
             .field("password_cmd", &password_cmd_value)
             .field("use_keyring", &self.use_keyring)
@@ -425,6 +452,7 @@ impl fmt::Debug for SharedConfigValues {
             .field("mixer", &self.mixer)
             .field("device_name", &self.device_name)
             .field("bitrate", &self.bitrate)
+            .field("initial_volume", &self.initial_volume)
             .field("volume_normalisation", &self.volume_normalisation)
             .field("normalisation_pregain", &self.normalisation_pregain)
             .field("zeroconf_port", &self.zeroconf_port)
@@ -474,10 +502,12 @@ impl SharedConfigValues {
         merge!(
             backend,
             username,
+            username_cmd,
             password,
             password_cmd,
             normalisation_pregain,
             bitrate,
+            initial_volume,
             device_name,
             mixer,
             control,
@@ -529,6 +559,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) mixer: Option<String>,
     #[allow(unused)]
     pub(crate) volume_controller: VolumeController,
+    pub(crate) initial_volume: Option<u16>,
     pub(crate) device_name: String,
     pub(crate) player_config: PlayerConfig,
     pub(crate) session_config: SessionConfig,
@@ -566,6 +597,19 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .volume_controller
         .unwrap_or(VolumeController::SoftVolume);
 
+    let initial_volume: Option<u16> = config
+        .shared_config
+        .initial_volume
+        .map(|input| match input.parse::<i16>() {
+            Ok(v) if 0 <= v && v <= 100 => Some(v),
+            _ => {
+                warn!("Could not parse initial_volume (must be in the range 0-100)");
+                None
+            }
+        })
+        .flatten()
+        .map(|volume| (volume as i32 * 0xFFFF / 100) as u16);
+
     let device_name = config
         .shared_config
         .device_name
@@ -599,8 +643,20 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         "sh".to_string()
     });
 
+    let mut username = config.shared_config.username;
+    if username.is_none() {
+        info!("No username specified. Checking username_cmd");
+        match config.shared_config.username_cmd {
+            Some(ref cmd) => match run_program(&shell, cmd) {
+                Ok(s) => username = Some(s.trim().to_string()),
+                Err(e) => error!("{}", CrateError::subprocess_with_err(&shell, cmd, e)),
+            },
+            None => info!("No username_cmd specified"),
+        }
+    }
+
     let mut password = config.shared_config.password;
-    if password.is_none() && config.shared_config.password_cmd.is_some() {
+    if password.is_none() {
         info!("No password specified. Checking password_cmd");
 
         match config.shared_config.password_cmd {
@@ -626,7 +682,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         None => info!("No proxy specified"),
     }
     SpotifydConfig {
-        username: config.shared_config.username,
+        username,
         password,
         use_keyring: config.shared_config.use_keyring,
         cache,
@@ -635,6 +691,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         control_device: config.shared_config.control,
         mixer: config.shared_config.mixer,
         volume_controller,
+        initial_volume,
         device_name,
         player_config: PlayerConfig {
             bitrate,

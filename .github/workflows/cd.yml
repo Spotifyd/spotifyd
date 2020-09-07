@@ -11,40 +11,65 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        build_target: [macos, macos-rodio, linux, linux-armhf, linux-armv6]
+        build_target: [macos, linux, linux-armhf, linux-armv6]
         rust: [stable]
-        artifact_type: ['slim', 'full']         # The build strategy will build both types for each OS specified
+        artifact_type: ['slim', 'default', 'full']  # The build strategy will build all types for each OS specified
         include:
           - artifact_type: 'slim'               # Slim version has no features enabled by default.
             feature: ''
+          - artifact_type: 'default'
+            feature: 'dbus_keyring,dbus_mpris'  # Default version has all extra features enabled
           - artifact_type: 'full'
-            feature: 'dbus_keyring,dbus_mpris'  # Full version has all OS compatible features enabled
+            feature: 'dbus_keyring,dbus_mpris'  # Full version has all extra features and audio backends enabled
           - build_target: macos
             os: macos-latest
             artifact_prefix: macos
-            audio_backend: portaudio
-            target: x86_64-apple-darwin
-          - build_target: macos-rodio
-            os: macos-latest
-            artifact_prefix: macos-rodio
-            audio_backend: rodio
             target: x86_64-apple-darwin
           - build_target: linux
             os: ubuntu-latest
             artifact_prefix: linux
-            audio_backend: alsa
             target: x86_64-unknown-linux-gnu
           - build_target: linux-armhf
             os: ubuntu-18.04
             artifact_prefix: linux-armhf
-            audio_backend: alsa
             target: arm-unknown-linux-gnueabihf
           - build_target: linux-armv6
             os: ubuntu-18.04
             artifact_prefix: linux-armv6
-            audio_backend: alsa
             target: arm-unknown-linux-gnueabihf
+          - build_target: macos
+            artifact_type: slim
+            audio_backend: portaudio_backend
+          - build_target: linux
+            artifact_type: slim
+            audio_backend: pulseaudio_backend
+          - build_target: linux-armhf
+            artifact_type: slim
+            audio_backend: alsa_backend
+          - build_target: linux-armv6
+            artifact_type: slim
+            audio_backend: alsa_backend
+          - build_target: macos
+            artifact_type: default
+            audio_backend: portaudio_backend
+          - build_target: linux
+            artifact_type: default
+            audio_backend: pulseaudio_backend
+          - build_target: linux-armhf
+            artifact_type: default
+            audio_backend: alsa_backend
+          - build_target: linux
+            artifact_type: full
+            audio_backend: pulseaudio_backend,alsa_backend,rodio_backend
+          - build_target: macos
+            artifact_type: full
+            audio_backend: portaudio_backend,rodio_backend
+          - build_target: linux-armhf
+            artifact_type: full
+            audio_backend: alsa_backend
         exclude:
+          - build_target: linux-armv6
+            artifact_type: 'default'            # Raspberry Pi toolchain is too old for dbus/systemd
           - build_target: linux-armv6
             artifact_type: 'full'               # Raspberry Pi toolchain is too old for dbus/systemd
 
@@ -100,7 +125,7 @@ jobs:
           echo "::set-env name=OPENSSL_LIB_DIR::/build/sysroot/usr/lib/arm-linux-gnueabihf"
           echo "::set-env name=OPENSSL_INCLUDE_DIR::/build/sysroot/usr/include/arm-linux-gnueabihf"
       - name: Installing needed Ubuntu armhf dependencies (full)
-        if: matrix.os == 'ubuntu-18.04' && matrix.build_target == 'linux-armhf' && matrix.artifact_type == 'full'
+        if: matrix.os == 'ubuntu-18.04' && matrix.build_target == 'linux-armhf' && matrix.artifact_type != 'slim'
         run: |
           # Make dbus-rs cross-compile, see https://github.com/diwic/dbus-rs/issues/184#issuecomment-520228758
           sudo apt-get download libdbus-1-dev:armhf libdbus-1-3:armhf libsystemd0:armhf libgcrypt20:armhf liblzma5:armhf liblz4-1:armhf libgpg-error0:armhf
@@ -127,7 +152,7 @@ jobs:
         with:
           command: build
           toolchain: ${{ matrix.rust }}
-          args: --locked --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}_backend"
+          args: --locked --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}"
       - name: Packaging final binary
         shell: bash
         run: |

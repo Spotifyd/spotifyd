@@ -39,6 +39,8 @@ The provided binaries come in two flavours, `slim` and `full`. Each are compiled
 
 You can also compile `Spotifyd` yourself, allowing you to make use of feature flags. `Spotifyd` is written in Rust. You can download the toolchain (compiler and package manager) over at [rustup.rs](https://rustup.rs). Follow their instructions to get started.
 
+> __Note:__ Please make sure that you compile the package using the most recent `stable` verison of Rust available throug `rustup`. Some distro versions are quite outdated and might result in compilation errors.
+
 `Spotifyd` might require additional libraries during build and runtime, depending on your platform and the way to compile it (static or dynamic). The following table shows the libraries needed for each OS respectively.
 
 | Target Platform | Libraries                                            |
@@ -59,8 +61,35 @@ cargo build --release
 To install the resulting binary, run
 
 ```bash
-cargo install --path .
+cargo install --path . --locked
 ```
+
+### Installing with Cargo
+
+If you have `cargo` installed, you can directly install `spotifyd` by running:
+
+```bash
+cargo install spotifyd --locked
+```
+
+That will compile and install `spotifyd`'s latest version under `$HOME/.cargo/bin` for you.
+
+#### Building a Debian package
+
+You can use the `cargo-deb` create in order to build a Debian package from source.
+Install it by:
+```
+$ cargo install cargo-deb
+```
+
+Then you can build and install the Debian package with:
+```
+$ cargo deb --install
+```
+
+Note, that when building a Debian package, the `--release` is passed to the
+build command already and you do not need to specify it yourself.  See for the
+flags that are set by default in `Cargo.toml`.
 
 #### Feature Flags
 
@@ -125,9 +154,7 @@ On Linux you will need the development package for alsa and make/gcc. (`libasoun
 
 ## Configuration
 
-`Spotifyd` is able to run without configuration at all and will assume default values for most of the fields. However, running without configuration will only allow you to connect to it if you're on the same network as the daemon.
-
-> __Note:__ This is currently not possible anymore and under investigation. For more information and updates, take a look at #366.
+`Spotifyd` is able to run without configuration at all and will assume default values for most of the fields. However, running without configuration will only allow you to connect to it via Spotify Connect if you're on the same network as the daemon.
 
 ### CLI options
 
@@ -198,7 +225,7 @@ device_name = device_name_in_spotify_connect
 # The audio bitrate. 96, 160 or 320 kbit/s
 bitrate = 160
 
-# The director used to cache audio data. This setting can save
+# The directory used to cache audio data. This setting can save
 # a lot of bandwidth when activated, as it will avoid re-downloading
 # audio files when replaying them.
 #
@@ -208,6 +235,9 @@ cache_path = cache_directory
 
 # If set to true, audio data does NOT get cached.
 no_audio_cache = true
+
+# Volume on startup between 0 and 100
+initial_volume = 90
 
 # If set to true, enables volume normalisation between songs.
 volume_normalisation = true
@@ -259,7 +289,7 @@ device_type = speaker
   ```
 
   You can use the keychain GUI on macOS to add an item respectively, or with the built-in `security` tool:
-  
+
   ```bash
   security add-generic-password -s spotifyd -D rust-keyring -a <your username> -w
   ```
@@ -343,7 +373,6 @@ Note:
 
 - Spotifyd will not work without Spotify Premium
 - The device name cannot contain spaces
-- Launching in discovery mode (username and password left empty) makes the daemon undiscoverable from within the app (tracking issue #373)
 
 ## Contributing
 

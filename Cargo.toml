@@ -18,9 +18,9 @@ fern = { version = "0.6.0", features = ["syslog-4"] }
 futures = "0.1"
 gethostname = "0.2.0"
 hex = "0.4"
-keyring = { version = "0.8.0", optional = true }
+keyring = { version = "0.9.0", optional = true }
 lazy_static = "1.4.0"
-libc = "0.2.67"
+libc = "0.2.73"
 log = "0.4.6"
 percent-encoding = "2.1.0"
 rspotify = "0.8.0"
@@ -38,7 +38,7 @@ toml = "0.5.6"
 serde_repr = "0.1.5"
 
 [target."cfg(target_os = \"macos\")".dependencies]
-whoami = "0.8.1"
+whoami = "0.9.0"
 
 [dev-dependencies]
 env_logger = "0.7"
@@ -51,3 +51,16 @@ default = ["alsa_backend"]
 portaudio_backend = ["librespot/portaudio-backend"]
 pulseaudio_backend = ["librespot/pulseaudio-backend"]
 rodio_backend = ["librespot/rodio-backend"]
+
+[package.metadata.deb]
+depends = "$auto, systemd, pulseaudio"
+features = [
+    "pulseaudio_backend",
+    "dbus_keyring",
+    "dbus_mpris",
+]
+assets = [
+    ["target/release/spotifyd", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/spotifyd/README", "644"],
+    ["contrib/spotifyd.service", "etc/systemd/user/", "644"],
+]

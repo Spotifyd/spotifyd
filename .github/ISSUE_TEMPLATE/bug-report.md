@@ -37,8 +37,9 @@ assignees: ''
 - [ ] rodio_backend
 
 **Versions (please complete the following information):**
- - OS: <!-- e.g. Ubuntu 18.04 LTS, Windows 10 -->
- - Spotifyd: <!-- commit hash or release version -->
+<!-- DO NOT use words like `latest`. Please specify the exact version/commit hash -->
+- OS: <!-- e.g. Ubuntu 18.04 LTS, Windows 10 -->
+- Spotifyd: <!-- commit hash or release version -->
 - cargo: <!-- cargo --version -->
 
 <!-- **Additional context**

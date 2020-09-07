@@ -1,13 +1,11 @@
+use crate::error::Error;
 use librespot::playback::player::PlayerEvent;
 use log::info;
-
 use std::{
     collections::HashMap,
     io::{self, Read, Write},
     process::{Command, ExitStatus, Stdio},
 };
-
-use crate::error::Error;
 
 /// Blocks while provided command is run in a subprocess using the provided
 /// shell. If successful, returns the contents of the subprocess's `stdout` as a
