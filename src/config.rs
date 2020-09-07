@@ -9,22 +9,14 @@ use librespot::{
     core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version},
     playback::config::{Bitrate as LSBitrate, PlayerConfig},
 };
-use log::{error, info};
+use log::{error, info, warn};
 use serde::Deserialize;
 use serde_repr::Deserialize_repr;
 use sha1::{Digest, Sha1};
-use std::{fmt, fs, io::BufRead, path::PathBuf, str::FromStr, string::ToString};
+use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
 use xdg;
-
-use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
-
-use crate::{
-    error::{Error as CrateError, ParseError},
-    process::run_program,
-    utils,
-};
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
