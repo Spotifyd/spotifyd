@@ -1,4 +1,7 @@
 # Spotifyd <!-- omit in toc -->
+---
+Looking for maintainers!
+---
 
 [![Dependabot Status][dependabot-badge]](https://dependabot.com)
 [![Github Actions - CD][cd-badge]][github-actions]
