@@ -10,8 +10,7 @@ use librespot::{
     playback::config::{Bitrate as LSBitrate, PlayerConfig},
 };
 use log::{error, info, warn};
-use serde::Deserialize;
-use serde_repr::Deserialize_repr;
+use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
 use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
@@ -191,12 +190,26 @@ lazy_static! {
 }
 
 /// Spotify's audio bitrate
-#[derive(Clone, Copy, Debug, Deserialize_repr, PartialEq, StructOpt)]
-#[repr(u16)]
+#[derive(Clone, Copy, Debug, PartialEq, StructOpt)]
 pub enum Bitrate {
-    Bitrate96 = 96,
-    Bitrate160 = 160,
-    Bitrate320 = 320,
+    Bitrate96,
+    Bitrate160,
+    Bitrate320,
+}
+
+impl<'de> Deserialize<'de> for Bitrate {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        match u16::deserialize(deserializer) {
+            Ok(96) => Ok(Self::Bitrate96),
+            Ok(160) => Ok(Self::Bitrate160),
+            Ok(320) => Ok(Self::Bitrate320),
+            Ok(x) => Err(D::Error::invalid_value(
+                Unexpected::Unsigned(x.into()),
+                &"a bitrate: 96, 160, 320",
+            )),
+            Err(e) => Err(e),
+        }
+    }
 }
 
 impl FromStr for Bitrate {
