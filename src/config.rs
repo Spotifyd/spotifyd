@@ -477,7 +477,7 @@ impl CliConfig {
         };
         info!("Loading config from {:?}", &config_file_path);
 
-        let content = match std::fs::read_to_string(config_file_path) {
+        let content = match fs::read_to_string(config_file_path) {
             Ok(s) => s,
             Err(e) => {
                 info!("Failed reading config file: {}", e);
