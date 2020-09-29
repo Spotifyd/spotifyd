@@ -169,19 +169,19 @@ spotifyd --help
 
 ### Configuration file
 
-`Spotifyd` is able to load configuration values from a file too. The file has to be named `spotifyd.conf` and reside in the user's configuration directory (`~/.config/spotifyd`) or the system configuration directory (`/etc` or `/etc/xdg/spotifyd`). This also applies to macOS!
+`Spotifyd` is able to load configuration values from a TOML file too. The file has to be named `spotifyd.conf` and reside in the user's configuration directory (`~/.config/spotifyd`) or the system configuration directory (`/etc` or `/etc/xdg/spotifyd`). This also applies to macOS!
 
 The configuration file consists of two sections, `global` and `spotifyd`, whereas `spotifyd` takes priority over `global`.
 
 The configuration file has the following format:
 
-```ini
+```toml
 [global]
 # Your Spotify account name.
-username = username
+username = "username"
 
 # Your Spotify account password.
-password = password
+password = "password"
 
 # A command that gets executed and can be used to
 # retrieve your password.
@@ -189,7 +189,7 @@ password = password
 #
 # This is an alternative to the `password` field. Both
 # can't be used simultaneously.
-password_cmd = command_that_writes_password_to_stdout
+password_cmd = "command_that_writes_password_to_stdout"
 
 # If set to true, `spotifyd` tries to look up your
 # password in the system's password storage.
@@ -200,30 +200,30 @@ use_keyring = true
 
 # The audio backend used to play the your music. To get
 # a list of possible backends, run `spotifyd --help`.
-backend = alsa
+backend = "alsa"
 
 # The alsa audio device to stream audio to. To get a
 # list of valid devices, run `aplay -L`,
-device = alsa_audio_device  # omit for macOS
+device = "alsa_audio_device"  # omit for macOS
 
 # The alsa control device. By default this is the same
 # name as the `device` field.
-control = alsa_audio_device  # omit for macOS
+control = "alsa_audio_device"  # omit for macOS
 
 # The alsa mixer used by `spotifyd`.
-mixer = PCM
+mixer = "PCM"
 
 # The volume controller. Each one behaves different to
 # volume increases. For possible values, run
 # `spotifyd --help`.
-volume_controller = alsa  # use softvol for macOS
+volume_controller = "alsa"  # use softvol for macOS
 
 # A command that gets executed in your shell after each song changes.
-on_song_change_hook = command_to_run_on_playback_events
+on_song_change_hook = "command_to_run_on_playback_events"
 
 # The name that gets displayed under the connect tab on
 # official clients. Spaces are not allowed!
-device_name = device_name_in_spotify_connect
+device_name = "device_name_in_spotify_connect"
 
 # The audio bitrate. 96, 160 or 320 kbit/s
 bitrate = 160
@@ -234,7 +234,7 @@ bitrate = 160
 #
 # Note: The file path does not get expanded. Environment variables and
 # shell placeholders like $HOME or ~ don't work!
-cache_path = cache_directory
+cache_path = "cache_directory"
 
 # If set to true, audio data does NOT get cached.
 no_audio_cache = true
@@ -252,12 +252,12 @@ normalisation_pregain = -10
 zeroconf_port = 1234
 
 # The proxy `spotifyd` will use to connect to spotify.
-proxy = http://proxy.example.org:8080
+proxy = "http://proxy.example.org:8080"
 
 # The displayed device type in Spotify clients.
 # Can be unknown, computer, tablet, smartphone, speaker, tv,
 # avr (Audio/Video Receiver), stb (Set-Top Box), and audiodongle.
-device_type = speaker
+device_type = "speaker"
 ```
 
 #### Alternatives to storing your password in the config file <!-- omit in toc -->
@@ -268,9 +268,9 @@ device_type = speaker
 
   For example (using the password-management utility [pass][pass-homepage]).
 
-  ```ini
+  ```toml
   # ~/.config/spotifyd/spotifyd.conf
-  password_cmd = pass spotify
+  password_cmd = "pass spotify"
   ```
 
 - **`use_keyring`** config entry / **`--use-keyring`** CLI flag <!-- omit in toc -->
