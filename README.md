@@ -169,7 +169,7 @@ spotifyd --help
 
 ### Configuration file
 
-`Spotifyd` is able to load configuration values from a TOML file too. The file has to be named `spotifyd.conf` and reside in the user's configuration directory (`~/.config/spotifyd`) or the system configuration directory (`/etc` or `/etc/xdg/spotifyd`). This also applies to macOS!
+`Spotifyd` is able to load configuration values from a [TOML](https://toml.io/en/v0.5.0) file too. The file has to be named `spotifyd.conf` and reside in the user's configuration directory (`~/.config/spotifyd`) or the system configuration directory (`/etc` or `/etc/xdg/spotifyd`). This also applies to macOS!
 
 The configuration file consists of two sections, `global` and `spotifyd`, whereas `spotifyd` takes priority over `global`.
 
