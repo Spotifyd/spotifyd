@@ -4,7 +4,6 @@ use crate::{
     utils,
 };
 use gethostname::gethostname;
-use lazy_static::lazy_static;
 use librespot::{
     core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version},
     playback::config::{Bitrate as LSBitrate, PlayerConfig},
@@ -18,26 +17,16 @@ use url::Url;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
-lazy_static! {
-    static ref BACKEND_VALUES: Vec<&'static str> = {
-        let mut vec = Vec::new();
-
-        if cfg!(feature = "alsa_backend") {
-            vec.push("alsa");
-        }
-        if cfg!(feature = "pulseaudio_backend") {
-            vec.push("pulseaudio");
-        }
-        if cfg!(feature = "portaudio_backend") {
-            vec.push("portaudio");
-        }
-        if cfg!(feature = "rodio_backend") {
-            vec.push("rodio");
-        }
-
-        vec
-    };
-}
+static BACKEND_VALUES: &[&str] = &[
+    #[cfg(feature = "alsa_backend")]
+    "alsa",
+    #[cfg(feature = "pulseaudio_backend")]
+    "pulseaudio",
+    #[cfg(feature = "portaudio_backend")]
+    "portaudio",
+    #[cfg(feature = "rodio_backend")]
+    "rodio",
+];
 
 /// The backend used by librespot
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
@@ -74,18 +63,13 @@ impl ToString for Backend {
     }
 }
 
-lazy_static! {
-    static ref VOLUME_CONTROLLER_VALUES: Vec<&'static str> = {
-        let mut vec = vec!["softvol"];
-
-        if cfg!(feature = "alsa_backend") {
-            vec.push("alsa");
-            vec.push("alsa_linear");
-        }
-
-        vec
-    };
-}
+static VOLUME_CONTROLLER_VALUES: &[&str] = &[
+    "softvol",
+    #[cfg(feature = "alsa_backend")]
+    "alsa",
+    #[cfg(feature = "alsa_backend")]
+    "alsa_linear",
+];
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
 #[serde(rename_all = "snake_case")]
@@ -109,18 +93,16 @@ impl FromStr for VolumeController {
     }
 }
 
-lazy_static! {
-    static ref DEVICETYPE_VALUES: Vec<&'static str> = vec![
-        "computer",
-        "tablet",
-        "smartphone",
-        "speaker",
-        "tv",
-        "avr",
-        "stb",
-        "audiodongle"
-    ];
-}
+static DEVICETYPE_VALUES: &[&str] = &[
+    "computer",
+    "tablet",
+    "smartphone",
+    "speaker",
+    "tv",
+    "avr",
+    "stb",
+    "audiodongle",
+];
 
 // Spotify's device type (copied from it's config.rs)
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
@@ -185,9 +167,7 @@ impl ToString for DeviceType {
     }
 }
 
-lazy_static! {
-    static ref BITRATE_VALUES: Vec<&'static str> = vec!["96", "160", "320"];
-}
+static BITRATE_VALUES: &[&str] = &["96", "160", "320"];
 
 /// Spotify's audio bitrate
 #[derive(Clone, Copy, Debug, PartialEq, StructOpt)]
