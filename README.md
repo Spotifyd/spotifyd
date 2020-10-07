@@ -67,15 +67,13 @@ To install the resulting binary, run
 cargo install --path . --locked
 ```
 
-### Installing with Cargo
-
-If you have `cargo` installed, you can directly install `spotifyd` by running:
+You can directly install `spotifyd` without cloning the repo by running:
 
 ```bash
 cargo install spotifyd --locked
 ```
 
-That will compile and install `spotifyd`'s latest version under `$HOME/.cargo/bin` for you.
+That will compile and install `spotifyd`'s latest version (from crates.io) under `$HOME/.cargo/bin` for you.
 
 #### Building a Debian package
 
