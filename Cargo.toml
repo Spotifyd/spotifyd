@@ -24,7 +24,6 @@ log = "0.4.6"
 percent-encoding = "2.1.0"
 rspotify = "0.8.0"
 serde = { version = "1.0.115", features = ["derive"] }
-serde_ini = "0.2.0"
 sha-1 = "0.9"
 structopt = "0.3.17"
 syslog = "4"
@@ -34,6 +33,7 @@ tokio-signal = "0.1"
 url = "1.7"
 xdg = "2.2"
 librespot = { version = "0.1.1", default-features = false, features = ["with-tremor"] }
+toml = "0.5.6"
 
 [target."cfg(target_os = \"macos\")".dependencies]
 whoami = "0.9.0"
