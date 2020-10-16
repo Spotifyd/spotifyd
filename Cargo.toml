@@ -19,7 +19,7 @@ futures = "0.1"
 gethostname = "0.2.0"
 hex = "0.4"
 keyring = { version = "0.9.0", optional = true }
-libc = "0.2.73"
+libc = "0.2.79"
 log = "0.4.6"
 percent-encoding = "2.1.0"
 rspotify = "0.8.0"
