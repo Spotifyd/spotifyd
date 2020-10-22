@@ -94,7 +94,13 @@ pub(crate) fn initial_state(
             name: config.device_name.clone(),
             device_type,
             volume: mixer().volume(),
-            linear_volume,
+            volume_ctrl: {
+                if linear_volume {
+                    librespot::core::config::VolumeCtrl::Linear
+                } else {
+                    librespot::core::config::VolumeCtrl::Fixed
+                }
+            },
         },
         device_id,
         zeroconf_port,
@@ -145,7 +151,7 @@ pub(crate) fn initial_state(
             audio_device: config.audio_device.clone(),
         },
         spotifyd_state: main_loop::SpotifydState {
-            ctrl_c_stream: Box::new(ctrl_c(&handle).flatten_stream()),
+            ctrl_c_stream: Box::new(ctrl_c().flatten_stream()),
             shutting_down: false,
             cache,
             device_name: config.device_name,

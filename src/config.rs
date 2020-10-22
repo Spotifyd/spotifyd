@@ -681,6 +681,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
             bitrate,
             normalisation: config.shared_config.volume_normalisation,
             normalisation_pregain,
+            ..PlayerConfig::default()
         },
         session_config: SessionConfig {
             user_agent: version::version_string(),

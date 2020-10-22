@@ -169,7 +169,13 @@ impl Future for MainLoopState {
                         name: self.spotifyd_state.device_name.clone(),
                         device_type: self.device_type,
                         volume: self.initial_volume.unwrap_or_else(|| mixer.volume()),
-                        linear_volume: self.linear_volume,
+                        volume_ctrl: {
+                            if self.linear_volume {
+                                librespot::core::config::VolumeCtrl::Linear
+                            } else {
+                                librespot::core::config::VolumeCtrl::Fixed
+                            }
+                        },
                     },
                     session.clone(),
                     player,

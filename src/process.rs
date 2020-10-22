@@ -62,14 +62,22 @@ pub(crate) fn spawn_program_on_event(
             env.insert("PLAYER_EVENT", "change".to_string());
             env.insert("TRACK_ID", new_track_id.to_base62());
         }
-        PlayerEvent::Started { track_id } => {
+        PlayerEvent::Started {
+            play_request_id: _,
+            track_id,
+            position_ms: _,
+        } => {
             env.insert("PLAYER_EVENT", "start".to_string());
             env.insert("TRACK_ID", track_id.to_base62());
         }
-        PlayerEvent::Stopped { track_id } => {
+        PlayerEvent::Stopped {
+            play_request_id: _,
+            track_id,
+        } => {
             env.insert("PLAYER_EVENT", "stop".to_string());
             env.insert("TRACK_ID", track_id.to_base62());
         }
+        _ => unreachable!(),
     }
     spawn_program(shell, cmd, env)
 }
