@@ -626,26 +626,25 @@ dependencies = [
 
 [[package]]
 name = "dbus"
-version = "0.9.0"
+version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22c08adfeb70c940c14d8af988fa854dcb5529e6141f2397e4e0fa4c9375d094"
+checksum = "48b5f0f36f1eebe901b0e6bee369a77ed3396334bf3f09abd46454a576f71819"
 dependencies = [
- "futures-channel",
- "futures-util",
  "libc",
  "libdbus-sys",
 ]
 
 [[package]]
 name = "dbus-tokio"
-version = "0.6.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6840421e249bf51f6ad1873b53f7423f14e712208792dfe4b3a8ff99f713309"
+checksum = "c4a58aa53eb3d63a9e0030471f6bb6a18e34553bdb6a7633149479f79fb907ad"
 dependencies = [
- "dbus 0.9.0",
- "libc",
+ "dbus 0.6.5",
+ "futures 0.1.29",
+ "log 0.3.9",
  "mio",
- "tokio 0.2.11",
+ "tokio-core",
 ]
 
 [[package]]
@@ -2877,7 +2876,7 @@ dependencies = [
  "alsa 0.3.0",
  "chrono",
  "daemonize",
- "dbus 0.9.0",
+ "dbus 0.6.5",
  "dbus-tokio",
  "env_logger 0.8.1",
  "failure",
@@ -3116,7 +3115,6 @@ dependencies = [
  "num_cpus",
  "pin-project-lite",
  "slab 0.4.2",
- "tokio-macros",
 ]
 
 [[package]]
@@ -3189,17 +3187,6 @@ dependencies = [
  "bytes 0.4.12",
  "futures 0.1.29",
  "log 0.4.11",
-]
-
-[[package]]
-name = "tokio-macros"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0c3acc6aa564495a0f2e1d59fab677cd7f81a19994cfc7f3ad0e64301560389"
-dependencies = [
- "proc-macro2 1.0.24",
- "quote 1.0.2",
- "syn 1.0.46",
 ]
 
 [[package]]
