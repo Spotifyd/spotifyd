@@ -5,7 +5,7 @@ name = "spotifyd"
 description = "A Spotify daemon"
 repository = "https://github.com/Spotifyd/spotifyd"
 license = "GPL-3.0-only"
-version = "0.2.24"
+version = "0.2.25"
 
 [dependencies]
 alsa = { version = "0.3", optional = true }
