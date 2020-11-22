@@ -13,9 +13,12 @@ Spotifyd streams music just like the official client, but is more lightweight an
 
 > __Note:__ Spotifyd requires a Spotify Premium account.
 
+- [Looking for maintainers!](#looking-for-maintainers)
 - [Installation](#installation)
   - [Provided binaries](#provided-binaries)
   - [Compiling from source](#compiling-from-source)
+  - [Installing with Cargo](#installing-with-cargo)
+    - [Building a Debian package](#building-a-debian-package)
     - [Feature Flags](#feature-flags)
       - [Media controls](#media-controls)
       - [Audio Backends](#audio-backends)
@@ -26,6 +29,8 @@ Spotifyd streams music just like the official client, but is more lightweight an
   - [CLI options](#cli-options)
   - [Configuration file](#configuration-file)
 - [Running as a system service](#running-as-a-system-service)
+  - [on Linux](#on-linux)
+  - [on macOS](#on-macos)
 - [Common issues](#common-issues)
 - [Contributing](#contributing)
 - [Credits](#credits)
@@ -305,20 +310,21 @@ If either of these options is given, the shell `spotifyd` will use to run its co
 
 ### on Linux
 
-A `systemd.service` unit file is provided to help run spotifyd as a service on systemd-based systems. The file `contrib/spotifyd.service` should be copied to either:
+To run this safely and in a stable way. It is recommend to create a restricted system user for this service all alone.:
+```
+sudo adduser --system  --gecos "spoty" --disabled-password --group --home /var/lib/spoty spoty && sudo usermod -aG audio spoty
+```
+A `systemd.service` unit file is provided to help run spotifyd as a service on systemd-based systems. The file `contrib/spotifyd.service` should be copied to:
 
 ```
-/etc/systemd/user/
-~/.config/systemd/user/
+/etc/systemd/system/
 ```
-
-Packagers of systemd-based distributions are encouraged to include the file in the former location. End-user should prefer the latter. It should be noted that some targets are not available when running under the user directory, such as `network-online.target`.
 
 Control of the daemon is handed over to systemd. The following example commands will run the service once and enable the service to always run on login in the future respectively:
 
 ```
-systemctl --user start spotifyd.service
-systemctl --user enable spotifyd.service
+sudo systemctl start spotifyd.service
+sudo systemctl enable spotifyd.service
 ```
 
 
