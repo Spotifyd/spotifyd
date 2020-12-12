@@ -7,8 +7,8 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=spotify
-Group=spotify
+User=spotifyd
+Group=spotifyd
 WorkingDirectory=/var/lib/spoty
 ExecStart=dbus-run-session /usr/sbin/spotifyd --config-path /var/lib/spoty/spotifyd.conf --no-daemon
 Restart=always
