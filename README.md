@@ -312,7 +312,7 @@ If either of these options is given, the shell `spotifyd` will use to run its co
 
 To run this safely and in a stable way. It is recommend to create a restricted system user for this service all alone.:
 ```
-sudo adduser --system  --gecos "spoty" --disabled-password --group --home /var/lib/spoty spoty && sudo usermod -aG audio spoty
+sudo adduser --system  --gecos "spotifyd" --disabled-password --group --home /var/lib/spotifyd spotifyd && sudo usermod -aG audio spotifyd
 ```
 A `systemd.service` unit file is provided to help run spotifyd as a service on systemd-based systems. The file `contrib/spotifyd.service` should be copied to:
 
