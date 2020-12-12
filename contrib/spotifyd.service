@@ -10,7 +10,7 @@ After=network-online.target
 User=spotifyd
 Group=spotifyd
 WorkingDirectory=/var/lib/spoty
-ExecStart=dbus-run-session /usr/sbin/spotifyd --config-path /var/lib/spoty/spotifyd.conf --no-daemon
+ExecStart=dbus-run-session /usr/sbin/spotifyd --config-path /var/lib/spotifyd/spotifyd.conf --no-daemon
 Restart=always
 RestartSec=12
 
