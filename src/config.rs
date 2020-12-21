@@ -274,6 +274,14 @@ pub struct SharedConfigValues {
     #[cfg_attr(not(feature = "dbus_keyring"), structopt(skip), serde(skip))]
     use_keyring: bool,
 
+    #[cfg_attr(
+        feature = "dbus_mpris",
+        structopt(long),
+        serde(alias = "use-mpris", default)
+    )]
+    #[cfg_attr(not(feature = "dbus_mpris"), structopt(skip), serde(skip))]
+    use_mpris: bool,
+
     /// A command that can be used to retrieve the Spotify account password
     #[structopt(
         conflicts_with = "password",
@@ -426,6 +434,7 @@ impl fmt::Debug for SharedConfigValues {
             .field("password", &password_value)
             .field("password_cmd", &password_cmd_value)
             .field("use_keyring", &self.use_keyring)
+            .field("use_mpris", &self.use_mpris)
             .field("on_song_change_hook", &self.on_song_change_hook)
             .field("cache_path", &self.cache_path)
             .field("no-audio-cache", &self.no_audio_cache)
@@ -534,6 +543,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) password: Option<String>,
     #[allow(unused)]
     pub(crate) use_keyring: bool,
+    pub(crate) use_mpris: bool,
     pub(crate) cache: Option<Cache>,
     pub(crate) backend: Option<String>,
     pub(crate) audio_device: Option<String>,
@@ -669,6 +679,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         username,
         password,
         use_keyring: config.shared_config.use_keyring,
+        use_mpris: config.shared_config.use_mpris,
         cache,
         backend: Some(backend),
         audio_device: config.shared_config.device,

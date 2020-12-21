@@ -155,6 +155,7 @@ pub(crate) fn initial_state(
         shell: config.shell,
         device_type,
         autoplay,
+        use_mpris: config.use_mpris,
     }
 }
 

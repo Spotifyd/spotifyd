@@ -198,6 +198,12 @@ password_cmd = "command_that_writes_password_to_stdout"
 # can't be used simultaneously.
 use_keyring = true
 
+#
+# If set to true, `spotifyd` tries to bind to the session dbus
+# and expose MPRIS controls
+#
+use_mpris = false
+
 # The audio backend used to play the your music. To get
 # a list of possible backends, run `spotifyd --help`.
 backend = "alsa"
