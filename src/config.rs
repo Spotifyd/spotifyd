@@ -623,14 +623,11 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .unwrap_or(DeviceType::Speaker)
         .to_string();
 
-    let pid = config
-        .pid
-        .map(|f| {
-            f.into_os_string()
-                .into_string()
-                .expect("Failed to convert PID file path to valid Unicode")
-        })
-        .or_else(|| None);
+    let pid = config.pid.map(|f| {
+        f.into_os_string()
+            .into_string()
+            .expect("Failed to convert PID file path to valid Unicode")
+    });
 
     let shell = utils::get_shell().unwrap_or_else(|| {
         info!("Unable to identify shell. Defaulting to \"sh\".");
