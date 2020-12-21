@@ -1,14 +1,22 @@
 name: Continuous Integration
 
-on:
-  pull_request:
-    paths:
-      - '**.rs'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
+on: pull_request
 
 jobs:
+  # The package provides a better algorithm for path-based filters.
+  pre_job:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v3.2.0
+        with:
+          paths: '["**/*.rs", "Cargo.toml", "Cargo.lock"]'
+
   codestyle:
+    needs: pre_job
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Installing Rust toolchain
@@ -25,9 +33,10 @@ jobs:
         with:
           command: fmt
           args: -- --check
-    
+
   lint:
     needs: [codestyle]
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Installing Rust toolchain
@@ -52,6 +61,7 @@ jobs:
 
   check:
     needs: [lint]
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -76,7 +86,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y -qq libasound2-dev libssl-dev libpulse-dev libdbus-1-dev
-      
+
       - name: Checking out sources
         uses: actions/checkout@v1
       - name: Checking Rust code
