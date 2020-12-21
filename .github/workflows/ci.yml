@@ -12,7 +12,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v3.2.0
         with:
-          paths: '["**/*.rs", "Cargo.toml", "Cargo.lock"]'
+          paths: '["**/*.rs", "Cargo.toml", "Cargo.lock", ".github/workflows/ci.yml"]'
 
   codestyle:
     needs: pre_job
