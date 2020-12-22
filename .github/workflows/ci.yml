@@ -12,7 +12,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v3.2.0
         with:
-          paths: '["**/*.rs", "Cargo.toml", "Cargo.lock", ".github/workflows/ci.yml"]'
+          paths: '["src/**", "Cargo.toml", "Cargo.lock", ".github/workflows/ci.yml"]'
 
   codestyle:
     needs: pre_job
@@ -35,7 +35,7 @@ jobs:
           args: -- --check
 
   lint:
-    needs: [codestyle]
+    needs: [pre_job, codestyle]
     if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -60,7 +60,7 @@ jobs:
           args: --all-targets --all-features -- -D warnings
 
   check:
-    needs: [lint]
+    needs: [pre_job, lint]
     if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
