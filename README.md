@@ -200,9 +200,10 @@ use_keyring = true
 
 #
 # If set to true, `spotifyd` tries to bind to the session dbus
-# and expose MPRIS controls
+# and expose MPRIS controls. When running headless, without a dbus session,
+# then set this to false to avoid binding errors
 #
-use_mpris = false
+use_mpris = true
 
 # The audio backend used to play the your music. To get
 # a list of possible backends, run `spotifyd --help`.
