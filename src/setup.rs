@@ -162,6 +162,11 @@ pub(crate) fn initial_state(
         shell: config.shell,
         device_type,
         autoplay,
+        session: None,
+        #[cfg(feature = "dbus_mpris")]
+        future_get_metadata: None,
+        #[cfg(feature = "dbus_mpris")]
+        tx: None,
     }
 }
 

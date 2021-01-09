@@ -26,6 +26,18 @@ use rspotify::spotify::{
 use std::{collections::HashMap, env, rc::Rc, thread};
 use tokio_core::reactor::Handle;
 
+pub struct ChangedTrack {
+    pub track: String,
+    pub album: String,
+    pub artist: String,
+}
+
+pub enum TrackChange {
+    Changed(ChangedTrack),
+    Started,
+    Stopped,
+}
+
 pub struct DbusServer {
     session: Session,
     handle: Handle,
@@ -34,6 +46,8 @@ pub struct DbusServer {
     token_request: Option<Box<dyn Future<Item = LibrespotToken, Error = MercuryError>>>,
     dbus_future: Option<Box<dyn Future<Item = (), Error = ()>>>,
     device_name: String,
+    tx: Option<futures::sync::mpsc::UnboundedSender<TrackChange>>,
+    rx: futures::sync::mpsc::UnboundedReceiver<TrackChange>,
 }
 
 const CLIENT_ID: &str = "2c1ea588dfbc4a989e2426f8385297c3";
@@ -50,6 +64,7 @@ impl DbusServer {
         handle: Handle,
         spirc: Rc<Spirc>,
         device_name: String,
+        rx: futures::sync::mpsc::UnboundedReceiver<TrackChange>,
     ) -> DbusServer {
         DbusServer {
             session,
@@ -59,6 +74,8 @@ impl DbusServer {
             token_request: None,
             dbus_future: None,
             device_name,
+            rx,
+            tx: None,
         }
     }
 
@@ -76,6 +93,12 @@ impl Future for DbusServer {
     type Item = ();
 
     fn poll(&mut self) -> Poll<(), ()> {
+        if let Some(ref mut tx2) = self.tx {
+            if let Async::Ready(msg) = self.rx.poll().unwrap() {
+                tx2.unbounded_send(msg.unwrap()).unwrap();
+            }
+        }
+
         let mut got_new_token = false;
         if self.is_token_expired() {
             if let Some(ref mut fut) = self.token_request {
@@ -84,11 +107,14 @@ impl Future for DbusServer {
                         .access_token(&token.access_token)
                         .expires_in(token.expires_in)
                         .expires_at(datetime_to_timestamp(token.expires_in));
+                    let (tx2, rx2) = futures::sync::mpsc::unbounded::<TrackChange>();
+                    self.tx = Some(tx2);
                     self.dbus_future = Some(create_dbus_server(
                         self.handle.clone(),
                         self.api_token.clone(),
                         self.spirc.clone(),
                         self.device_name.clone(),
+                        rx2,
                     ));
                     got_new_token = true;
                 }
@@ -119,6 +145,7 @@ fn create_dbus_server(
     api_token: RspotifyToken,
     spirc: Rc<Spirc>,
     device_name: String,
+    rx: futures::sync::mpsc::UnboundedReceiver<TrackChange>,
 ) -> Box<dyn Future<Item = (), Error = ()>> {
     macro_rules! spotify_api_method {
         ([ $sp:ident, $device:ident $(, $m:ident: $t:ty)*] $f:expr) => {
@@ -610,6 +637,88 @@ fn create_dbus_server(
     let async_connection = AConnection::new(connection.clone(), handle)
         .expect("Failed to create async dbus connection");
 
+    let connection2 = connection.clone();
+
+    let f2 = rx.for_each(move |message| {
+        match message {
+            TrackChange::Changed(changed_track) => {
+                println!("TrackChange::Changed");
+
+                let track_name2: Variant<Box<dyn RefArg>> =
+                    Variant(Box::new(changed_track.track.to_string()));
+
+                let album: Variant<Box<dyn RefArg>> =
+                    Variant(Box::new(changed_track.album.to_string()));
+                let artist: Variant<Box<dyn RefArg>> = Variant(Box::new(changed_track.artist));
+
+                let mut changed_properties2: HashMap<String, Variant<Box<dyn RefArg>>> =
+                    HashMap::new();
+                changed_properties2.insert("xesam:title".to_string(), track_name2);
+                changed_properties2.insert("xesam:album".to_string(), album);
+                changed_properties2.insert("xesam:artist".to_string(), artist);
+
+                let changed_properties3: Variant<Box<dyn RefArg>> =
+                    Variant(Box::new(changed_properties2));
+
+                let mut changed_properties = HashMap::new();
+                changed_properties.insert("Metadata".to_string(), changed_properties3);
+
+                let msg = dbus::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged {
+                    interface_name: "org.mpris.MediaPlayer2.Player".to_string(),
+                    changed_properties,
+                    invalidated_properties: Vec::new(),
+                };
+
+                use dbus::SignalArgs;
+                let msg = msg
+                    .to_emit_message(&dbus::Path::from_slice(b"/org/mpris/MediaPlayer2").unwrap());
+
+                connection2.clone().send(msg).unwrap();
+            }
+            TrackChange::Started => {
+                let paused: Variant<Box<dyn RefArg>> = Variant(Box::new("Playing".to_string()));
+
+                let mut changed_properties: HashMap<String, Variant<Box<dyn RefArg>>> =
+                    HashMap::new();
+                changed_properties.insert("PlaybackStatus".to_string(), paused);
+
+                let msg = dbus::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged {
+                    interface_name: "org.mpris.MediaPlayer2.Player".to_string(),
+                    changed_properties,
+                    invalidated_properties: Vec::new(),
+                };
+
+                use dbus::SignalArgs;
+                let msg = msg
+                    .to_emit_message(&dbus::Path::from_slice(b"/org/mpris/MediaPlayer2").unwrap());
+
+                connection2.clone().send(msg).unwrap();
+            }
+            TrackChange::Stopped => {
+                println!("TrackChange::Stopped");
+                let paused: Variant<Box<dyn RefArg>> = Variant(Box::new("Paused".to_string()));
+
+                let mut changed_properties: HashMap<String, Variant<Box<dyn RefArg>>> =
+                    HashMap::new();
+                changed_properties.insert("PlaybackStatus".to_string(), paused);
+
+                let msg = dbus::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged {
+                    interface_name: "org.mpris.MediaPlayer2.Player".to_string(),
+                    changed_properties,
+                    invalidated_properties: Vec::new(),
+                };
+
+                use dbus::SignalArgs;
+                let msg = msg
+                    .to_emit_message(&dbus::Path::from_slice(b"/org/mpris/MediaPlayer2").unwrap());
+
+                connection2.clone().send(msg).unwrap();
+            }
+        }
+
+        Ok(())
+    });
+
     let server = ATreeServer::new(
         connection,
         Box::new(tree),
@@ -618,8 +727,10 @@ fn create_dbus_server(
             .expect("Failed to unwrap async messages"),
     );
 
-    Box::new(server.for_each(|message| {
+    let f1 = Box::new(server.for_each(|message| {
         warn!("Unhandled DBus message: {:?}", message);
         Ok(())
-    }))
+    }));
+
+    Box::new(f1.join(f2).map(|_| ()))
 }
