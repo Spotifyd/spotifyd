@@ -585,7 +585,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .shared_config
         .initial_volume
         .map(|input| match input.parse::<i16>() {
-            Ok(v) if 0 <= v && v <= 100 => Some(v),
+            (0..=100).contains(&v),
             _ => {
                 warn!("Could not parse initial_volume (must be in the range 0-100)");
                 None
@@ -620,7 +620,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
                 .into_string()
                 .expect("Failed to convert PID file path to valid Unicode")
         })
-        .or_else(|| None);
+    
 
     let shell = utils::get_shell().unwrap_or_else(|| {
         info!("Unable to identify shell. Defaulting to \"sh\".");
