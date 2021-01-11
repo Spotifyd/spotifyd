@@ -40,7 +40,6 @@ pub(crate) fn initial_state(
             }
             _ => {
                 info!("Using alsa volume controller.");
-
                 let linear = match config.volume_controller {
                     config::VolumeController::AlsaLinear => true,
                     _ => false,
@@ -51,7 +50,7 @@ pub(crate) fn initial_state(
                             .clone()
                             .or_else(|| local_audio_device.clone())
                             .unwrap_or_else(|| "default".to_string()),
-                        mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
+                        mixer: local_mixer.clone().unwrap_or_else( || "Master".to_string()),
                         linear_scaling: linear,
                     }) as Box<dyn mixer::Mixer>
                 }) as Box<dyn FnMut() -> Box<dyn Mixer>>
