@@ -46,8 +46,8 @@ pub(crate) fn initial_state(
                 };
                 Box::new(move || { 
                     Box::new(alsa_mixer::AlsaMixer {
-                        device: local_control_device.clone().or_else( || local_audio_device.clone()).unwrap_or_else( || "default".to_string()),
-                        mixer: local_mixer.clone().unwrap_or_else( || "Master".to_string()),
+                        device: local_control_device.clone().or_else(|| local_audio_device.clone()).unwrap_or_else(|| "default".to_string()),
+                        mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
                         linear_scaling: linear,
                     }) as Box<dyn mixer::Mixer>
                 }) as Box<dyn FnMut() -> Box<dyn Mixer>>
