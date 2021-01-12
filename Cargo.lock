@@ -2862,7 +2862,6 @@ dependencies = [
  "dbus 0.6.5",
  "dbus-tokio",
  "env_logger 0.7.1",
- "failure",
  "fern",
  "futures 0.1.29",
  "gethostname",
