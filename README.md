@@ -2,7 +2,7 @@
 ---
 Looking for maintainers!
 ---
-
+[![Cargo Downloads][cargo-downloads]](https://img.shields.io/crates/d/spotifyd)
 [![Dependabot Status][dependabot-badge]](https://dependabot.com)
 [![Github Actions - CD][cd-badge]][github-actions]
 [![Github Actions - CI][ci-badge]][github-actions]
