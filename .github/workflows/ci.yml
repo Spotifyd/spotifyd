@@ -25,7 +25,7 @@ jobs:
         with:
           command: fmt
           args: -- --check
-    
+
   lint:
     needs: [codestyle]
     runs-on: ubuntu-latest
@@ -76,7 +76,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y -qq libasound2-dev libssl-dev libpulse-dev libdbus-1-dev
-      
+
       - name: Checking out sources
         uses: actions/checkout@v1
       - name: Checking Rust code
