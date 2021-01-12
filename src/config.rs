@@ -280,7 +280,7 @@ pub struct SharedConfigValues {
         serde(alias = "use-mpris", default)
     )]
     #[cfg_attr(not(feature = "dbus_mpris"), structopt(skip), serde(skip))]
-    use_mpris: bool,
+    use_mpris: Option<bool>,
 
     /// A command that can be used to retrieve the Spotify account password
     #[structopt(
@@ -676,7 +676,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         username,
         password,
         use_keyring: config.shared_config.use_keyring,
-        use_mpris: config.shared_config.use_mpris,
+        use_mpris: config.shared_config.use_mpris.unwrap_or(true),
         cache,
         backend: Some(backend),
         audio_device: config.shared_config.device,
