@@ -396,6 +396,17 @@ fn create_dbus_server(
             Ok(())
         });
 
+    let property_volume = f
+        .property::<f64, _>("Volume", ())
+        .access(Access::Read)
+        .on_get(spotify_api_property!([sp, _device]
+            if let Ok(Some(player)) = sp.current_playback(None) {
+                player.device.volume_percent as f64
+            } else {
+                0.0
+            }
+        ));
+
     let property_max_rate = f
         .property::<f64, _>("MaximumRate", ())
         .access(Access::Read)
@@ -584,6 +595,7 @@ fn create_dbus_server(
         .add_m(method_open_uri)
         .add_p(property_playback_status)
         .add_p(property_rate)
+        .add_p(property_volume)
         .add_p(property_max_rate)
         .add_p(property_min_rate)
         .add_p(property_loop_status)

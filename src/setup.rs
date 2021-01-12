@@ -41,10 +41,7 @@ pub(crate) fn initial_state(
             _ => {
                 info!("Using alsa volume controller.");
 
-                let linear = matches!(
-                    config.volume_controller,
-                    config::VolumeController::AlsaLinear
-                );
+                let linear = matches!(config.volume_controller, config::VolumeController::AlsaLinear);
 
                 Box::new(move || {
                     Box::new(alsa_mixer::AlsaMixer {
@@ -74,12 +71,9 @@ pub(crate) fn initial_state(
     let autoplay = config.autoplay;
     let device_id = session_config.device_id.clone();
 
-    #[cfg(feature = "alsa_backend")]
-    let linear_volume = matches!(
-        config.volume_controller,
-        config::VolumeController::AlsaLinear
-    );
-
+    #[cfg(feature = "alsa_backend")]  
+    let linear_volume = matches!(config.volume_controller, config::VolumeController::AlsaLinear);
+  
     #[cfg(not(feature = "alsa_backend"))]
     let linear_volume = false;
 
