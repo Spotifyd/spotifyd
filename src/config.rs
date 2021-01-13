@@ -510,7 +510,8 @@ impl SharedConfigValues {
             on_song_change_hook,
             zeroconf_port,
             proxy,
-            device_type
+            device_type,
+            use_mpris
         );
 
         // Handles boolean merging.
