@@ -2854,7 +2854,7 @@ checksum = "4bf77cb82ba8453b42b6ae1d692e4cdc92f9a47beaf89a847c8be83f4e328ad3"
 
 [[package]]
 name = "spotifyd"
-version = "0.2.25"
+version = "0.3.0"
 dependencies = [
  "alsa 0.3.0",
  "chrono",
