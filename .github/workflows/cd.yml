@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         build_target: [macos, linux, linux-armhf, linux-armv6]
-        rust: [stable]
+        rust: [1.47.0]
         artifact_type: ['slim', 'default', 'full']  # The build strategy will build all types for each OS specified
         include:
           - artifact_type: 'slim'               # Slim version has no features enabled by default.
