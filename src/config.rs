@@ -717,7 +717,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut global_section = SharedConfigValues {
+        let global_section = SharedConfigValues {
             username: Some("testUserName".to_string()),
             ..Default::default()
         };
