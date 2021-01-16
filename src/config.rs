@@ -596,7 +596,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .shared_config
         .initial_volume
         .map(|input| match input.parse::<i16>() {
-            Ok(v) if 0 <= v && v <= 100 => Some(v),
+            Ok(v) if (0..=100).contains(&v) => Some(v),
             _ => {
                 warn!("Could not parse initial_volume (must be in the range 0-100)");
                 None
