@@ -712,11 +712,15 @@ mod tests {
 
     #[test]
     fn test_section_merging() {
-        let mut spotifyd_section = SharedConfigValues::default();
-        spotifyd_section.password = Some("123456".to_string());
+        let mut spotifyd_section = SharedConfigValues {
+            password: Some("123456".to_string()),
+            ..Default::default()
+        };
 
-        let mut global_section = SharedConfigValues::default();
-        global_section.username = Some("testUserName".to_string());
+        let mut global_section = SharedConfigValues {
+            username: Some("testUserName".to_string()),
+            ..Default::default()
+        };
 
         // The test only makes sense if both sections differ.
         assert!(spotifyd_section != global_section, true);
