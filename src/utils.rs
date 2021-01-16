@@ -12,8 +12,8 @@ fn get_shell_ffi() -> Option<String> {
 
     let mut result = ptr::null_mut();
     unsafe {
-        let amt = match libc::sysconf(libc::_SC_GETPW_R_SIZE_MAX) {
-            n if n < 0 => 512 as usize,
+        let amt: usize = match libc::sysconf(libc::_SC_GETPW_R_SIZE_MAX) {
+            n if n < 0 => 512,
             n => n as usize,
         };
         let mut buf = Vec::with_capacity(amt);

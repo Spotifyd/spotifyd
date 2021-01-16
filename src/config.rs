@@ -596,7 +596,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .shared_config
         .initial_volume
         .map(|input| match input.parse::<i16>() {
-            Ok(v) if 0 <= v && v <= 100 => Some(v),
+            Ok(v) if (0..=100).contains(&v) => Some(v),
             _ => {
                 warn!("Could not parse initial_volume (must be in the range 0-100)");
                 None
@@ -712,11 +712,15 @@ mod tests {
 
     #[test]
     fn test_section_merging() {
-        let mut spotifyd_section = SharedConfigValues::default();
-        spotifyd_section.password = Some("123456".to_string());
+        let mut spotifyd_section = SharedConfigValues {
+            password: Some("123456".to_string()),
+            ..Default::default()
+        };
 
-        let mut global_section = SharedConfigValues::default();
-        global_section.username = Some("testUserName".to_string());
+        let global_section = SharedConfigValues {
+            username: Some("testUserName".to_string()),
+            ..Default::default()
+        };
 
         // The test only makes sense if both sections differ.
         assert!(spotifyd_section != global_section, true);
