@@ -337,7 +337,7 @@ pub struct SharedConfigValues {
 
     /// Initial volume between 0 and 100
     #[structopt(long, value_name = "initial_volume")]
-    initial_volume: Option<String>,
+    initial_volume: Option<u16>,
 
     /// Enable to normalize the volume during playback
     #[structopt(long)]
@@ -595,14 +595,6 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let initial_volume: Option<u16> = config
         .shared_config
         .initial_volume
-        .map(|input| match input.parse::<i16>() {
-            Ok(v) if (0..=100).contains(&v) => Some(v),
-            _ => {
-                warn!("Could not parse initial_volume (must be in the range 0-100)");
-                None
-            }
-        })
-        .flatten()
         .map(|volume| (volume as i32 * 0xFFFF / 100) as u16);
 
     let device_name = config
