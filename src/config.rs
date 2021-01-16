@@ -8,7 +8,7 @@ use librespot::{
     core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version},
     playback::config::{Bitrate as LSBitrate, PlayerConfig},
 };
-use log::{error, info, warn};
+use log::{error, info};
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
 use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
