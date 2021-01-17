@@ -245,7 +245,8 @@ cache_path = "cache_directory"
 no_audio_cache = true
 
 # Volume on startup between 0 and 100
-initial_volume = 90
+# NOTE: This variable's type will change in v0.4, to a number (instead of string)
+initial_volume = "90"
 
 # If set to true, enables volume normalisation between songs.
 volume_normalisation = true
