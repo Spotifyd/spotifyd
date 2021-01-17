@@ -882,7 +882,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c9a4820f0ccc8a7afd67c39a0f1a0f4b07ca1725164271a64939d7aeb9af065"
 dependencies = [
  "log 0.4.8",
- "syslog",
+ "syslog 4.0.1",
 ]
 
 [[package]]
@@ -3001,7 +3001,7 @@ dependencies = [
  "serde",
  "sha-1 0.9.1",
  "structopt",
- "syslog",
+ "syslog 5.0.0",
  "tokio-core",
  "tokio-io",
  "tokio-signal 0.1.5",
@@ -3126,6 +3126,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a0641142b4081d3d44beffa4eefd7346a228cdf91ed70186db2ca2cef762d327"
 dependencies = [
  "error-chain 0.11.0",
+ "libc",
+ "log 0.4.8",
+ "time",
+]
+
+[[package]]
+name = "syslog"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a5d8ef1b679c07976f3ee336a436453760c470f54b5e7237556728b8589515d"
+dependencies = [
+ "error-chain 0.12.1",
  "libc",
  "log 0.4.8",
  "time",
