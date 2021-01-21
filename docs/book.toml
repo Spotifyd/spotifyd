@@ -1,0 +1,6 @@
+[book]
+authors = ["@Spotifyd/maintainers and contributors"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Spotifyd"
