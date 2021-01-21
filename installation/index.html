@@ -1,0 +1,290 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Installation Instructions - Spotifyd</title>
+        
+        
+
+
+        <!-- Custom HTML head -->
+        
+
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        
+        <link rel="icon" href="../favicon.svg">
+        
+        
+        <link rel="shortcut icon" href="../favicon.png">
+        
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        
+        <link rel="stylesheet" href="../fonts/fonts.css">
+        
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../Introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="../installation/index.html" class="active"><strong aria-hidden="true">1.</strong> Installation Instructions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../installation/Raspberry-Pi.html"><strong aria-hidden="true">1.1.</strong> Installing on a Raspberry Pi</a></li><li class="chapter-item expanded "><a href="../installation/Ubuntu.html"><strong aria-hidden="true">1.2.</strong> Installing on Ubuntu (from source)</a></li><li class="chapter-item expanded "><a href="../installation/Cross-Compiling-on-Ubuntu.html"><strong aria-hidden="true">1.3.</strong> Cross Compiling on Ubuntu</a></li><li class="chapter-item expanded "><a href="../installatio/MacOS.html"><strong aria-hidden="true">1.4.</strong> Installing with Homebrew on macOS</a></li><li class="chapter-item expanded "><a href="../Feature-flags.html"><strong aria-hidden="true">1.5.</strong> Feature Flags</a></li></ol></li><li class="chapter-item expanded "><a href="../config/index.html"><strong aria-hidden="true">2.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../config/Cli.html"><strong aria-hidden="true">2.1.</strong> CLI options</a></li><li class="chapter-item expanded "><a href="../config/File.html"><strong aria-hidden="true">2.2.</strong> Configuration file</a></li><li class="chapter-item expanded "><strong aria-hidden="true">2.3.</strong> Running as a Service</li><li><ol class="section"><li class="chapter-item expanded "><a href="../config/services/Sytemd.html"><strong aria-hidden="true">2.3.1.</strong> Running as systemd service</a></li><li class="chapter-item expanded "><a href="../config/services/MacOS.html"><strong aria-hidden="true">2.3.2.</strong> Running as launchd service (MacOS)</a></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                        
+                    </div>
+
+                    <h1 class="menu-title">Spotifyd</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#installation" id="installation">Installation</a></h1>
+<h2><a class="header" href="#provided-binaries" id="provided-binaries">Provided binaries</a></h2>
+<p>We provide pre-built binaries through GitHub Actions for the more popular platforms: Linux, macOS and ARMv7. You can find them <a href="https://github.com/Spotifyd/spotifyd/releases">here</a>. For extra integrity, the file's SHA-512 gets calculated and uploaded as well.</p>
+<p>The provided binaries come in two flavours, <code>slim</code> and <code>full</code>. Each are compiled with different features. <code>slim</code> only contains the platform's most used audio backend, <code>full</code> has also all optional features enabled (see <a href="#feature-flags">Feature Flags</a>).</p>
+<h2><a class="header" href="#provided-packages" id="provided-packages">Provided packages</a></h2>
+<p>There are packages for the following systems:</p>
+<ul>
+<li><a href="https://aur.archlinux.org/packages/?O=0&amp;K=spotifyd">Arch Linux (via an AUR)</a></li>
+<li><a href="./MacOS.html">MacOS (via homebrew)</a></li>
+</ul>
+<p>It is also available as a <a href="https://snapcraft.io/spotifyd">snap package</a>.</p>
+<h2><a class="header" href="#building-from-source" id="building-from-source">Building from source</a></h2>
+<p>You can also compile <code>Spotifyd</code> yourself, allowing you to make use of feature flags. <code>Spotifyd</code> is written in Rust. You can download the toolchain (compiler and package manager) over at <a href="https://rustup.rs">rustup.rs</a>. Follow their instructions to get started.</p>
+<blockquote>
+<p><strong>Note:</strong> Please make sure that you compile the package using the most recent <code>stable</code> verison of Rust available throug <code>rustup</code>. Some distro versions are quite outdated and might result in compilation errors.</p>
+</blockquote>
+<p><code>Spotifyd</code> might require additional libraries during build and runtime, depending on your platform and the way to compile it (static or dynamic). The following table shows the libraries needed for each OS respectively.</p>
+<table><thead><tr><th>Target Platform</th><th>Libraries</th></tr></thead><tbody>
+<tr><td>Fedora</td><td>alsa-lib-devel make gcc</td></tr>
+<tr><td>openSUSE</td><td>alsa-devel make gcc</td></tr>
+<tr><td>Debian</td><td>libasound2-dev libssl-dev libpulse-dev libdbus-1-dev</td></tr>
+<tr><td>Arch</td><td>base-devel alsa-lib libogg libpulse dbus</td></tr>
+<tr><td>macOS</td><td>dbus pkg-config portaudio</td></tr>
+</tbody></table>
+<blockquote>
+<p><strong>Note:</strong> The package names for Linux are the ones used on Debian based distributions (like Ubuntu). You will need to adapt the packages for your distribution respectively.</p>
+</blockquote>
+<p>To compile the binary, run</p>
+<pre><code class="language-bash">cargo build --release
+</code></pre>
+<p>To install the resulting binary, run</p>
+<pre><code class="language-bash">cargo install --path . --locked
+</code></pre>
+<h3><a class="header" href="#installing-with-cargo" id="installing-with-cargo">Installing with Cargo</a></h3>
+<p>If you have <code>cargo</code> installed, you can directly install <code>spotifyd</code> by running:</p>
+<pre><code class="language-bash">cargo install spotifyd --locked
+</code></pre>
+<p>That will compile and install <code>spotifyd</code>'s latest version under <code>$HOME/.cargo/bin</code> for you.</p>
+<h3><a class="header" href="#building-a-debian-package" id="building-a-debian-package">Building a Debian package</a></h3>
+<p>You can use the <code>cargo-deb</code> create in order to build a Debian package from source.
+Install it by:</p>
+<pre><code class="language-bash">cargo install cargo-deb
+</code></pre>
+<p>Then you can build and install the Debian package with:</p>
+<pre><code class="language-bash">cargo deb --install
+</code></pre>
+<p>Note, that when building a Debian package, the <code>--release</code> is passed to the
+build command already and you do not need to specify it yourself.  See for the
+flags that are set by default in <code>Cargo.toml</code>.</p>
+<h3><a class="header" href="#feature-flags" id="feature-flags">Feature Flags</a></h3>
+<p><code>Spotifyd</code> is split into a base package plus additional features that can be toggled on or off during compilation. Those can be split into two groups: The audio backend features that are responsible for playing back the music and additional functionality features, which enhance your experience using <code>spotifyd</code>.</p>
+<p>To enable an additional audio backend, pass <code>&lt;audio_backend_name&gt;_backend</code> as a feature flag. We currently support <code>alsa</code>, <code>pulseaudio</code> and <code>portaudio</code>.</p>
+<p><code>Spotifyd</code> provides the following additional functionality:</p>
+<table><thead><tr><th>Feature Flag</th><th>Description</th></tr></thead><tbody>
+<tr><td>dbus_keyring</td><td>Provides password authentication over the system's keyring (supports all platforms)</td></tr>
+<tr><td>dbus_mpris</td><td>Provides multimedia key support (Linux only)</td></tr>
+</tbody></table>
+<blockquote>
+<p><strong>Note:</strong> Compiling Spotifyd with all features and the pulseaudio backend on Ubuntu would result in the following command: <code>cargo build --release --no-default-features --features pulseaudio_backend,dbus_keyring,dbus_mpris</code></p>
+</blockquote>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="../Introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="../installation/Raspberry-Pi.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a rel="prev" href="../Introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a rel="next" href="../installation/Raspberry-Pi.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        
+
+        
+
+        
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
