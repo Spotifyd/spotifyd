@@ -68,7 +68,7 @@ fn main() -> Result<(), Report> {
         .with_section(|| {
             concat!(
                 "the config format should be valid TOML\n",
-                "we recently changed the config format, check the README for more info"
+                "we recently changed the config format, see https://github.com/Spotifyd/spotifyd/issues/765"
             )
             .header("note:")
         })?;
