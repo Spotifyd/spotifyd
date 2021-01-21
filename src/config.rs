@@ -3,6 +3,7 @@ use crate::{
     process::run_program,
     utils,
 };
+use color_eyre::Report;
 use gethostname::gethostname;
 use librespot::{
     core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version},
@@ -456,12 +457,12 @@ impl fmt::Debug for SharedConfigValues {
 }
 
 impl CliConfig {
-    pub fn load_config_file_values(&mut self) {
+    pub fn load_config_file_values(&mut self) -> Result<(), Report> {
         let config_file_path = match self.config_path.clone().or_else(get_config_file) {
             Some(p) => p,
             None => {
                 info!("No config file specified. Running with default values");
-                return;
+                return Ok(());
             }
         };
         info!("Loading config from {:?}", &config_file_path);
@@ -470,16 +471,18 @@ impl CliConfig {
             Ok(s) => s,
             Err(e) => {
                 info!("Failed reading config file: {}", e);
-                return;
+                return Ok(());
             }
         };
 
-        let config_content: FileConfig = toml::from_str(&content).unwrap();
+        let config_content: FileConfig = toml::from_str(&content)?;
 
         // The call to get_merged_sections consumes the FileConfig!
         if let Some(merged_sections) = config_content.get_merged_sections() {
             self.shared_config.merge_with(merged_sections);
         }
+
+        Ok(())
     }
 }
 
