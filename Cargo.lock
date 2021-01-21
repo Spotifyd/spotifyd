@@ -739,6 +739,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "dbus"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b1334c0161ddfccd239ac81b188d62015b049c986c5cd0b7f9447cf2c54f4a3"
+dependencies = [
+ "libc",
+ "libdbus-sys",
+]
+
+[[package]]
 name = "dbus-tokio"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3085,7 +3095,7 @@ dependencies = [
  "chrono",
  "color-eyre",
  "daemonize",
- "dbus 0.6.5",
+ "dbus 0.9.1",
  "dbus-tokio",
  "env_logger 0.7.1",
  "fern",
