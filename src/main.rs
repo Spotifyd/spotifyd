@@ -1,6 +1,7 @@
 #![cfg(unix)]
 
 use crate::config::CliConfig;
+use color_eyre::{eyre::Context, Help, Report, SectionExt};
 use daemonize::Daemonize;
 use log::{error, info, trace, LevelFilter};
 use std::panic;
@@ -42,7 +43,7 @@ fn setup_logger(log_target: LogTarget, log_level: LevelFilter) {
     logger.apply().expect("Couldn't initialize logger");
 }
 
-fn main() {
+fn main() -> Result<(), Report> {
     let mut cli_config: CliConfig = CliConfig::from_args();
 
     let is_daemon = !cli_config.no_daemon;
@@ -59,8 +60,18 @@ fn main() {
     };
 
     setup_logger(log_target, log_level);
+    color_eyre::install().expect("Coundn't initialize error reporting");
 
-    cli_config.load_config_file_values();
+    cli_config
+        .load_config_file_values()
+        .wrap_err("could not load the config file")
+        .with_section(|| {
+            concat!(
+                "the config format should be valid TOML\n",
+                "we recently changed the config format, check the README for more info"
+            )
+            .header("note:")
+        })?;
     trace!("{:?}", &cli_config);
 
     // Returns the old SpotifydConfig struct used within the rest of the daemon.
@@ -98,4 +109,6 @@ fn main() {
 
     let initial_state = setup::initial_state(handle, internal_config);
     core.run(initial_state).unwrap();
+
+    Ok(())
 }
