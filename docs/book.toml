@@ -1,5 +1,5 @@
 [book]
-authors = ["Sven Lechner", "vringar"]
+authors = ["@Spotifyd/maintainers and contributors"]
 language = "en"
 multilingual = false
 src = "src"
