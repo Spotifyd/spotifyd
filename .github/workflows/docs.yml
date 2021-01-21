@@ -22,9 +22,6 @@ jobs:
 
       - name: Build book
         run: mdbook build ./docs
-      
-      - name: Write CNAME file
-        run: "echo 'jen.zerotask.net' > ./docs/book/CNAME"
 
       - name: Deploy on gh-pages
         uses: peaceiris/actions-gh-pages@v3
