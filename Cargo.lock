@@ -2707,9 +2707,9 @@ dependencies = [
 
 [[package]]
 name = "rspotify"
-version = "0.8.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a924a166cfb1315c8d9c89148e438a1337feb655ce052fc6dc952af8018bad93"
+checksum = "eefd7bb58b714606b30a490f751d7926942e2874eef5e82934d60d7a4a68dca4"
 dependencies = [
  "base64 0.10.1",
  "chrono",
@@ -3326,7 +3326,6 @@ dependencies = [
  "lazy_static",
  "memchr",
  "mio",
- "num_cpus",
  "pin-project-lite 0.1.4",
  "slab 0.4.2",
 ]
