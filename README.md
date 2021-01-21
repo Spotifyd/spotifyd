@@ -45,10 +45,11 @@ You can also compile `Spotifyd` yourself, allowing you to make use of feature fl
 
 | Target Platform | Libraries                                            |
 |-----------------|------------------------------------------------------|
-| Fedora          | alsa-lib-devel, make, gcc                            |
-| openSUSE        | alsa-devel, make, gcc                                |
+| Fedora          | alsa-lib-devel make gcc                              |
+| openSUSE        | alsa-devel make gcc                                  |
 | Debian          | libasound2-dev libssl-dev libpulse-dev libdbus-1-dev |
-| macOS           | dbus, pkg-config, portaudio                          |
+| Arch            | base-devel alsa-lib libogg libpulse dbus             |
+| macOS           | dbus pkg-config portaudio                            |
 
 > __Note:__ The package names for Linux are the ones used on Debian based distributions (like Ubuntu). You will need to adapt the packages for your distribution respectively.
 
@@ -244,7 +245,8 @@ cache_path = "cache_directory"
 no_audio_cache = true
 
 # Volume on startup between 0 and 100
-initial_volume = 90
+# NOTE: This variable's type will change in v0.4, to a number (instead of string)
+initial_volume = "90"
 
 # If set to true, enables volume normalisation between songs.
 volume_normalisation = true
