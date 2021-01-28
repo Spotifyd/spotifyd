@@ -9,7 +9,7 @@ use librespot::{
     },
     core::{
         cache::Cache,
-        config::{ConnectConfig, DeviceType, SessionConfig},
+        config::{ConnectConfig, DeviceType, SessionConfig, VolumeCtrl},
         session::Session,
     },
     playback::{
@@ -94,7 +94,7 @@ pub(crate) struct MainLoopState {
     pub(crate) session_config: SessionConfig,
     pub(crate) handle: Handle,
     pub(crate) autoplay: bool,
-    pub(crate) linear_volume: bool,
+    pub(crate) volume_ctrl: VolumeCtrl,
     pub(crate) initial_volume: Option<u16>,
     pub(crate) running_event_program: Option<Child>,
     pub(crate) shell: String,
@@ -170,7 +170,7 @@ impl Future for MainLoopState {
                         name: self.spotifyd_state.device_name.clone(),
                         device_type: self.device_type,
                         volume: self.initial_volume.unwrap_or_else(|| mixer.volume()),
-                        linear_volume: self.linear_volume,
+                        volume_ctrl: self.volume_ctrl.clone(),
                     },
                     session.clone(),
                     player,
