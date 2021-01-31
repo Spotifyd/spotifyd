@@ -317,16 +317,19 @@ pub struct SharedConfigValues {
     volume_controller: Option<VolumeController>,
 
     /// The audio device
+    #[cfg(feature = "alsa-backend")]
     #[structopt(long, value_name = "string")]
-    device: Option<String>,
+    device: String,
 
     /// The control device
+    #[cfg(feature = "alsa-backend")]
     #[structopt(long, value_name = "string")]
-    control: Option<String>,
+    control: String,
 
     /// The mixer to use
+    #[cfg(feature = "alsa-backend")]
     #[structopt(long, value_name = "string")]
-    mixer: Option<String>,
+    mixer: String,
 
     /// The device name displayed in Spotify
     #[structopt(long, short, value_name = "string")]
@@ -429,7 +432,8 @@ impl fmt::Debug for SharedConfigValues {
             None
         };
 
-        f.debug_struct("SharedConfigValues")
+        let mut deb_struct = f.debug_struct("SharedConfigValues");
+        deb_struct
             .field("username", &username_value)
             .field("username_cmd", &username_cmd_value)
             .field("password", &password_value)
@@ -441,9 +445,6 @@ impl fmt::Debug for SharedConfigValues {
             .field("no-audio-cache", &self.no_audio_cache)
             .field("backend", &self.backend)
             .field("volume_controller", &self.volume_controller)
-            .field("device", &self.device)
-            .field("control", &self.control)
-            .field("mixer", &self.mixer)
             .field("device_name", &self.device_name)
             .field("bitrate", &self.bitrate)
             .field("initial_volume", &self.initial_volume)
@@ -451,8 +452,18 @@ impl fmt::Debug for SharedConfigValues {
             .field("normalisation_pregain", &self.normalisation_pregain)
             .field("zeroconf_port", &self.zeroconf_port)
             .field("proxy", &self.proxy)
-            .field("device_type", &self.device_type)
-            .finish()
+            .field("device_type", &self.device_type);
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "alsa-backend")] {
+                deb_struct
+                .field("device", &self.device)
+                .field("control", &self.control)
+                .field("mixer", &self.mixer)
+                .finish()
+            } else {
+                deb_struct.finish()
+            }
+        }
     }
 }
 
@@ -494,28 +505,52 @@ impl SharedConfigValues {
             }
         }
 
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "alsa-backend")] {
+                merge!(
+                    backend,
+                    username,
+                    username_cmd,
+                    password,
+                    password_cmd,
+                    normalisation_pregain,
+                    bitrate,
+                    initial_volume,
+                    device_name,
+                    mixer,
+                    control,
+                    device,
+                    volume_controller,
+                    cache_path,
+                    on_song_change_hook,
+                    zeroconf_port,
+                    proxy,
+                    device_type,
+                    use_mpris
+                );
+            } else {
+                merge!(
+                    backend,
+                    username,
+                    username_cmd,
+                    password,
+                    password_cmd,
+                    normalisation_pregain,
+                    bitrate,
+                    initial_volume,
+                    device_name,
+                    volume_controller,
+                    cache_path,
+                    on_song_change_hook,
+                    zeroconf_port,
+                    proxy,
+                    device_type,
+                    use_mpris
+                );
+            }
+        }
+
         // Handles Option<T> merging.
-        merge!(
-            backend,
-            username,
-            username_cmd,
-            password,
-            password_cmd,
-            normalisation_pregain,
-            bitrate,
-            initial_volume,
-            device_name,
-            mixer,
-            control,
-            device,
-            volume_controller,
-            cache_path,
-            on_song_change_hook,
-            zeroconf_port,
-            proxy,
-            device_type,
-            use_mpris
-        );
 
         // Handles boolean merging.
         self.use_keyring |= other.use_keyring;
@@ -550,12 +585,12 @@ pub(crate) struct SpotifydConfig {
     pub(crate) use_mpris: bool,
     pub(crate) cache: Option<Cache>,
     pub(crate) backend: Option<String>,
-    pub(crate) audio_device: Option<String>,
-    #[allow(unused)]
-    pub(crate) control_device: Option<String>,
-    #[allow(unused)]
-    pub(crate) mixer: Option<String>,
-    #[allow(unused)]
+    #[cfg(feature = "alsa-backend")]
+    pub(crate) audio_device: String,
+    #[cfg(feature = "alsa-backend")]
+    pub(crate) control_device: String,
+    #[cfg(feature = "alsa-backend")]
+    pub(crate) mixer: String,
     pub(crate) volume_controller: VolumeController,
     pub(crate) initial_volume: Option<u16>,
     pub(crate) device_name: String,
@@ -683,8 +718,11 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         use_mpris: config.shared_config.use_mpris.unwrap_or(true),
         cache,
         backend: Some(backend),
+        #[cfg(feature = "alsa-backend")]
         audio_device: config.shared_config.device,
+        #[cfg(feature = "alsa-backend")]
         control_device: config.shared_config.control,
+        #[cfg(feature = "alsa-backend")]
         mixer: config.shared_config.mixer,
         volume_controller,
         initial_volume,

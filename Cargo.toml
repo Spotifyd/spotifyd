@@ -34,6 +34,7 @@ xdg = "2.2"
 librespot = { version = "0.1.1", default-features = false, features = ["with-tremor"] }
 toml = "0.5.8"
 color-eyre = "0.5"
+cfg-if = "1"
 
 [target."cfg(target_os = \"macos\")".dependencies]
 whoami = "0.9.0"
