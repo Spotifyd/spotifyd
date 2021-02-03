@@ -195,6 +195,16 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "juliangaal",
+      "name": "Julian Gaal",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22290570?v=4",
+      "profile": "https://github.com/juliangaal",
+      "contributions": [
+        "doc",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
