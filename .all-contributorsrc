@@ -52,6 +52,17 @@
         "doc",
         "infra"
       ]
+    },
+    {
+      "login": "slondr",
+      "name": "Eric S. Londres",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13040688?v=4",
+      "profile": "https://github.com/slondr",
+      "contributions": [
+        "code",
+        "doc",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
