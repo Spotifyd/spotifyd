@@ -1,8 +1,25 @@
 {
-  "files": ["CONTRIBUTORS.md"],
+  "files": [
+    "CONTRIBUTORS.md"
+  ],
   "imageSize": 100,
   "contributorsPerLine": 7,
   "contributorsSortAlphabetically": false,
-  "skipCi": "true",
-  "contributors": []
+  "skipCi": true,
+  "contributors": [
+    {
+      "login": "juliangaal",
+      "name": "Julian Gaal",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22290570?v=4",
+      "profile": "https://github.com/juliangaal",
+      "contributions": [
+        "doc",
+        "code"
+      ]
+    }
+  ],
+  "projectName": "spotifyd",
+  "projectOwner": "Spotifyd",
+  "repoType": "github",
+  "repoHost": "https://github.com"
 }
