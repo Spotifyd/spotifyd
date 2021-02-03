@@ -260,6 +260,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "bertptrs",
+      "name": "Bert Peters",
+      "avatar_url": "https://avatars.githubusercontent.com/u/861864?v=4",
+      "profile": "https://bertptrs.nl/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
