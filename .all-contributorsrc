@@ -657,6 +657,16 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "Plecra",
+      "name": "Plecra",
+      "avatar_url": "https://avatars.githubusercontent.com/u/60934058?v=4",
+      "profile": "https://github.com/Plecra",
+      "contributions": [
+        "code",
+        "maintenance"
+      ]
     }
   ],
   "contributorsPerLine": 7,
