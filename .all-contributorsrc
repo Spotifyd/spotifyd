@@ -1,11 +1,15 @@
 {
+  "projectName": "spotifyd",
+  "projectOwner": "Spotifyd",
+  "repoType": "github",
+  "repoHost": "https://github.com",
   "files": [
-    "CONTRIBUTORS.md"
+    "CONTRIBUTORS.md",
+    "README.md"
   ],
   "imageSize": 100,
-  "contributorsPerLine": 7,
-  "contributorsSortAlphabetically": false,
-  "skipCi": true,
+  "commit": true,
+  "commitConvention": "angular",
   "contributors": [
     {
       "login": "SirWindfield",
@@ -14,32 +18,10 @@
       "profile": "https://github.com/SirWindfield",
       "contributions": [
         "code",
+        "doc",
         "infra"
-      ]
-    },
-    {
-      "login": "0jdxt",
-      "name": "0jdxt",
-      "avatar_url": "https://avatars.githubusercontent.com/u/4650251?v=4",
-      "profile": "http://gitlab.com/jdxt",
-      "contributions": [
-        "code",
-        "doc"
-      ]
-    },
-    {
-      "login": "bcmyers",
-      "name": "Brian Myers",
-      "avatar_url": "https://avatars.githubusercontent.com/u/10109972?v=4",
-      "profile": "https://github.com/bcmyers",
-      "contributions": [
-        "code",
-        "doc"
       ]
     }
   ],
-  "projectName": "spotifyd",
-  "projectOwner": "Spotifyd",
-  "repoType": "github",
-  "repoHost": "https://github.com"
+  "contributorsPerLine": 7
 }
