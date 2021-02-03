@@ -450,6 +450,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "bobvanderlinden",
+      "name": "Bob van der Linden",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6375609?v=4",
+      "profile": "https://github.com/bobvanderlinden",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
