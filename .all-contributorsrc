@@ -186,6 +186,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "joelpet",
+      "name": "Joel Pettersson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/114321?v=4",
+      "profile": "https://github.com/joelpet",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
