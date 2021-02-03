@@ -504,6 +504,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "bphermansson",
+      "name": "Patrik Hermansson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3775861?v=4",
+      "profile": "http://www.patrikhermansson.se/",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
