@@ -558,6 +558,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "ghishadow",
+      "name": "Suraj Ghimire",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9583775?v=4",
+      "profile": "https://github.com/ghishadow",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
