@@ -377,6 +377,16 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "sflip",
+      "name": "Philipp Moers",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6862899?v=4",
+      "profile": "https://philippmoers.de/",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
