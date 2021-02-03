@@ -72,6 +72,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://github.com/dcoppa"><img src="https://avatars.githubusercontent.com/u/1073526?v=4?s=100" width="100px;" alt=""/><br /><sub><b>dcoppa</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=dcoppa" title="Code">💻</a></td>
   </tr>
   <tr>
+    <td align="center"><a href="https://github.com/dimlev"><img src="https://avatars.githubusercontent.com/u/1188269?v=4?s=100" width="100px;" alt=""/><br /><sub><b>dimlev</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=dimlev" title="Documentation">📖</a></td>
     <td align="center"><a href="https://tommady.com/"><img src="https://avatars.githubusercontent.com/u/11532828?v=4?s=100" width="100px;" alt=""/><br /><sub><b>tommady</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=tommady" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/zv0n"><img src="https://avatars.githubusercontent.com/u/17143863?v=4?s=100" width="100px;" alt=""/><br /><sub><b>zv0n</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=zv0n" title="Code">💻</a></td>
   </tr>
