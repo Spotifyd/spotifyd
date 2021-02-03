@@ -1,8 +1,24 @@
 {
-  "files": ["CONTRIBUTORS.md"],
+  "files": [
+    "CONTRIBUTORS.md"
+  ],
   "imageSize": 100,
   "contributorsPerLine": 7,
   "contributorsSortAlphabetically": false,
-  "skipCi": "true",
-  "contributors": []
+  "skipCi": true,
+  "contributors": [
+    {
+      "login": "andir",
+      "name": "Andreas Rammhold",
+      "avatar_url": "https://avatars.githubusercontent.com/u/638836?v=4",
+      "profile": "https://andreas.rammhold.de",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "projectName": "spotifyd",
+  "projectOwner": "Spotifyd",
+  "repoType": "github",
+  "repoHost": "https://github.com"
 }
