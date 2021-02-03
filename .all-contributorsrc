@@ -414,6 +414,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "reschandreas",
+      "name": "Andreas Resch",
+      "avatar_url": "https://avatars.githubusercontent.com/u/16179620?v=4",
+      "profile": "https://github.com/reschandreas",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
