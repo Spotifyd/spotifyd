@@ -685,6 +685,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "katrielalex",
+      "name": "Katriel Cohn-Gordon",
+      "avatar_url": "https://avatars.githubusercontent.com/u/315959?v=4",
+      "profile": "http://www.katriel.co.uk/",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
