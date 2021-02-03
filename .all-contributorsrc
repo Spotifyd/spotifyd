@@ -1,8 +1,26 @@
 {
-  "files": ["CONTRIBUTORS.md"],
+  "files": [
+    "CONTRIBUTORS.md"
+  ],
   "imageSize": 100,
   "contributorsPerLine": 7,
   "contributorsSortAlphabetically": false,
-  "skipCi": "true",
-  "contributors": []
+  "skipCi": true,
+  "contributors": [
+    {
+      "login": "JojiiOfficial",
+      "name": "JojiiOfficial",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15957865?v=4",
+      "profile": "http://jojii.de",
+      "contributions": [
+        "code",
+        "maintenance",
+        "doc"
+      ]
+    }
+  ],
+  "projectName": "spotifyd",
+  "projectOwner": "Spotifyd",
+  "repoType": "github",
+  "repoHost": "https://github.com"
 }
