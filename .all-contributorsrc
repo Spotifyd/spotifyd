@@ -350,6 +350,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "sk22",
+      "name": "Samuel Kaiser",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6217438?v=4",
+      "profile": "https://sk22.ml/",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
