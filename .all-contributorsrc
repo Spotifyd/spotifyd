@@ -531,6 +531,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "WhyNotHugo",
+      "name": "Hugo Barrera",
+      "avatar_url": "https://avatars.githubusercontent.com/u/730811?v=4",
+      "profile": "https://hugo.barrera.io/",
+      "contributions": [
+        "platform"
+      ]
     }
   ],
   "contributorsPerLine": 7,
