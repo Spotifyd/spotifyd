@@ -769,6 +769,18 @@
       "contributions": [
         "maintenance"
       ]
+    },
+    {
+      "login": "SimonPersson",
+      "name": "Simon Persson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/606973?v=4",
+      "profile": "https://github.com/SimonPersson",
+      "contributions": [
+        "maintenance",
+        "doc",
+        "code",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
