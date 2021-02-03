@@ -423,6 +423,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "marijnvanderhorst",
+      "name": "Marijn van der Horst",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7057618?v=4",
+      "profile": "https://github.com/marijnvanderhorst",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
