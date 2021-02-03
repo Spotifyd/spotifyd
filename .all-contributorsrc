@@ -224,6 +224,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "eisnerd",
+      "name": "David Eisner",
+      "avatar_url": "https://avatars.githubusercontent.com/u/441072?v=4",
+      "profile": "http://pph.me/david.eisner",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
