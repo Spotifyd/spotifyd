@@ -16,6 +16,16 @@
         "code",
         "infra"
       ]
+    },
+    {
+      "login": "0jdxt",
+      "name": "0jdxt",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4650251?v=4",
+      "profile": "http://gitlab.com/jdxt",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "projectName": "spotifyd",
