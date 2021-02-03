@@ -549,6 +549,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "wvangeit",
+      "name": "Werner Van Geit",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3098670?v=4",
+      "profile": "https://github.com/wvangeit",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
