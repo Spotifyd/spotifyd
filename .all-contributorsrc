@@ -703,6 +703,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Gorzen",
+      "name": "Lucien Iseli",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28461464?v=4",
+      "profile": "https://github.com/Gorzen",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
