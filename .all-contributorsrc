@@ -513,6 +513,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "qaisjp",
+      "name": "Qais Patankar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/923242?v=4",
+      "profile": "https://qaisjp.com/",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
