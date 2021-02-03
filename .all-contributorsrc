@@ -739,6 +739,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "aignas",
+      "name": "Ignas Anikevicius",
+      "avatar_url": "https://avatars.githubusercontent.com/u/240938?v=4",
+      "profile": "http://anikevicius.lt/",
+      "contributions": [
+        "infra",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
