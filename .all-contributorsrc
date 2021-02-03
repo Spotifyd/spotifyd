@@ -750,6 +750,15 @@
         "doc",
         "maintenance"
       ]
+    },
+    {
+      "login": "Ben-PH",
+      "name": "Ben",
+      "avatar_url": "https://avatars.githubusercontent.com/u/16680090?v=4",
+      "profile": "https://github.com/Ben-PH",
+      "contributions": [
+        "maintenance"
+      ]
     }
   ],
   "contributorsPerLine": 7,
