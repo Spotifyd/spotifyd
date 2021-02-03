@@ -721,6 +721,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "Crazybus",
+      "name": "Michael Russell",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4550136?v=4",
+      "profile": "https://michaelrussell.ninja/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
