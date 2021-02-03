@@ -477,6 +477,15 @@
       "contributions": [
         "infra"
       ]
+    },
+    {
+      "login": "timotk",
+      "name": "Timo",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6358247?v=4",
+      "profile": "https://github.com/timotk",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,

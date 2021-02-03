@@ -64,14 +64,15 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/vringar"><img src="https://avatars.githubusercontent.com/u/13276717?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stefan Zabka</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=vringar" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/timotk"><img src="https://avatars.githubusercontent.com/u/6358247?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timo</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=timotk" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/TimotheeGerber"><img src="https://avatars.githubusercontent.com/u/37541513?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Timothée Gerber</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=TimotheeGerber" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/valir"><img src="https://avatars.githubusercontent.com/u/4358494?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Valentin Rusu</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=valir" title="Code">💻</a> <a href="https://github.com/Spotifyd/spotifyd/commits?author=valir" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/aksel"><img src="https://avatars.githubusercontent.com/u/6985716?v=4?s=100" width="100px;" alt=""/><br /><sub><b>aksel</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=aksel" title="Code">💻</a></td>
     <td align="center"><a href="https://ashleytqy.github.io/"><img src="https://avatars.githubusercontent.com/u/11889765?v=4?s=100" width="100px;" alt=""/><br /><sub><b>ashley teoh</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=ashleytqy" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/dcoppa"><img src="https://avatars.githubusercontent.com/u/1073526?v=4?s=100" width="100px;" alt=""/><br /><sub><b>dcoppa</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=dcoppa" title="Code">💻</a></td>
-    <td align="center"><a href="https://tommady.com/"><img src="https://avatars.githubusercontent.com/u/11532828?v=4?s=100" width="100px;" alt=""/><br /><sub><b>tommady</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=tommady" title="Code">💻</a></td>
   </tr>
   <tr>
+    <td align="center"><a href="https://tommady.com/"><img src="https://avatars.githubusercontent.com/u/11532828?v=4?s=100" width="100px;" alt=""/><br /><sub><b>tommady</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=tommady" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/zv0n"><img src="https://avatars.githubusercontent.com/u/17143863?v=4?s=100" width="100px;" alt=""/><br /><sub><b>zv0n</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=zv0n" title="Code">💻</a></td>
   </tr>
 </table>
