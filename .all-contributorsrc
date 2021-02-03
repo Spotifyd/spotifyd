@@ -166,6 +166,17 @@
       "contributions": [
         "infra"
       ]
+    },
+    {
+      "login": "JojiiOfficial",
+      "name": "JojiiOfficial",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15957865?v=4",
+      "profile": "https://github.com/JojiiOfficial",
+      "contributions": [
+        "code",
+        "doc",
+        "maintenance"
+      ]
     }
   ],
   "contributorsPerLine": 7,
