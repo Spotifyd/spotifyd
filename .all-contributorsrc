@@ -157,6 +157,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "nicokaiser",
+      "name": "Nico Kaiser",
+      "avatar_url": "https://avatars.githubusercontent.com/u/238631?v=4",
+      "profile": "https://kaiser.me/",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
