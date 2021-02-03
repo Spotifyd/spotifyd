@@ -314,6 +314,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "PontusPersson",
+      "name": "Pontus Persson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/720546?v=4",
+      "profile": "https://pontus-persson.se/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
