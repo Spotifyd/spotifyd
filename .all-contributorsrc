@@ -63,6 +63,16 @@
         "doc",
         "infra"
       ]
+    },
+    {
+      "login": "mh84",
+      "name": "MH",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17948500?v=4",
+      "profile": "https://github.com/mh84",
+      "contributions": [
+        "code",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
