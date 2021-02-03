@@ -93,6 +93,15 @@
         "code",
         "infra"
       ]
+    },
+    {
+      "login": "zv0n",
+      "name": "zv0n",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17143863?v=4",
+      "profile": "https://github.com/zv0n",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
