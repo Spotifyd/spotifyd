@@ -712,6 +712,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "schnitzeltony",
+      "name": "Andreas Müller",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2571823?v=4",
+      "profile": "https://github.com/schnitzeltony",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
