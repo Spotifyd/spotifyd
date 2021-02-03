@@ -441,6 +441,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "codyshepherd",
+      "name": "Cody Shepherd",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15008379?v=4",
+      "profile": "https://launchpad.net/~codyshepherd",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
