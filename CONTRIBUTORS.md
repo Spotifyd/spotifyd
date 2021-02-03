@@ -9,6 +9,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- markdownlint-disable -->
 <table>
   <tr>
+    <td align="center"><a href="https://github.com/0jdxt"><img src="https://avatars.githubusercontent.com/u/4650251?v=4?s=100" width="100px;" alt=""/><br /><sub><b>0jdxt</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=0jdxt" title="Code">💻</a> <a href="https://github.com/Spotifyd/spotifyd/commits?author=0jdxt" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/SirWindfield"><img src="https://avatars.githubusercontent.com/u/5113257?v=4?s=100" width="100px;" alt=""/><br /><sub><b>SirWindfield</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=SirWindfield" title="Code">💻</a> <a href="https://github.com/Spotifyd/spotifyd/commits?author=SirWindfield" title="Documentation">📖</a> <a href="#infra-SirWindfield" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
   </tr>
 </table>

@@ -21,7 +21,18 @@
         "doc",
         "infra"
       ]
+    },
+    {
+      "login": "0jdxt",
+      "name": "0jdxt",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4650251?v=4",
+      "profile": "https://github.com/0jdxt",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
-  "contributorsPerLine": 7
+  "contributorsPerLine": 7,
+  "contributorsSortAlphabetically": true
 }
