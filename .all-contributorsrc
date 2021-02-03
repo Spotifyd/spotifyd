@@ -251,6 +251,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "maringuu",
+      "name": "Marten Ringwelski",
+      "avatar_url": "https://avatars.githubusercontent.com/u/60553448?v=4",
+      "profile": "https://github.com/maringuu",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
