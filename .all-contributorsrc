@@ -83,6 +83,16 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "Mitschmaster",
+      "name": "Mitschmaster",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39187239?v=4",
+      "profile": "https://github.com/Mitschmaster",
+      "contributions": [
+        "code",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
