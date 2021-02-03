@@ -341,6 +341,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "aksel",
+      "name": "aksel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6985716?v=4",
+      "profile": "https://github.com/aksel",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
