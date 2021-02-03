@@ -396,6 +396,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Rik-de-Kort",
+      "name": "Rik-de-Kort",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32839123?v=4",
+      "profile": "https://github.com/Rik-de-Kort",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
