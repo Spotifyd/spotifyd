@@ -287,6 +287,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "dcoppa",
+      "name": "dcoppa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1073526?v=4",
+      "profile": "https://github.com/dcoppa",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
