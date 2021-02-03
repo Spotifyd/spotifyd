@@ -1,8 +1,25 @@
 {
-  "files": ["CONTRIBUTORS.md"],
+  "files": [
+    "CONTRIBUTORS.md"
+  ],
   "imageSize": 100,
   "contributorsPerLine": 7,
   "contributorsSortAlphabetically": false,
-  "skipCi": "true",
-  "contributors": []
+  "skipCi": true,
+  "contributors": [
+    {
+      "login": "Plecra",
+      "name": "Plecra",
+      "avatar_url": "https://avatars.githubusercontent.com/u/60934058?v=4",
+      "profile": "https://github.com/Plecra",
+      "contributions": [
+        "code",
+        "maintenance"
+      ]
+    }
+  ],
+  "projectName": "spotifyd",
+  "projectOwner": "Spotifyd",
+  "repoType": "github",
+  "repoHost": "https://github.com"
 }
