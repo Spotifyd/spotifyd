@@ -205,6 +205,16 @@
         "doc",
         "code"
       ]
+    },
+    {
+      "login": "jackloughran",
+      "name": "Jack",
+      "avatar_url": "https://avatars.githubusercontent.com/u/30052269?v=4",
+      "profile": "https://github.com/jackloughran",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
