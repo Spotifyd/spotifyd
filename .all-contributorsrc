@@ -41,6 +41,17 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "robinvd",
+      "name": "Robin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22073483?v=4",
+      "profile": "https://github.com/robinvd",
+      "contributions": [
+        "code",
+        "doc",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
