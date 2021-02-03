@@ -432,6 +432,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Jason-Cooke",
+      "name": "Jason Cooke",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5185660?v=4",
+      "profile": "https://twitter.com/JSON_C11",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
