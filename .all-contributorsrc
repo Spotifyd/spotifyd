@@ -1,8 +1,24 @@
 {
-  "files": ["CONTRIBUTORS.md"],
+  "files": [
+    "CONTRIBUTORS.md"
+  ],
   "imageSize": 100,
   "contributorsPerLine": 7,
   "contributorsSortAlphabetically": false,
-  "skipCi": "true",
-  "contributors": []
+  "skipCi": true,
+  "contributors": [
+    {
+      "login": "sk22",
+      "name": "Samuel Kaiser",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6217438?v=4",
+      "profile": "https://sk22.ml",
+      "contributions": [
+        "doc"
+      ]
+    }
+  ],
+  "projectName": "spotifyd",
+  "projectOwner": "Spotifyd",
+  "repoType": "github",
+  "repoHost": "https://github.com"
 }
