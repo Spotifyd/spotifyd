@@ -359,6 +359,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "smgt",
+      "name": "Simon Gate",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2408?v=4",
+      "profile": "http://smgt.me/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
