@@ -759,6 +759,15 @@
       "contributions": [
         "maintenance"
       ]
+    },
+    {
+      "login": "MarinPostma",
+      "name": "marin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28804882?v=4",
+      "profile": "https://github.com/MarinPostma",
+      "contributions": [
+        "maintenance"
+      ]
     }
   ],
   "contributorsPerLine": 7,
