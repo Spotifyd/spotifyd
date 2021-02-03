@@ -269,6 +269,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Calinou",
+      "name": "Hugo Locurcio",
+      "avatar_url": "https://avatars.githubusercontent.com/u/180032?v=4",
+      "profile": "https://hugo.pro/",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
