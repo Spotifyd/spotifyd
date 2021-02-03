@@ -576,6 +576,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "johnalanwoods",
+      "name": "Woodstock",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5158898?v=4",
+      "profile": "https://github.com/johnalanwoods",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
