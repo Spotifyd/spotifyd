@@ -102,6 +102,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Yarn",
+      "name": "Ryan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/908816?v=4",
+      "profile": "https://github.com/Yarn",
+      "contributions": [
+        "code",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
