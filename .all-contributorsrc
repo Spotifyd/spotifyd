@@ -630,6 +630,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "wdehoog",
+      "name": "Willem-Jan de Hoog",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3353303?v=4",
+      "profile": "https://github.com/wdehoog",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
