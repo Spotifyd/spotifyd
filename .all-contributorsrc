@@ -215,6 +215,15 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "basvandenbrink",
+      "name": "Bas van den Brink",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2811984?v=4",
+      "profile": "https://github.com/basvandenbrink",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
