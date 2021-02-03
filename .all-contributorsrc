@@ -73,6 +73,16 @@
         "code",
         "infra"
       ]
+    },
+    {
+      "login": "valir",
+      "name": "Valentin Rusu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4358494?v=4",
+      "profile": "https://github.com/valir",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
