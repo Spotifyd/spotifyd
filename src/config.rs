@@ -317,19 +317,19 @@ pub struct SharedConfigValues {
     volume_controller: Option<VolumeController>,
 
     /// The audio device
-    #[cfg(feature = "alsa-backend")]
+    #[cfg(feature = "alsa_backend")]
     #[structopt(long, value_name = "string")]
-    device: String,
+    device: Option<String>,
 
     /// The control device
-    #[cfg(feature = "alsa-backend")]
+    #[cfg(feature = "alsa_backend")]
     #[structopt(long, value_name = "string")]
-    control: String,
+    control: Option<String>,
 
     /// The mixer to use
-    #[cfg(feature = "alsa-backend")]
+    #[cfg(feature = "alsa_backend")]
     #[structopt(long, value_name = "string")]
-    mixer: String,
+    mixer: Option<String>,
 
     /// The device name displayed in Spotify
     #[structopt(long, short, value_name = "string")]
@@ -454,7 +454,7 @@ impl fmt::Debug for SharedConfigValues {
             .field("proxy", &self.proxy)
             .field("device_type", &self.device_type);
         cfg_if::cfg_if! {
-            if #[cfg(feature = "alsa-backend")] {
+            if #[cfg(feature = "alsa_backend")] {
                 deb_struct
                 .field("device", &self.device)
                 .field("control", &self.control)
@@ -524,7 +524,7 @@ impl SharedConfigValues {
             use_mpris
         );
 
-        #[cfg(feature = "alsa-backend")]
+        #[cfg(feature = "alsa_backend")]
         merge!(mixer, control, device);
 
         // Handles boolean merging.
@@ -560,12 +560,12 @@ pub(crate) struct SpotifydConfig {
     pub(crate) use_mpris: bool,
     pub(crate) cache: Option<Cache>,
     pub(crate) backend: Option<String>,
-    #[cfg(feature = "alsa-backend")]
-    pub(crate) audio_device: String,
-    #[cfg(feature = "alsa-backend")]
-    pub(crate) control_device: String,
-    #[cfg(feature = "alsa-backend")]
-    pub(crate) mixer: String,
+    #[cfg(feature = "alsa_backend")]
+    pub(crate) audio_device: Option<String>,
+    #[cfg(feature = "alsa_backend")]
+    pub(crate) control_device: Option<String>,
+    #[cfg(feature = "alsa_backend")]
+    pub(crate) mixer: Option<String>,
     pub(crate) volume_controller: VolumeController,
     pub(crate) initial_volume: Option<u16>,
     pub(crate) device_name: String,
@@ -693,11 +693,11 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         use_mpris: config.shared_config.use_mpris.unwrap_or(true),
         cache,
         backend: Some(backend),
-        #[cfg(feature = "alsa-backend")]
+        #[cfg(feature = "alsa_backend")]
         audio_device: config.shared_config.device,
-        #[cfg(feature = "alsa-backend")]
+        #[cfg(feature = "alsa_backend")]
         control_device: config.shared_config.control,
-        #[cfg(feature = "alsa-backend")]
+        #[cfg(feature = "alsa_backend")]
         mixer: config.shared_config.mixer,
         volume_controller,
         initial_volume,
@@ -752,7 +752,7 @@ mod tests {
         assert_eq!(merged_config, spotifyd_section);
     }
 
-    #[cfg(features = "alsa-backend")]
+    #[cfg(features = "alsa_backend")]
     #[test]
     fn test_section_merging() {
         let mut spotifyd_section = SharedConfigValues::default();
