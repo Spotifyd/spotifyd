@@ -42,13 +42,19 @@ backend = "alsa"
 
 # The alsa audio device to stream audio to. To get a
 # list of valid devices, run `aplay -L`,
+#
+# Comment out or remove if you are not using the `alsa_backend`.
 device = "alsa_audio_device"  # omit for macOS
 
 # The alsa control device. By default this is the same
 # name as the `device` field.
+#
+# Comment out or remove if you are not using the `alsa_backend`.
 control = "alsa_audio_device"  # omit for macOS
 
 # The alsa mixer used by `spotifyd`.
+#
+# Comment out or remove if you are not using the `alsa_backend`.
 mixer = "PCM"
 
 # The volume controller. Each one behaves different to
@@ -114,7 +120,7 @@ device_type = "speaker"
 
 - **`use_keyring`** config entry / **`--use-keyring`** CLI flag <!-- omit in toc -->
 
-  This features leverages [Linux's DBus Secret Service API][secret-storage-specification] or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, complile with the `dbus_keyring` feature and set the `use-keyring` config entry to `true` or pass the `--use-keyring` CLI flag  during start to the daemon. Remove the `password` and/or `password_cmd` config entries.
+  This features leverages [Linux's DBus Secret Service API][secret-storage-specification] or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, complile with the `dbus_keyring` feature and set the `use-keyring` config entry to `true` or pass the `--use-keyring` CLI flag during start to the daemon. Remove the `password` and/or `password_cmd` config entries.
 
   Your keyring entry needs to have the following attributes set:
 
