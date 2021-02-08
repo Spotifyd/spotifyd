@@ -751,4 +751,27 @@ mod tests {
         spotifyd_section.username = Some("testUserName".to_string());
         assert_eq!(merged_config, spotifyd_section);
     }
+
+    #[cfg(features = "alsa-backend")]
+    #[test]
+    fn test_section_merging() {
+        let mut spotifyd_section = SharedConfigValues::default();
+        global_section.mixer = "PCM".to_string();
+
+        let global_section = SharedConfigValues::default();
+        global_section.mixer = "PCM1".to_string();
+
+        // The test only makes sense if both sections differ.
+        assert!(spotifyd_section != global_section, true);
+
+        let file_config = FileConfig {
+            global: Some(global_section),
+            spotifyd: Some(spotifyd_section.clone()),
+        };
+        let merged_config = file_config.get_merged_sections().unwrap();
+
+        // Add the new field to spotifyd section.
+        spotifyd_section.mixer = "PMC".to_string();
+        assert_eq!(merged_config, spotifyd_section);
+    }
 }
