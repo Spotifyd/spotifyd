@@ -94,8 +94,8 @@ zeroconf_port = 1234
 proxy = "http://proxy.example.org:8080"
 
 # The displayed device type in Spotify clients.
-# Can be unknown, computer, tablet, smartphone, speaker, tv,
-# avr (Audio/Video Receiver), stb (Set-Top Box), and audiodongle.
+# Can be unknown, computer, tablet, smartphone, speaker, t_v,
+# a_v_r (Audio/Video Receiver), s_t_b (Set-Top Box), and audio_dongle.
 device_type = "speaker"
 ```
 
