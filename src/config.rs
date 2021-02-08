@@ -505,52 +505,27 @@ impl SharedConfigValues {
             }
         }
 
-        cfg_if::cfg_if! {
-            if #[cfg(feature = "alsa-backend")] {
-                merge!(
-                    backend,
-                    username,
-                    username_cmd,
-                    password,
-                    password_cmd,
-                    normalisation_pregain,
-                    bitrate,
-                    initial_volume,
-                    device_name,
-                    mixer,
-                    control,
-                    device,
-                    volume_controller,
-                    cache_path,
-                    on_song_change_hook,
-                    zeroconf_port,
-                    proxy,
-                    device_type,
-                    use_mpris
-                );
-            } else {
-                merge!(
-                    backend,
-                    username,
-                    username_cmd,
-                    password,
-                    password_cmd,
-                    normalisation_pregain,
-                    bitrate,
-                    initial_volume,
-                    device_name,
-                    volume_controller,
-                    cache_path,
-                    on_song_change_hook,
-                    zeroconf_port,
-                    proxy,
-                    device_type,
-                    use_mpris
-                );
-            }
-        }
+        merge!(
+            backend,
+            username,
+            username_cmd,
+            password,
+            password_cmd,
+            normalisation_pregain,
+            bitrate,
+            initial_volume,
+            device_name,
+            volume_controller,
+            cache_path,
+            on_song_change_hook,
+            zeroconf_port,
+            proxy,
+            device_type,
+            use_mpris
+        );
 
-        // Handles Option<T> merging.
+        #[cfg(feature = "alsa-backend")]
+        merge!(mixer, control, device);
 
         // Handles boolean merging.
         self.use_keyring |= other.use_keyring;
