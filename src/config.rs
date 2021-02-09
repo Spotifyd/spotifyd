@@ -566,6 +566,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) control_device: Option<String>,
     #[cfg(feature = "alsa_backend")]
     pub(crate) mixer: Option<String>,
+    #[cfg_attr(not(feature = "alsa_backend"), allow(dead_code))]
     pub(crate) volume_controller: VolumeController,
     pub(crate) initial_volume: Option<u16>,
     pub(crate) device_name: String,

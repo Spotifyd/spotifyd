@@ -141,10 +141,17 @@ pub(crate) fn initial_state(
     let backend = find_backend(backend.as_ref().map(String::as_ref));
     main_loop::MainLoopState {
         librespot_connection: main_loop::LibreSpotConnection::new(connection, discovery_stream),
+        #[cfg(feature = "alsa_backend")]
         audio_setup: main_loop::AudioSetup {
             mixer,
             backend,
             audio_device: config.audio_device,
+        },
+        #[cfg(not(feature = "alsa_backend"))]
+        audio_setup: main_loop::AudioSetup {
+            mixer,
+            backend,
+            audio_device: None,
         },
         spotifyd_state: main_loop::SpotifydState {
             ctrl_c_stream: Box::new(ctrl_c(&handle).flatten_stream()),
