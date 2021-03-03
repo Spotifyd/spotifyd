@@ -3122,7 +3122,7 @@ dependencies = [
  "tokio-io",
  "tokio-signal 0.1.5",
  "toml",
- "url 1.7.2",
+ "url 2.1.1",
  "whoami",
  "xdg",
 ]
