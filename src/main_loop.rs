@@ -62,6 +62,7 @@ pub struct SpotifydState {
 }
 
 #[cfg(feature = "dbus_mpris")]
+#[allow(clippy::unnecessary_wraps)]
 fn new_dbus_server(
     session: Session,
     handle: Handle,
