@@ -5,6 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added 
+### Changed
+### Removed
+
+## [0.3.1]
+### Added 
+- Use eyre for better error reporting [#789]
+- Add a contributers file
+
+### Changed
+- Change docs from readme to mkdocs [#783]
+- Update librespot, thus fixing [#719] [#900]
+### Removed
+
+[#789]: https://github.com/Spotifyd/spotifyd/pull/789
+[#783]: https://github.com/Spotifyd/spotifyd/pull/783
+[#719]: https://github.com/Spotifyd/spotifyd/issues/719
+[#900]: https://github.com/Spotifyd/spotifyd/pull/900
+## [0.3.0]
 ### Added
 - Added a changelog [#714]
 ### Changed
