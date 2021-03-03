@@ -1583,7 +1583,7 @@ dependencies = [
  "tokio-core",
  "tokio-io",
  "tokio-process",
- "tokio-signal 0.2.7",
+ "tokio-signal",
  "url 1.7.2",
 ]
 
@@ -3120,7 +3120,7 @@ dependencies = [
  "syslog",
  "tokio-core",
  "tokio-io",
- "tokio-signal 0.1.5",
+ "tokio-signal",
  "toml",
  "url 1.7.2",
  "whoami",
@@ -3434,7 +3434,7 @@ dependencies = [
  "mio-named-pipes",
  "tokio-io",
  "tokio-reactor",
- "tokio-signal 0.2.7",
+ "tokio-signal",
  "winapi 0.3.8",
 ]
 
@@ -3482,21 +3482,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24da22d077e0f15f55162bdbdc661228c1581892f52074fb242678d015b45162"
 dependencies = [
  "futures 0.1.29",
-]
-
-[[package]]
-name = "tokio-signal"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8f46863230f9a05cf52d173721ec391b9c5782a2465f593029922b8782b9ffe"
-dependencies = [
- "futures 0.1.29",
- "libc",
- "mio",
- "mio-uds",
- "tokio-core",
- "tokio-io",
- "winapi 0.3.8",
 ]
 
 [[package]]
