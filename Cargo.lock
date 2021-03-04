@@ -118,7 +118,7 @@ version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4a0d4ebc8b23041c5de9bc9aee13b4bad844a589479701f31a5934cfe4aeb32"
 dependencies = [
- "alsa-sys",
+ "alsa-sys 0.1.2",
  "bitflags 0.9.1",
  "libc",
  "nix 0.9.0",
@@ -126,14 +126,14 @@ dependencies = [
 
 [[package]]
 name = "alsa"
-version = "0.3.0"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe6a5e4eb4879d7cb8d19161927fbf825f0d89761776359c9cf4f9c9c2f35c52"
+checksum = "eb213f6b3e4b1480a60931ca2035794aa67b73103d254715b1db7b70dcb3c934"
 dependencies = [
- "alsa-sys",
- "bitflags 0.9.1",
+ "alsa-sys 0.3.1",
+ "bitflags 1.2.1",
  "libc",
- "nix 0.14.1",
+ "nix 0.15.0",
 ]
 
 [[package]]
@@ -141,6 +141,16 @@ name = "alsa-sys"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0edcbbf9ef68f15ae1b620f722180b82a98b6f0628d30baa6b8d2a5abc87d58"
+dependencies = [
+ "libc",
+ "pkg-config",
+]
+
+[[package]]
+name = "alsa-sys"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db8fee663d06c4e303404ef5f40488a53e062f89ba8bfed81f42325aafad1527"
 dependencies = [
  "libc",
  "pkg-config",
@@ -581,7 +591,7 @@ version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d58ae1ed6536b1b233f5e3aeb6997a046ddb4d05e3f61701b58a92eb254a829e"
 dependencies = [
- "alsa-sys",
+ "alsa-sys 0.1.2",
  "core-foundation-sys 0.5.1",
  "coreaudio-rs",
  "lazy_static",
@@ -1967,9 +1977,9 @@ dependencies = [
 
 [[package]]
 name = "nix"
-version = "0.14.1"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c722bee1037d430d0f8e687bbdbf222f27cc6e4e68d5caf630857bb2b6dbdce"
+checksum = "3b2e0b4f3320ed72aaedb9a5ac838690a8047c7b275da22711fddff4f8a14229"
 dependencies = [
  "bitflags 1.2.1",
  "cc",
@@ -3097,7 +3107,7 @@ checksum = "4bf77cb82ba8453b42b6ae1d692e4cdc92f9a47beaf89a847c8be83f4e328ad3"
 name = "spotifyd"
 version = "0.3.2"
 dependencies = [
- "alsa 0.3.0",
+ "alsa 0.4.3",
  "chrono",
  "color-eyre",
  "daemonize",
