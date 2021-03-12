@@ -293,6 +293,11 @@ pub struct SharedConfigValues {
     )]
     password_cmd: Option<String>,
 
+    /// Whether the credentials should be debugged.
+    #[structopt(long)]
+    #[serde(skip)]
+    debug_credentials: bool,
+
     /// A script that gets evaluated in the user's shell when the song changes
     #[structopt(visible_alias = "onevent", long, value_name = "string")]
     #[serde(alias = "onevent")]
@@ -404,30 +409,25 @@ impl fmt::Debug for SharedConfigValues {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let placeholder = "taken out for privacy";
 
-        // TODO: somehow replace with a appropiate macro.
-        let password_value = if self.password.is_some() {
-            Some(&placeholder)
-        } else {
-            None
+        macro_rules! extract_credential {
+            ( $e:expr ) => {
+                match $e {
+                    Some(s) => match self.debug_credentials {
+                        true => Some(s.as_str()),
+                        false => Some(placeholder),
+                    },
+                    None => None,
+                }
+            };
         };
 
-        let password_cmd_value = if self.password_cmd.is_some() {
-            Some(&placeholder)
-        } else {
-            None
-        };
+        let password_value = extract_credential!(&self.password);
 
-        let username_value = if self.username.is_some() {
-            Some(&placeholder)
-        } else {
-            None
-        };
+        let password_cmd_value = extract_credential!(&self.password_cmd);
 
-        let username_cmd_value = if self.username_cmd.is_some() {
-            Some(&placeholder)
-        } else {
-            None
-        };
+        let username_value = extract_credential!(&self.username);
+
+        let username_cmd_value = extract_credential!(&self.username_cmd);
 
         f.debug_struct("SharedConfigValues")
             .field("username", &username_value)
