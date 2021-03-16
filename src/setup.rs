@@ -1,6 +1,6 @@
 #[cfg(feature = "alsa_backend")]
 use crate::alsa_mixer;
-use crate::{config, main_loop};
+use crate::{config, main_loop, no_mixer};
 use futures::{self, Future};
 #[cfg(feature = "dbus_keyring")]
 use keyring::Keyring;
@@ -38,6 +38,11 @@ pub(crate) fn initial_state(
                 Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
                     as Box<dyn FnMut() -> Box<dyn Mixer>>
             }
+            config::VolumeController::None => {
+                info!("Using no volume controller.");
+                Box::new(|| Box::new(no_mixer::NoMixer::open(None)) as Box<dyn Mixer>)
+                    as Box<dyn FnMut() -> Box<dyn Mixer>>
+            }
             _ => {
                 info!("Using alsa volume controller.");
                 let linear = matches!(
@@ -59,10 +64,17 @@ pub(crate) fn initial_state(
     };
 
     #[cfg(not(feature = "alsa_backend"))]
-    let mut mixer = {
-        info!("Using software volume controller.");
-        Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
-            as Box<dyn FnMut() -> Box<dyn Mixer>>
+    let mut mixer = match config.volume_controller {
+        config::VolumeController::None => {
+            info!("Using no volume controller.");
+            Box::new(|| Box::new(no_mixer::NoMixer::open(None)) as Box<dyn Mixer>)
+                as Box<dyn FnMut() -> Box<dyn Mixer>>
+        }
+        _ => {
+            info!("Using software volume controller.");
+            Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+                as Box<dyn FnMut() -> Box<dyn Mixer>>
+        }
     };
 
     let cache = config.cache;
