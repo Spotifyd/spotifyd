@@ -92,7 +92,7 @@ fn main() -> Result<(), Report> {
 
     panic::set_hook(Box::new(|panic_info| {
         error!(
-            "Caught panic with message: {}",
+            "PANIC: Shutting down spotifyd. Error message: {}",
             match (
                 panic_info.payload().downcast_ref::<String>(),
                 panic_info.payload().downcast_ref::<&str>(),
