@@ -11,15 +11,18 @@ The configuration file has the following format:
 # Your Spotify account name.
 username = "username"
 
+# A command that gets executed and can be used to
+# retrieve your account name.
+# The command should return the account name on stdout.
+#
+# This is an alternative to the `username` field. Both
+# can't be used simultaneously.
+username_cmd = "command_that_writes_username_to_stdout"
+
 # Your Spotify account password.
 password = "password"
 
-# A command that gets executed and can be used to
-# retrieve your password.
-# The command should return the password on stdout.
-#
-# This is an alternative to the `password` field. Both
-# can't be used simultaneously.
+# This is the same as the `username_cmd` field but for the account password 
 password_cmd = "command_that_writes_password_to_stdout"
 
 # If set to true, `spotifyd` tries to look up your
