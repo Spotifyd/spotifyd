@@ -1,0 +1,25 @@
+version: 2
+updates:
+- package-ecosystem: cargo
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  reviewers:
+  - SirWindfield
+  assignees:
+  - SirWindfield
+  ignore:
+  - dependency-name: whoami
+    versions:
+    - 1.1.0
+    - 1.1.1
+  - dependency-name: alsa
+    versions:
+    - 0.4.3
+  - dependency-name: dbus
+    versions:
+    - 0.9.1
+  - dependency-name: syslog
+    versions:
+    - 5.0.0
