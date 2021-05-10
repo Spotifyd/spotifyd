@@ -2,22 +2,20 @@
 use crate::dbus_mpris::DbusServer;
 use crate::process::{spawn_program_on_event, Child};
 use futures::{self, Async, Future, Poll, Stream};
-use librespot::{
-    connect::{
-        discovery::DiscoveryStream,
-        spirc::{Spirc, SpircTask},
-    },
-    core::{
-        cache::Cache,
-        config::{ConnectConfig, DeviceType, SessionConfig, VolumeCtrl},
-        session::Session,
-    },
-    playback::{
-        audio_backend::Sink,
-        config::PlayerConfig,
-        mixer::Mixer,
-        player::{Player, PlayerEvent},
-    },
+use librespot_connect::{
+    discovery::DiscoveryStream,
+    spirc::{Spirc, SpircTask},
+};
+use librespot_core::{
+    cache::Cache,
+    config::{ConnectConfig, DeviceType, SessionConfig, VolumeCtrl},
+    session::Session,
+};
+use librespot_playback::{
+    audio_backend::Sink,
+    config::PlayerConfig,
+    mixer::Mixer,
+    player::{Player, PlayerEvent},
 };
 use log::error;
 use std::{io, rc::Rc};

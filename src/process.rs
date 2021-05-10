@@ -1,5 +1,5 @@
 use crate::error::Error;
-use librespot::playback::player::PlayerEvent;
+use librespot_playback::player::PlayerEvent;
 use log::info;
 use std::{
     collections::HashMap,
