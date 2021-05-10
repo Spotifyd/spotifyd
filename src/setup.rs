@@ -4,18 +4,16 @@ use crate::{config, main_loop};
 use futures::{self, Future};
 #[cfg(feature = "dbus_keyring")]
 use keyring::Keyring;
-use librespot::{
-    connect::discovery::discovery,
-    core::{
-        authentication::get_credentials,
-        cache::Cache,
-        config::{ConnectConfig, DeviceType, VolumeCtrl},
-        session::Session,
-    },
-    playback::{
-        audio_backend::{Sink, BACKENDS},
-        mixer::{self, Mixer},
-    },
+use librespot_connect::discovery::discovery;
+use librespot_core::{
+    authentication::get_credentials,
+    cache::Cache,
+    config::{ConnectConfig, DeviceType, VolumeCtrl},
+    session::Session,
+};
+use librespot_playback::{
+    audio_backend::{Sink, BACKENDS},
+    mixer::{self, Mixer},
 };
 use log::{error, info};
 use std::str::FromStr;

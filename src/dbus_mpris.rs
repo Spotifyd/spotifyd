@@ -9,13 +9,11 @@ use dbus_tokio::{
     AConnection,
 };
 use futures::{sync::oneshot, Async, Future, Poll, Stream};
-use librespot::{
-    connect::spirc::Spirc,
-    core::{
-        keymaster::{get_token, Token as LibrespotToken},
-        mercury::MercuryError,
-        session::Session,
-    },
+use librespot_connect::spirc::Spirc;
+use librespot_core::{
+    keymaster::{get_token, Token as LibrespotToken},
+    mercury::MercuryError,
+    session::Session,
 };
 use log::{info, warn};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
