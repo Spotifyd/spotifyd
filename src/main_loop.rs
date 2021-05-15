@@ -1,6 +1,7 @@
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
 use crate::process::{spawn_program_on_event, Child};
+use crate::config::DBusType;
 use futures::{self, Async, Future, Poll, Stream};
 use librespot::{
     connect::{
@@ -68,12 +69,14 @@ fn new_dbus_server(
     handle: Handle,
     spirc: Rc<Spirc>,
     device_name: String,
+    dbus_type: DBusType,
 ) -> Option<Box<dyn Future<Item = (), Error = ()>>> {
     Some(Box::new(DbusServer::new(
         session,
         handle,
         spirc,
         device_name,
+        dbus_type,
     )))
 }
 
@@ -83,6 +86,7 @@ fn new_dbus_server(
     _: Handle,
     _: Rc<Spirc>,
     _: String,
+    _: DBusType,
 ) -> Option<Box<dyn Future<Item = (), Error = ()>>> {
     None
 }
@@ -101,6 +105,7 @@ pub(crate) struct MainLoopState {
     pub(crate) shell: String,
     pub(crate) device_type: DeviceType,
     pub(crate) use_mpris: bool,
+    pub(crate) dbus_type: DBusType,
 }
 
 impl Future for MainLoopState {
@@ -187,6 +192,7 @@ impl Future for MainLoopState {
                         self.handle.clone(),
                         shared_spirc,
                         self.spotifyd_state.device_name.clone(),
+                        self.dbus_type,
                     );
                 }
             } else if let Async::Ready(_) = self.spotifyd_state.ctrl_c_stream.poll().unwrap() {
