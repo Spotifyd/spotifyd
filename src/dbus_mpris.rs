@@ -258,6 +258,23 @@ fn create_dbus_server(
 
     // The following methods and properties are part of the MediaPlayer2.Player interface.
     // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
+
+    let method_volume_up = {
+        let local_spirc = spirc.clone();
+        f.amethod("VolumeUp", (), move |m| {
+            local_spirc.volume_up();
+            Ok(vec![m.msg.method_return()])
+        })
+    };
+
+    let method_volume_down = {
+        let local_spirc = spirc.clone();
+        f.amethod("VolumeDown", (), move |m| {
+            local_spirc.volume_down();
+            Ok(vec![m.msg.method_return()])
+        })
+    };
+    
     let method_next = {
         let local_spirc = spirc.clone();
         f.amethod("Next", (), move |m| {
@@ -584,6 +601,8 @@ fn create_dbus_server(
 
     let media_player2_player_interface = f
         .interface("org.mpris.MediaPlayer2.Player", ())
+        .add_m(method_volume_up)
+        .add_m(method_volume_down)
         .add_m(method_next)
         .add_m(method_previous)
         .add_m(method_pause)
