@@ -31,7 +31,10 @@ tokio-io = "0.1"
 tokio-signal = "0.1"
 url = "1.7"
 xdg = "2.2"
-librespot = { version = "0.1.5", default-features = false, features = ["with-tremor"] }
+librespot-audio = { version = "0.1.5", default-features = false, features = ["with-tremor"] }
+librespot-connect = "0.1.5"
+librespot-core = "0.1.5"
+librespot-playback = { version = "0.1.5", default-features = false }
 toml = "0.5.8"
 color-eyre = "0.5"
 
@@ -42,13 +45,13 @@ whoami = "0.9.0"
 env_logger = "0.7"
 
 [features]
-alsa_backend = ["librespot/alsa-backend", "alsa"]
+alsa_backend = ["librespot-playback/alsa-backend", "alsa"]
 dbus_keyring = ["keyring"]
 dbus_mpris = ["dbus", "dbus-tokio"]
 default = ["alsa_backend"]
-portaudio_backend = ["librespot/portaudio-backend"]
-pulseaudio_backend = ["librespot/pulseaudio-backend"]
-rodio_backend = ["librespot/rodio-backend"]
+portaudio_backend = ["librespot-playback/portaudio-backend"]
+pulseaudio_backend = ["librespot-playback/pulseaudio-backend"]
+rodio_backend = ["librespot-playback/rodio-backend"]
 
 [package.metadata.deb]
 depends = "$auto, systemd, pulseaudio"
