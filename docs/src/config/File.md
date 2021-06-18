@@ -101,6 +101,14 @@ device_type = "speaker"
 
 ## Alternatives to storing your password in the config file <!-- omit in toc -->
 
+- use zeroconf authentication from Spotify Connect
+
+  Spotifyd is able to advertise itself on the network without credentials. To enable this, you must omit / comment any `username` / `username_cmd` or `password` / `password_cmd` in the configuration. Spotifyd will receive an authentication blob from Spotify when you choose it from the devices list.
+
+  This way, a Spotifyd instance can also be made available to multiple users.
+
+  For more information, have a look at the [librespot documentation][librespot-docs].
+
 - **`password_cmd`** config entry
 
   This feature allows you to provide a command that prints your password to `stdout`, which saves you from having to store your password in the config file directly. To use it, set the `password_cmd` config entry to the command you would like to use and remove the `password` config entry.
@@ -144,3 +152,4 @@ If either of these options is given, the shell `spotifyd` will use to run its co
 [playerctl-homepage]: https://github.com/altdesktop/playerctl
 [secret-storage-specification]: https://www.freedesktop.org/wiki/Specifications/secret-storage-spec/
 [sp-homepage]: https://gist.github.com/wandernauta/6800547
+[librespot-docs]: https://github.com/librespot-org/librespot/blob/master/docs/authentication.md#zeroconf-based-authentication
