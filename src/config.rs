@@ -228,6 +228,10 @@ pub struct CliConfig {
     #[structopt(long, value_name = "string")]
     pub config_path: Option<PathBuf>,
 
+    /// Path to a logfile. If set, overrides syslog output
+    #[structopt(long, value_name = "string")]
+    pub log_path: Option<PathBuf>,
+
     /// If set, starts spotifyd without detaching
     #[structopt(long)]
     pub no_daemon: bool,

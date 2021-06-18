@@ -5,6 +5,7 @@ use color_eyre::{eyre::Context, Help, Report, SectionExt};
 use daemonize::Daemonize;
 use log::{error, info, trace, LevelFilter};
 use std::panic;
+use std::path::PathBuf;
 use structopt::StructOpt;
 use tokio_core::reactor::Core;
 
@@ -22,6 +23,7 @@ mod utils;
 enum LogTarget {
     Terminal,
     Syslog,
+    Logfile(PathBuf),
 }
 
 fn setup_logger(log_target: LogTarget, log_level: LevelFilter) {
@@ -36,7 +38,13 @@ fn setup_logger(log_target: LogTarget, log_level: LevelFilter) {
                 process: "spotifyd".to_owned(),
                 pid: 0,
             };
-            logger.chain(syslog::unix(log_format).expect("Couldn't initialize logger"))
+            logger.chain(
+                syslog::unix(log_format)
+                    .expect("Couldn't initialize syslog (Do you have syslog on your system?)"),
+            )
+        }
+        LogTarget::Logfile(x) => {
+            logger.chain(fern::log_file(x).expect("Couldn't initialize log file"))
         }
     };
 
@@ -48,7 +56,9 @@ fn main() -> Result<(), Report> {
 
     let is_daemon = !cli_config.no_daemon;
 
-    let log_target = if is_daemon {
+    let log_target = if let Some(ref log_path) = cli_config.log_path {
+        LogTarget::Logfile(log_path.clone())
+    } else if is_daemon {
         LogTarget::Syslog
     } else {
         LogTarget::Terminal
