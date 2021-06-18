@@ -3098,6 +3098,7 @@ name = "spotifyd"
 version = "0.3.2"
 dependencies = [
  "alsa 0.3.0",
+ "cfg-if 1.0.0",
  "chrono",
  "color-eyre",
  "daemonize",

@@ -23,12 +23,18 @@ use std::{io, process::exit};
 use tokio_core::reactor::Handle;
 use tokio_signal::ctrl_c;
 
+// We need to allow these lints since the conditional compilation is
+// what makes them appear.
+#[allow(unused_must_use, unreachable_code, unused_variables)]
 pub(crate) fn initial_state(
     handle: Handle,
     config: config::SpotifydConfig,
 ) -> main_loop::MainLoopState {
-    #[cfg(feature = "alsa_backend")]
-    let mut mixer = {
+    // We just need to initialize the mixer. The contents will be mutated for sure
+    // and therefore we don't need to worry since all of the branches are covered.
+    let mut mixer: Box<dyn FnMut() -> Box<dyn Mixer>> = unimplemented!();
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "alsa_backend")] {
         let local_audio_device = config.audio_device.clone();
         let local_control_device = config.control_device.clone();
         let local_mixer = config.mixer.clone();
@@ -54,15 +60,12 @@ pub(crate) fn initial_state(
                         linear_scaling: linear,
                     }) as Box<dyn mixer::Mixer>
                 }) as Box<dyn FnMut() -> Box<dyn Mixer>>
-            }
         }
-    };
-
-    #[cfg(not(feature = "alsa_backend"))]
-    let mut mixer = {
-        info!("Using software volume controller.");
-        Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+        }} else {
+            info!("Using software volume controller.");
+        mixer = Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
             as Box<dyn FnMut() -> Box<dyn Mixer>>
+        }
     };
 
     let cache = config.cache;
@@ -142,10 +145,17 @@ pub(crate) fn initial_state(
     let backend = find_backend(backend.as_ref().map(String::as_ref));
     main_loop::MainLoopState {
         librespot_connection: main_loop::LibreSpotConnection::new(connection, discovery_stream),
+        #[cfg(feature = "alsa_backend")]
         audio_setup: main_loop::AudioSetup {
             mixer,
             backend,
-            audio_device: config.audio_device.clone(),
+            audio_device: config.audio_device,
+        },
+        #[cfg(not(feature = "alsa_backend"))]
+        audio_setup: main_loop::AudioSetup {
+            mixer,
+            backend,
+            audio_device: None,
         },
         spotifyd_state: main_loop::SpotifydState {
             ctrl_c_stream: Box::new(ctrl_c(&handle).flatten_stream()),
