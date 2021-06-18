@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use crate::config::DBusType;
 use dbus::{
     arg::{RefArg, Variant},
     tree::{Access, MethodErr},
@@ -30,6 +31,7 @@ pub struct DbusServer {
     session: Session,
     handle: Handle,
     spirc: Rc<Spirc>,
+    dbus_type: DBusType,
     api_token: RspotifyToken,
     token_request: Option<Box<dyn Future<Item = LibrespotToken, Error = MercuryError>>>,
     dbus_future: Option<Box<dyn Future<Item = (), Error = ()>>>,
@@ -45,16 +47,18 @@ const SCOPE: &str = "user-read-playback-state,user-read-private,\
                      user-read-recently-played";
 
 impl DbusServer {
-    pub fn new(
+    pub (crate) fn new(
         session: Session,
         handle: Handle,
         spirc: Rc<Spirc>,
         device_name: String,
+        dbus_type: DBusType,
     ) -> DbusServer {
         DbusServer {
             session,
             handle,
             spirc,
+            dbus_type,
             api_token: RspotifyToken::default(),
             token_request: None,
             dbus_future: None,
@@ -89,6 +93,7 @@ impl Future for DbusServer {
                         self.api_token.clone(),
                         self.spirc.clone(),
                         self.device_name.clone(),
+                        self.dbus_type,
                     ));
                     got_new_token = true;
                 }
@@ -119,6 +124,7 @@ fn create_dbus_server(
     api_token: RspotifyToken,
     spirc: Rc<Spirc>,
     device_name: String,
+    dbus_type: DBusType,
 ) -> Box<dyn Future<Item = (), Error = ()>> {
     macro_rules! spotify_api_method {
         ([ $sp:ident, $device:ident $(, $m:ident: $t:ty)*] $f:expr) => {
@@ -157,9 +163,12 @@ fn create_dbus_server(
         }};
     }
 
-    // TODO: allow other DBus types through CLI and config entry.
+    let dbus_type = match dbus_type {
+        DBusType::Session => BusType::Session,
+        DBusType::System => BusType::System
+    };
     let connection = Rc::new(
-        Connection::get_private(BusType::Session).expect("Failed to initialize DBus connection"),
+        Connection::get_private(dbus_type).expect("Failed to initialize DBus connection"),
     );
 
     connection

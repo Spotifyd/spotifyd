@@ -166,6 +166,7 @@ pub(crate) fn initial_state(
         device_type,
         autoplay,
         use_mpris: config.use_mpris,
+        dbus_type: config.dbus_type,
     }
 }
 
