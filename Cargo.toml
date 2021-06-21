@@ -11,7 +11,7 @@ version = "0.3.2"
 alsa = { version = "0.3", optional = true }
 chrono = "0.4"
 daemonize = "0.4"
-dbus = { version = "0.6", optional = true }
+dbus = { version = "0.9", optional = true }
 dbus-tokio = { version = "0.2", optional = true }
 fern = { version = "0.6.0", features = ["syslog-4"] }
 futures = "0.1"
