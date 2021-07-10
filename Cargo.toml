@@ -14,24 +14,26 @@ daemonize = "0.4"
 dbus = { version = "0.6", optional = true }
 dbus-tokio = { version = "0.2", optional = true }
 fern = { version = "0.6.0", features = ["syslog-4"] }
-futures = "0.1"
+futures = "0.3.15"
 gethostname = "0.2.0"
 hex = "0.4"
 keyring = { version = "0.10.1", optional = true }
 libc = "0.2.82"
 log = "0.4.6"
 percent-encoding = "2.1.0"
+reqwest = "0.11.3"
 rspotify = "0.8.0"
 serde = { version = "1.0.115", features = ["derive"] }
 sha-1 = "0.9"
 structopt = "0.3.17"
 syslog = "4"
-tokio-core = "0.1"
-tokio-io = "0.1"
-tokio-signal = "0.1"
+tokio = "1.6.1"
+tokio-compat = { version = "0.1.6", features = ["rt-current-thread"] }
+tokio-compat-02 = "0.2.0"
+tokio-stream = "0.1.7"
 url = "1.7"
 xdg = "2.2"
-librespot = { version = "0.1.5", default-features = false, features = ["with-tremor"] }
+librespot = { version = "0.2.0", default-features = false, features = ["with-tremor"] }
 toml = "0.5.8"
 color-eyre = "0.5"
 

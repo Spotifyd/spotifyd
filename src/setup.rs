@@ -1,13 +1,12 @@
 #[cfg(feature = "alsa_backend")]
 use crate::alsa_mixer;
 use crate::{config, main_loop};
-use futures::{self, Future};
+use futures;
 #[cfg(feature = "dbus_keyring")]
 use keyring::Keyring;
 use librespot::{
     connect::discovery::discovery,
     core::{
-        authentication::get_credentials,
         cache::Cache,
         config::{ConnectConfig, DeviceType, VolumeCtrl},
         session::Session,
@@ -17,14 +16,15 @@ use librespot::{
         mixer::{self, Mixer},
     },
 };
-use log::{error, info};
+use log::info;
 use std::str::FromStr;
-use std::{io, process::exit};
-use tokio_core::reactor::Handle;
-use tokio_signal::ctrl_c;
+use tokio::signal::ctrl_c;
+use librespot::core::authentication::Credentials;
+use librespot::playback::config::AudioFormat;
+use librespot::core::session::SessionError;
+use std::pin::Pin;
 
 pub(crate) fn initial_state(
-    handle: Handle,
     config: config::SpotifydConfig,
 ) -> main_loop::MainLoopState {
     #[cfg(feature = "alsa_backend")]
@@ -91,7 +91,6 @@ pub(crate) fn initial_state(
 
     #[allow(clippy::or_fun_call)]
     let discovery_stream = discovery(
-        &handle,
         ConnectConfig {
             autoplay,
             name: config.device_name.clone(),
@@ -120,23 +119,17 @@ pub(crate) fn initial_state(
     }
 
     let connection = if let Some(credentials) = get_credentials(
-        username,
-        password,
-        cache.as_ref().and_then(Cache::credentials),
-        |_| {
-            error!("No password found.");
-            exit(1);
-        },
-    ) {
-        Session::connect(
+        &cache,
+        &username,
+        &password) {
+        let sess: Pin<Box<dyn futures::Future<Output=Result<Session, SessionError>>>>  = Box::pin(Session::connect(
             session_config.clone(),
             credentials,
             cache.clone(),
-            handle.clone(),
-        )
+        ));
+        sess
     } else {
-        Box::new(futures::future::empty())
-            as Box<dyn futures::Future<Item = Session, Error = io::Error>>
+        Box::pin(futures::future::pending())
     };
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
@@ -148,7 +141,7 @@ pub(crate) fn initial_state(
             audio_device: config.audio_device.clone(),
         },
         spotifyd_state: main_loop::SpotifydState {
-            ctrl_c_stream: Box::new(ctrl_c(&handle).flatten_stream()),
+            ctrl_c_stream: Box::pin(ctrl_c()),
             shutting_down: false,
             cache,
             device_name: config.device_name,
@@ -158,7 +151,6 @@ pub(crate) fn initial_state(
         },
         player_config,
         session_config,
-        handle,
         initial_volume: config.initial_volume,
         volume_ctrl,
         running_event_program: None,
@@ -169,7 +161,15 @@ pub(crate) fn initial_state(
     }
 }
 
-fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<dyn Sink> {
+fn get_credentials(cache: &Option<Cache>, username: &Option<String>, password: &Option<String>) -> Option<Credentials> {
+    if let (Some(username), Some(password)) = (username, password) {
+        return Some(Credentials::with_password(username, password));
+    }
+
+    cache.as_ref()?.credentials()
+}
+
+fn find_backend(name: Option<&str>) -> fn(Option<String>, AudioFormat) -> Box<dyn Sink> {
     match name {
         Some(name) => {
             BACKENDS

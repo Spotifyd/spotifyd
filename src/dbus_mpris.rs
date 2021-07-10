@@ -8,7 +8,8 @@ use dbus_tokio::{
     tree::{AFactory, ATree, ATreeServer},
     AConnection,
 };
-use futures::{sync::oneshot, Async, Future, Poll, Stream};
+use futures::{self, Future, FutureExt};
+use futures::channel::oneshot;
 use librespot::{
     connect::spirc::Spirc,
     core::{
@@ -24,15 +25,15 @@ use rspotify::spotify::{
     util::datetime_to_timestamp,
 };
 use std::{collections::HashMap, env, rc::Rc, thread};
-use tokio_core::reactor::Handle;
+use std::pin::Pin;
+use futures::task::{Context, Poll};
 
 pub struct DbusServer {
     session: Session,
-    handle: Handle,
     spirc: Rc<Spirc>,
     api_token: RspotifyToken,
-    token_request: Option<Box<dyn Future<Item = LibrespotToken, Error = MercuryError>>>,
-    dbus_future: Option<Box<dyn Future<Item = (), Error = ()>>>,
+    token_request: Option<Pin<Box<dyn Future<Output=Result<LibrespotToken, MercuryError>>>>>,
+    dbus_future: Option<Pin<Box<dyn Future<Output = ()>>>>,
     device_name: String,
 }
 
@@ -47,13 +48,11 @@ const SCOPE: &str = "user-read-playback-state,user-read-private,\
 impl DbusServer {
     pub fn new(
         session: Session,
-        handle: Handle,
         spirc: Rc<Spirc>,
         device_name: String,
     ) -> DbusServer {
         DbusServer {
             session,
-            handle,
             spirc,
             api_token: RspotifyToken::default(),
             token_request: None,
@@ -72,20 +71,18 @@ impl DbusServer {
 }
 
 impl Future for DbusServer {
-    type Error = ();
-    type Item = ();
+    type Output = ();
 
-    fn poll(&mut self) -> Poll<(), ()> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
         let mut got_new_token = false;
         if self.is_token_expired() {
             if let Some(ref mut fut) = self.token_request {
-                if let Async::Ready(token) = fut.poll().unwrap() {
+                if let Poll::Ready(Ok(token)) = fut.as_mut().poll(cx) {
                     self.api_token = RspotifyToken::default()
                         .access_token(&token.access_token)
                         .expires_in(token.expires_in)
                         .expires_at(datetime_to_timestamp(token.expires_in));
                     self.dbus_future = Some(create_dbus_server(
-                        self.handle.clone(),
                         self.api_token.clone(),
                         self.spirc.clone(),
                         self.device_name.clone(),
@@ -96,17 +93,17 @@ impl Future for DbusServer {
                 // This is more meant as a fast hotfix than anything else!
                 let client_id =
                     env::var("SPOTIFYD_CLIENT_ID").unwrap_or_else(|_| CLIENT_ID.to_string());
-                self.token_request = Some(get_token(&self.session, &client_id, SCOPE));
+                self.token_request = Some(Box::pin(get_token(&self.session.clone(), &client_id, SCOPE)));
             }
         } else if let Some(ref mut fut) = self.dbus_future {
-            return fut.poll();
+            return fut.as_mut().poll(cx);
         }
 
         if got_new_token {
             self.token_request = None;
         }
 
-        Ok(Async::NotReady)
+        Poll::Pending
     }
 }
 
@@ -115,18 +112,17 @@ fn create_spotify_api(token: &RspotifyToken) -> Spotify {
 }
 
 fn create_dbus_server(
-    handle: Handle,
     api_token: RspotifyToken,
     spirc: Rc<Spirc>,
     device_name: String,
-) -> Box<dyn Future<Item = (), Error = ()>> {
+) -> Pin<Box<dyn Future<Output = ()>>> {
     macro_rules! spotify_api_method {
         ([ $sp:ident, $device:ident $(, $m:ident: $t:ty)*] $f:expr) => {
             {
                 let device_name = utf8_percent_encode(&device_name, NON_ALPHANUMERIC).to_string();
                 let token = api_token.clone();
                 move |m| {
-                    let (p, c) = oneshot::channel();
+                    let (tx, rx) = oneshot::channel();
                     let token = token.clone();
                     let device_name = device_name.clone();
                     $(let $m: Result<$t,_> = m.msg.read1();)*
@@ -134,10 +130,13 @@ fn create_dbus_server(
                         let $sp = create_spotify_api(&token);
                         let $device = Some(device_name);
                         let _ = $f;
-                        let _ = p.send(());
+                        let _ = tx.send(());
                     });
                     let mret = m.msg.method_return();
-                    c.map_err(|e| MethodErr::failed(&e)).map(|_| vec![mret])
+                    rx.map(|val| match val {
+                        Ok(_) => Ok(vec![mret]),
+                        Err(e) => Err(MethodErr::failed(&e)),
+                    }).into()
                 }
             }
         }
@@ -638,6 +637,8 @@ fn create_dbus_server(
     tree.set_registered(&connection, true)
         .expect("Failed to register tree");
 
+    //let handle = tokio_compat::runtime::Handle::current();
+
     let async_connection = AConnection::new(connection.clone(), handle)
         .expect("Failed to create async dbus connection");
 
@@ -649,7 +650,7 @@ fn create_dbus_server(
             .expect("Failed to unwrap async messages"),
     );
 
-    Box::new(server.for_each(|message| {
+    Box::pin(server.for_each(|message| {
         warn!("Unhandled DBus message: {:?}", message);
         Ok(())
     }))
