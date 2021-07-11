@@ -20,17 +20,18 @@ use librespot::{
     },
 };
 use log::error;
-use std::{io, rc::Rc};
+use std::io;
 use librespot::core::session::SessionError;
 use std::pin::Pin;
 use librespot::playback::config::AudioFormat;
 use std::task::{Context, Poll};
 use tokio_stream::wrappers::UnboundedReceiverStream;
+use std::sync::Arc;
 
 pub struct LibreSpotConnection {
     connection: Pin<Box<dyn Future<Output=Result<Session, SessionError>>>>,
     spirc_task: Option<Pin<Box<dyn Future<Output=()>>>>,
-    spirc: Option<Rc<Spirc>>,
+    spirc: Option<Arc<Spirc>>,
     discovery_stream: DiscoveryStream,
 }
 
@@ -69,7 +70,7 @@ pub struct SpotifydState {
 #[allow(clippy::unnecessary_wraps)]
 fn new_dbus_server(
     session: Session,
-    spirc: Rc<Spirc>,
+    spirc: Arc<Spirc>,
     device_name: String,
 ) -> Option<Pin<Box<dyn Future<Output=()>>>> {
     Some(Box::pin(DbusServer::new(
@@ -82,7 +83,7 @@ fn new_dbus_server(
 #[cfg(not(feature = "dbus_mpris"))]
 fn new_dbus_server(
     _: Session,
-    _: Rc<Spirc>,
+    _: Arc<Spirc>,
     _: String,
 )  -> Option<Pin<Box<dyn Future<Output=()>>>> {
     None
@@ -180,7 +181,7 @@ impl Future for MainLoopState {
                     mixer,
                 );
                 self.librespot_connection.spirc_task = Some(Box::pin(spirc_task));
-                let shared_spirc = Rc::new(spirc);
+                let shared_spirc = Arc::new(spirc);
                 self.librespot_connection.spirc = Some(shared_spirc.clone());
 
                 if self.use_mpris {
