@@ -4,6 +4,9 @@ use crate::{config, main_loop};
 use futures;
 #[cfg(feature = "dbus_keyring")]
 use keyring::Keyring;
+use librespot::core::authentication::Credentials;
+use librespot::core::session::SessionError;
+use librespot::playback::config::AudioFormat;
 use librespot::{
     connect::discovery::discovery,
     core::{
@@ -17,16 +20,11 @@ use librespot::{
     },
 };
 use log::info;
+use std::pin::Pin;
 use std::str::FromStr;
 use tokio::signal::ctrl_c;
-use librespot::core::authentication::Credentials;
-use librespot::playback::config::AudioFormat;
-use librespot::core::session::SessionError;
-use std::pin::Pin;
 
-pub(crate) fn initial_state(
-    config: config::SpotifydConfig,
-) -> main_loop::MainLoopState {
+pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoopState {
     #[cfg(feature = "alsa_backend")]
     let mut mixer = {
         let local_audio_device = config.audio_device.clone();
@@ -118,15 +116,10 @@ pub(crate) fn initial_state(
         }
     }
 
-    let connection = if let Some(credentials) = get_credentials(
-        &cache,
-        &username,
-        &password) {
-        let sess: Pin<Box<dyn futures::Future<Output=Result<Session, SessionError>>>>  = Box::pin(Session::connect(
-            session_config.clone(),
-            credentials,
-            cache.clone(),
-        ));
+    let connection = if let Some(credentials) = get_credentials(&cache, &username, &password) {
+        let sess: Pin<Box<dyn futures::Future<Output = Result<Session, SessionError>>>> = Box::pin(
+            Session::connect(session_config.clone(), credentials, cache.clone()),
+        );
         sess
     } else {
         Box::pin(futures::future::pending())
@@ -161,7 +154,11 @@ pub(crate) fn initial_state(
     }
 }
 
-fn get_credentials(cache: &Option<Cache>, username: &Option<String>, password: &Option<String>) -> Option<Credentials> {
+fn get_credentials(
+    cache: &Option<Cache>,
+    username: &Option<String>,
+    password: &Option<String>,
+) -> Option<Credentials> {
     if let (Some(username), Some(password)) = (username, password) {
         return Some(Credentials::with_password(username, password));
     }

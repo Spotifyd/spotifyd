@@ -1,12 +1,11 @@
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
 use crate::process::{spawn_program_on_event, Child};
-use futures::{self, Future, StreamExt, Stream};
+use futures::{self, Future, Stream, StreamExt};
+use librespot::core::session::SessionError;
+use librespot::playback::config::AudioFormat;
 use librespot::{
-    connect::{
-        discovery::DiscoveryStream,
-        spirc::{Spirc},
-    },
+    connect::{discovery::DiscoveryStream, spirc::Spirc},
     core::{
         cache::Cache,
         config::{ConnectConfig, DeviceType, SessionConfig, VolumeCtrl},
@@ -21,23 +20,21 @@ use librespot::{
 };
 use log::error;
 use std::io;
-use librespot::core::session::SessionError;
 use std::pin::Pin;
-use librespot::playback::config::AudioFormat;
+use std::sync::Arc;
 use std::task::{Context, Poll};
 use tokio_stream::wrappers::UnboundedReceiverStream;
-use std::sync::Arc;
 
 pub struct LibreSpotConnection {
-    connection: Pin<Box<dyn Future<Output=Result<Session, SessionError>>>>,
-    spirc_task: Option<Pin<Box<dyn Future<Output=()>>>>,
+    connection: Pin<Box<dyn Future<Output = Result<Session, SessionError>>>>,
+    spirc_task: Option<Pin<Box<dyn Future<Output = ()>>>>,
     spirc: Option<Arc<Spirc>>,
     discovery_stream: DiscoveryStream,
 }
 
 impl LibreSpotConnection {
     pub fn new(
-        connection: Pin<Box<dyn Future<Output=Result<Session, SessionError>>>>,
+        connection: Pin<Box<dyn Future<Output = Result<Session, SessionError>>>>,
         discovery_stream: DiscoveryStream,
     ) -> LibreSpotConnection {
         LibreSpotConnection {
@@ -57,13 +54,13 @@ pub struct AudioSetup {
 
 pub struct SpotifydState {
     // TODO: this ain't a stream anymore, rename
-    pub ctrl_c_stream: Pin<Box<dyn Future<Output=Result<(),io::Error>>>>,
+    pub ctrl_c_stream: Pin<Box<dyn Future<Output = Result<(), io::Error>>>>,
     pub shutting_down: bool,
     pub cache: Option<Cache>,
     pub device_name: String,
-    pub player_event_channel: Option<Pin<Box<dyn Stream<Item=PlayerEvent>>>>,
+    pub player_event_channel: Option<Pin<Box<dyn Stream<Item = PlayerEvent>>>>,
     pub player_event_program: Option<String>,
-    pub dbus_mpris_server: Option<Pin<Box<dyn Future<Output=()>>>>,
+    pub dbus_mpris_server: Option<Pin<Box<dyn Future<Output = ()>>>>,
 }
 
 #[cfg(feature = "dbus_mpris")]
@@ -72,12 +69,8 @@ fn new_dbus_server(
     session: Session,
     spirc: Arc<Spirc>,
     device_name: String,
-) -> Option<Pin<Box<dyn Future<Output=()>>>> {
-    Some(Box::pin(DbusServer::new(
-        session,
-        spirc,
-        device_name,
-    )))
+) -> Option<Pin<Box<dyn Future<Output = ()>>>> {
+    Some(Box::pin(DbusServer::new(session, spirc, device_name)))
 }
 
 #[cfg(not(feature = "dbus_mpris"))]
@@ -85,7 +78,7 @@ fn new_dbus_server(
     _: Session,
     _: Arc<Spirc>,
     _: String,
-)  -> Option<Pin<Box<dyn Future<Output=()>>>> {
+) -> Option<Pin<Box<dyn Future<Output = ()>>>> {
     None
 }
 
@@ -109,8 +102,11 @@ impl Future for MainLoopState {
 
     fn poll(mut self: Pin<&mut MainLoopState>, cx: &mut Context<'_>) -> Poll<()> {
         loop {
-            if let Poll::Ready(Some(creds)) =
-                self.as_mut().librespot_connection.discovery_stream.poll_next_unpin(cx)
+            if let Poll::Ready(Some(creds)) = self
+                .as_mut()
+                .librespot_connection
+                .discovery_stream
+                .poll_next_unpin(cx)
             {
                 if let Some(ref mut spirc) = self.librespot_connection.spirc {
                     spirc.shutdown();
@@ -151,7 +147,8 @@ impl Future for MainLoopState {
                 let _ = fut.as_mut().poll(cx);
             }
 
-            if let Poll::Ready(Ok(session)) = self.librespot_connection.connection.as_mut().poll(cx) {
+            if let Poll::Ready(Ok(session)) = self.librespot_connection.connection.as_mut().poll(cx)
+            {
                 let mixer = (self.audio_setup.mixer)();
                 let audio_filter = mixer.get_audio_filter();
                 self.librespot_connection.connection = Box::pin(futures::future::pending());
@@ -166,7 +163,8 @@ impl Future for MainLoopState {
                     move || (backend)(audio_device, AudioFormat::default()),
                 );
 
-                self.spotifyd_state.player_event_channel = Some(Box::pin(UnboundedReceiverStream::new(event_channel)));
+                self.spotifyd_state.player_event_channel =
+                    Some(Box::pin(UnboundedReceiverStream::new(event_channel)));
 
                 let (spirc, spirc_task) = Spirc::new(
                     ConnectConfig {
@@ -198,7 +196,7 @@ impl Future for MainLoopState {
                         self.spotifyd_state.shutting_down = true;
                     }
                     // TODO: have I accidentally short-circuited the shutdown logic here?
-                    return Poll::Ready(())
+                    return Poll::Ready(());
                 }
             } else if let Some(Poll::Ready(_)) = self
                 .librespot_connection

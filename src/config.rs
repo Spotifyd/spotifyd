@@ -10,11 +10,11 @@ use librespot::{
     playback::config::{Bitrate as LSBitrate, PlayerConfig},
 };
 use log::{error, info, warn};
+use reqwest::Url;
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
 use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
-use reqwest::Url;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
@@ -580,7 +580,19 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .map(PathBuf::from)
         // TODO: plumb size limits, check audio_cache?
         // TODO: rather than silently disabling cache if constructor fails, maybe we should handle the error?
-        .map(|path| Cache::new(Some(path.clone()), if audio_cache { Some(path.clone()) } else { None }, None).ok()).flatten();
+        .map(|path| {
+            Cache::new(
+                Some(path.clone()),
+                if audio_cache {
+                    Some(path.clone())
+                } else {
+                    None
+                },
+                None,
+            )
+            .ok()
+        })
+        .flatten();
 
     let bitrate: LSBitrate = config
         .shared_config
