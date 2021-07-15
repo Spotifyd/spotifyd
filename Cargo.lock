@@ -851,7 +851,7 @@ checksum = "aafcde04e90a5226a6443b7aabdb016ba2f8307c847d524724bd9b346dd1a2d3"
 dependencies = [
  "atty",
  "humantime",
- "log 0.4.8",
+ "log 0.4.14",
  "regex",
  "termcolor",
 ]
@@ -864,7 +864,7 @@ checksum = "44533bbbb3bb3c1fa17d9f2e4e38bbbaf8396ba82193c4cb1b6445d711445d36"
 dependencies = [
  "atty",
  "humantime",
- "log 0.4.8",
+ "log 0.4.14",
  "regex",
  "termcolor",
 ]
@@ -931,7 +931,7 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c9a4820f0ccc8a7afd67c39a0f1a0f4b07ca1725164271a64939d7aeb9af065"
 dependencies = [
- "log 0.4.8",
+ "log 0.4.14",
  "syslog",
 ]
 
@@ -1187,7 +1187,7 @@ dependencies = [
  "futures-util",
  "http",
  "indexmap",
- "log 0.4.8",
+ "log 0.4.14",
  "slab 0.4.2",
  "tokio 0.2.11",
  "tokio-util",
@@ -1313,7 +1313,7 @@ dependencies = [
  "httparse",
  "iovec",
  "language-tags",
- "log 0.4.8",
+ "log 0.4.14",
  "mime",
  "net2",
  "percent-encoding 1.0.1",
@@ -1342,7 +1342,7 @@ dependencies = [
  "http-body",
  "httparse",
  "itoa",
- "log 0.4.8",
+ "log 0.4.14",
  "net2",
  "pin-project",
  "time",
@@ -1539,7 +1539,7 @@ dependencies = [
  "futures 0.1.29",
  "get_if_addrs",
  "hostname",
- "log 0.4.8",
+ "log 0.4.14",
  "multimap",
  "net2",
  "quick-error",
@@ -1574,7 +1574,7 @@ dependencies = [
  "librespot-metadata",
  "librespot-playback",
  "librespot-protocol",
- "log 0.4.8",
+ "log 0.4.14",
  "num-bigint 0.2.5",
  "protobuf",
  "rand 0.7.3",
@@ -1601,7 +1601,7 @@ dependencies = [
  "lewton",
  "librespot-core",
  "librespot-tremor",
- "log 0.4.8",
+ "log 0.4.14",
  "num-bigint 0.2.5",
  "num-traits",
  "tempfile",
@@ -1623,7 +1623,7 @@ dependencies = [
  "librespot-core",
  "librespot-playback",
  "librespot-protocol",
- "log 0.4.8",
+ "log 0.4.14",
  "num-bigint 0.2.5",
  "protobuf",
  "rand 0.7.3",
@@ -1653,7 +1653,7 @@ dependencies = [
  "hyper-proxy",
  "lazy_static",
  "librespot-protocol",
- "log 0.4.8",
+ "log 0.4.14",
  "num-bigint 0.2.5",
  "num-integer",
  "num-traits",
@@ -1684,7 +1684,7 @@ dependencies = [
  "librespot-core",
  "librespot-protocol",
  "linear-map",
- "log 0.4.8",
+ "log 0.4.14",
  "protobuf",
 ]
 
@@ -1703,7 +1703,7 @@ dependencies = [
  "librespot-audio",
  "librespot-core",
  "librespot-metadata",
- "log 0.4.8",
+ "log 0.4.14",
  "portaudio-rs",
  "rodio",
  "shell-words",
@@ -1754,16 +1754,16 @@ version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e19e8d5c34a3e0e2223db8e060f9e8264aeeb5c5fc64a4ee9965c062211c024b"
 dependencies = [
- "log 0.4.8",
+ "log 0.4.14",
 ]
 
 [[package]]
 name = "log"
-version = "0.4.8"
+version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14b6052be84e6b71ab17edffc2eeabf5c2c3ae1fdb464aae35ac50c67a44e1f7"
+checksum = "51b9bbe6c47d51fc3e1a9b945965946b4c44142ab8792c50835a980d362c2710"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
 ]
 
 [[package]]
@@ -1846,7 +1846,7 @@ dependencies = [
  "iovec",
  "kernel32-sys",
  "libc",
- "log 0.4.8",
+ "log 0.4.14",
  "miow 0.2.1",
  "net2",
  "slab 0.4.2",
@@ -1859,7 +1859,7 @@ version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5e374eff525ce1c5b7687c4cef63943e7686524a387933ad27ca7ec43779cb3"
 dependencies = [
- "log 0.4.8",
+ "log 0.4.14",
  "mio",
  "miow 0.3.3",
  "winapi 0.3.8",
@@ -1932,7 +1932,7 @@ checksum = "4b2df1a4c22fd44a62147fd8f13dd0f95c9d8ca7b2610299b2a2f9cf8964274e"
 dependencies = [
  "lazy_static",
  "libc",
- "log 0.4.8",
+ "log 0.4.14",
  "openssl",
  "openssl-probe",
  "openssl-sys",
@@ -2692,7 +2692,7 @@ dependencies = [
  "hyper-tls",
  "js-sys",
  "lazy_static",
- "log 0.4.8",
+ "log 0.4.14",
  "mime",
  "mime_guess",
  "native-tls",
@@ -2748,7 +2748,7 @@ dependencies = [
  "failure",
  "itertools",
  "lazy_static",
- "log 0.4.8",
+ "log 0.4.14",
  "percent-encoding 1.0.1",
  "rand 0.6.5",
  "random",
@@ -3111,7 +3111,7 @@ dependencies = [
  "keyring",
  "libc",
  "librespot",
- "log 0.4.8",
+ "log 0.4.14",
  "percent-encoding 2.1.0",
  "rspotify",
  "serde",
@@ -3243,7 +3243,7 @@ checksum = "a0641142b4081d3d44beffa4eefd7346a228cdf91ed70186db2ca2cef762d327"
 dependencies = [
  "error-chain 0.11.0",
  "libc",
- "log 0.4.8",
+ "log 0.4.14",
  "time",
 ]
 
@@ -3367,7 +3367,7 @@ dependencies = [
  "bytes 0.4.12",
  "futures 0.1.29",
  "iovec",
- "log 0.4.8",
+ "log 0.4.14",
  "mio",
  "scoped-tls",
  "tokio 0.1.22",
@@ -3416,7 +3416,7 @@ checksum = "57fc868aae093479e3131e3d165c93b1c7474109d13c90ec0dda2a1bbfff0674"
 dependencies = [
  "bytes 0.4.12",
  "futures 0.1.29",
- "log 0.4.8",
+ "log 0.4.14",
 ]
 
 [[package]]
@@ -3429,7 +3429,7 @@ dependencies = [
  "futures 0.1.29",
  "lazy_static",
  "libc",
- "log 0.4.8",
+ "log 0.4.14",
  "mio",
  "mio-named-pipes",
  "tokio-io",
@@ -3465,7 +3465,7 @@ dependencies = [
  "crossbeam-utils 0.6.6",
  "futures 0.1.29",
  "lazy_static",
- "log 0.4.8",
+ "log 0.4.14",
  "mio",
  "num_cpus",
  "parking_lot",
@@ -3565,7 +3565,7 @@ dependencies = [
  "crossbeam-utils 0.6.6",
  "futures 0.1.29",
  "lazy_static",
- "log 0.4.8",
+ "log 0.4.14",
  "num_cpus",
  "slab 0.4.2",
  "tokio-executor",
@@ -3601,7 +3601,7 @@ checksum = "f02298505547f73e60f568359ef0d016d5acd6e830ab9bc7c4a5b3403440121b"
 dependencies = [
  "bytes 0.4.12",
  "futures 0.1.29",
- "log 0.4.8",
+ "log 0.4.14",
  "mio",
  "tokio-codec",
  "tokio-io",
@@ -3618,7 +3618,7 @@ dependencies = [
  "futures 0.1.29",
  "iovec",
  "libc",
- "log 0.4.8",
+ "log 0.4.14",
  "mio",
  "mio-uds",
  "tokio-codec",
@@ -3635,7 +3635,7 @@ dependencies = [
  "bytes 0.5.4",
  "futures-core",
  "futures-sink",
- "log 0.4.8",
+ "log 0.4.14",
  "pin-project-lite 0.1.4",
  "tokio 0.2.11",
 ]
@@ -3856,7 +3856,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a05d9d966753fa4b5c8db73fcab5eed4549cfe0e1e4e66911e5564a0085c35d1"
 dependencies = [
  "futures 0.1.29",
- "log 0.4.8",
+ "log 0.4.14",
  "try-lock 0.1.0",
 ]
 
@@ -3866,7 +3866,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ce8a968cb1cd110d136ff8b819a556d6fb6d919363c61534f6860c7eb172ba0"
 dependencies = [
- "log 0.4.8",
+ "log 0.4.14",
  "try-lock 0.2.2",
 ]
 
@@ -3896,7 +3896,7 @@ checksum = "11cdb95816290b525b32587d76419facd99662a07e59d3cdb560488a819d9a45"
 dependencies = [
  "bumpalo",
  "lazy_static",
- "log 0.4.8",
+ "log 0.4.14",
  "proc-macro2 1.0.19",
  "quote 1.0.2",
  "syn 1.0.39",
@@ -3952,7 +3952,7 @@ checksum = "ef012a0d93fc0432df126a8eaf547b2dce25a8ce9212e1d3cbeef5c11157975d"
 dependencies = [
  "anyhow",
  "heck",
- "log 0.4.8",
+ "log 0.4.14",
  "proc-macro2 1.0.19",
  "quote 1.0.2",
  "syn 1.0.39",
