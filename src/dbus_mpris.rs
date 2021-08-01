@@ -441,7 +441,7 @@ async fn create_dbus_server(api_token: RspotifyToken, spirc: Arc<Spirc>, device_
         }
     });
 
-    cr.insert("/", &[media_player2_interface, player_interface], ());
+    cr.insert("/org/mpris/MediaPlayer2", &[media_player2_interface, player_interface], ());
 
     conn.start_receive(
         MatchRule::new_method_call(),
