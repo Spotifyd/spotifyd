@@ -143,7 +143,6 @@ impl Future for MainLoopState {
             }
 
             if let Some(ref mut fut) = self.spotifyd_state.dbus_mpris_server {
-                // TODO: original PR says let _ = Future::poll(fut.as_mut(), cx);
                 let _ = fut.as_mut().poll(cx);
             }
 
@@ -195,7 +194,6 @@ impl Future for MainLoopState {
                         spirc.shutdown();
                         self.spotifyd_state.shutting_down = true;
                     }
-                    // TODO: have I accidentally short-circuited the shutdown logic here?
                     return Poll::Ready(());
                 }
             } else if let Some(Poll::Ready(_)) = self
