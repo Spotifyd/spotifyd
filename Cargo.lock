@@ -69,36 +69,14 @@ dependencies = [
 
 [[package]]
 name = "alsa"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe6a5e4eb4879d7cb8d19161927fbf825f0d89761776359c9cf4f9c9c2f35c52"
-dependencies = [
- "alsa-sys 0.1.2",
- "bitflags 0.9.1",
- "libc",
- "nix 0.14.1",
-]
-
-[[package]]
-name = "alsa"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "75c4da790adcb2ce5e758c064b4f3ec17a30349f9961d3e5e6c9688b052a9e18"
 dependencies = [
- "alsa-sys 0.3.1",
- "bitflags 1.2.1",
+ "alsa-sys",
+ "bitflags",
  "libc",
- "nix 0.20.0",
-]
-
-[[package]]
-name = "alsa-sys"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0edcbbf9ef68f15ae1b620f722180b82a98b6f0628d30baa6b8d2a5abc87d58"
-dependencies = [
- "libc",
- "pkg-config",
+ "nix",
 ]
 
 [[package]]
@@ -201,7 +179,7 @@ version = "0.51.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebd71393f1ec0509b553aa012b9b58e81dadbdff7130bd3b8cba576e69b32f75"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "cexpr",
  "cfg-if 0.1.10",
  "clang-sys",
@@ -213,12 +191,6 @@ dependencies = [
  "rustc-hash",
  "shlex",
 ]
-
-[[package]]
-name = "bitflags"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4efd02e230a02e18f92fc2735f44597385ed02ad8f831e7c1c1156ee5e1ab3a5"
 
 [[package]]
 name = "bitflags"
@@ -377,7 +349,7 @@ checksum = "5067f5bb2d80ef5d68b4c87db81601f0b75bca627bc2ef76b141d7b846a3c6d9"
 dependencies = [
  "ansi_term",
  "atty",
- "bitflags 1.2.1",
+ "bitflags",
  "strsim 0.8.0",
  "textwrap",
  "unicode-width",
@@ -390,7 +362,7 @@ version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
 ]
 
 [[package]]
@@ -474,7 +446,7 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11894b20ebfe1ff903cbdc52259693389eea03b94918a2def2c30c3bf227ad88"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "coreaudio-sys",
 ]
 
@@ -493,7 +465,7 @@ version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8351ddf2aaa3c583fa388029f8b3d26f3c7035a20911fdd5f2e2ed7ab57dad25"
 dependencies = [
- "alsa 0.5.0",
+ "alsa",
  "core-foundation-sys 0.6.2",
  "coreaudio-rs",
  "jni",
@@ -503,7 +475,7 @@ dependencies = [
  "mach",
  "ndk",
  "ndk-glue",
- "nix 0.20.0",
+ "nix",
  "oboe",
  "parking_lot 0.11.1",
  "stdweb",
@@ -899,7 +871,7 @@ version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e9763c69ebaae630ba35f74888db465e49e259ba1bc0eda7d06f4a067615d82"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "fuchsia-zircon-sys",
 ]
 
@@ -1130,7 +1102,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0b7591fb62902706ae8e7aaff416b1b0fa2c0fd0878b46dc13baa3712d8a855"
 dependencies = [
  "base64 0.13.0",
- "bitflags 1.2.1",
+ "bitflags",
  "bytes 1.0.1",
  "headers-core",
  "http",
@@ -1591,7 +1563,7 @@ version = "2.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db951f37898e19a6785208e3a290261e0f1a8e086716be596aaad684882ca8e3"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "libc",
  "libpulse-sys",
  "num-derive",
@@ -1769,7 +1741,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59ca3df986a7e1a43008717660803e159177e86a589d484a0fc01fccd7967ad6"
 dependencies = [
- "alsa 0.5.0",
+ "alsa",
  "byteorder",
  "cpal",
  "futures-executor",
@@ -2036,24 +2008,11 @@ dependencies = [
 
 [[package]]
 name = "nix"
-version = "0.14.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c722bee1037d430d0f8e687bbdbf222f27cc6e4e68d5caf630857bb2b6dbdce"
-dependencies = [
- "bitflags 1.2.1",
- "cc",
- "cfg-if 0.1.10",
- "libc",
- "void",
-]
-
-[[package]]
-name = "nix"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fa9b4819da1bc61c0ea48b63b7bc8604064dd43013e7cc325df098d49cd7c18a"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "cc",
  "cfg-if 1.0.0",
  "libc",
@@ -2276,7 +2235,7 @@ version = "0.10.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "549430950c79ae24e6d02e0b7404534ecf311d94cc9f861e9e4020187d13d885"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "cfg-if 1.0.0",
  "foreign-types",
  "libc",
@@ -2458,7 +2417,7 @@ version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdb6b5eff96ccc9bf44d34c379ab03ae944426d83d1694345bdf8159d561d562"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "libc",
  "portaudio-sys",
 ]
@@ -2817,7 +2776,7 @@ version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ab49abadf3f9e1c4bc499e8845e152ad87d2ad2d30371841171169e9d75feee"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
 ]
 
 [[package]]
@@ -3046,7 +3005,7 @@ version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64808902d7d99f78eaddd2b4e2509713babc3dc3c85ad6f4c447680f3c01e535"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "core-foundation 0.7.0",
  "core-foundation-sys 0.7.0",
  "libc",
@@ -3059,7 +3018,7 @@ version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23a2ac85147a3a11d77ecf1bc7166ec0b92febfa4461c37944e180f319ece467"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "core-foundation 0.9.1",
  "core-foundation-sys 0.8.2",
  "libc",
@@ -3257,7 +3216,7 @@ dependencies = [
 name = "spotifyd"
 version = "0.3.2"
 dependencies = [
- "alsa 0.3.0",
+ "alsa",
  "chrono",
  "color-eyre",
  "daemonize",
@@ -3893,7 +3852,7 @@ version = "3.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6aba5e34f93dc7051dfad05b98a18e9156f27e7b431fe1d2398cb6061c0a1dba"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "chrono",
  "failure",
 ]
@@ -3909,12 +3868,6 @@ name = "version_check"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "078775d0255232fb988e6fccf26ddc9d1ac274299aaedcedce21c6f72cc533ce"
-
-[[package]]
-name = "void"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
 
 [[package]]
 name = "walkdir"
