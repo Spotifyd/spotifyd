@@ -701,6 +701,9 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         pc.bitrate = bitrate;
         pc.normalisation = config.shared_config.volume_normalisation;
         pc.normalisation_pregain = normalisation_pregain;
+        // Sensible default; the "default" supplied by PlayerConfig::default() sets this to -1.0,
+        // which turns the output to garbage.
+        pc.normalisation_threshold = 1.0;
         pc.gapless = true;
         pc
     };
