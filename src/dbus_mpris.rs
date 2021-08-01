@@ -79,6 +79,11 @@ impl Future for DbusServer {
                         self.spirc.clone(),
                         self.device_name.clone(),
                     )));
+                    // TODO: for reasons I don't _entirely_ understand, the token request completing
+                    // convinces callers that they don't need to re-check the status of this future
+                    // until we start playing. This causes DBUS to not respond until that point in
+                    // time. So, fire a "wake" here, which tells callers to keep checking.
+                    cx.waker().clone().wake();
                     got_new_token = true;
                 }
             } else {
