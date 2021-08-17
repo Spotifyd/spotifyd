@@ -29,10 +29,19 @@ password_cmd = "command_that_writes_password_to_stdout"
 # can't be used simultaneously.
 use_keyring = true
 
-# If set to true, `spotifyd` tries to bind to the session dbus
-# and expose MPRIS controls. When running headless, without a dbus session,
-# then set this to false to avoid binding errors
+# If set to true, `spotifyd` tries to bind to dbus (default is the session bus)
+# and expose MPRIS controls. When running headless, without the session bus,
+# you should set this to false, to avoid errors. If you still want to use MPRIS,
+# have a look at the `dbus_type` option.
 use_mpris = true
+
+# The bus to bind to with the MPRIS interface.
+# Possible values: "session", "system"
+# The system bus can be used if no graphical session is available
+# (e.g. on headless systems) but you still want to be able to use MPRIS.
+# NOTE: You might need to add appropriate policies to allow spotifyd to
+# own the name.
+dbus_type = "session"
 
 # The audio backend used to play music. To get
 # a list of possible backends, run `spotifyd --help`.

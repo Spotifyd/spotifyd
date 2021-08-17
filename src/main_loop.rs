@@ -1,3 +1,4 @@
+use crate::config::DBusType;
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
 use crate::process::spawn_program_on_event;
@@ -81,6 +82,8 @@ pub(crate) struct MainLoop {
     pub(crate) device_type: DeviceType,
     #[cfg_attr(not(feature = "dbus_mpris"), allow(unused))]
     pub(crate) use_mpris: bool,
+    #[cfg_attr(not(feature = "dbus_mpris"), allow(unused))]
+    pub(crate) dbus_type: DBusType,
     pub(crate) credentials_provider: CredentialsProvider,
 }
 
@@ -156,6 +159,7 @@ impl MainLoop {
                     shared_spirc.clone(),
                     self.spotifyd_state.device_name.clone(),
                     rx,
+                    self.dbus_type,
                 ));
                 Some(tx)
             } else {
