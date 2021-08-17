@@ -1,3 +1,4 @@
+use crate::config::DBusType;
 use chrono::{prelude::*, Duration};
 use dbus::{
     arg::{RefArg, Variant},
@@ -36,6 +37,7 @@ pub struct DbusServer {
     session: Session,
     spirc: Arc<Spirc>,
     spotify_client: Arc<AuthCodeSpotify>,
+    dbus_type: DBusType,
     #[allow(clippy::type_complexity)]
     token_request: Option<Pin<Box<dyn Future<Output = Result<LibrespotToken, MercuryError>>>>>,
     dbus_future: Option<Pin<Box<dyn Future<Output = ()>>>>,
@@ -54,11 +56,13 @@ impl DbusServer {
         spirc: Arc<Spirc>,
         device_name: String,
         event_rx: UnboundedReceiver<PlayerEvent>,
+        dbus_type: DBusType,
     ) -> DbusServer {
         DbusServer {
             session,
             spirc,
             spotify_client: Default::default(),
+            dbus_type,
             token_request: None,
             dbus_future: None,
             device_name,
@@ -112,6 +116,7 @@ impl Future for DbusServer {
                             self.spirc.clone(),
                             self.device_name.clone(),
                             rx,
+                            self.dbus_type,
                         )));
                     } else {
                         *self.spotify_client.get_token().lock().unwrap() = Some(api_token);
@@ -155,10 +160,13 @@ async fn create_dbus_server(
     spirc: Arc<Spirc>,
     device_name: String,
     mut event_rx: UnboundedReceiver<PlayerEvent>,
+    dbus_type: DBusType,
 ) {
-    // TODO: allow other DBus types through CLI and config entry.
-    let (resource, conn) =
-        connection::new_session_sync().expect("Failed to initialize DBus connection");
+    let (resource, conn) = match dbus_type {
+        DBusType::Session => connection::new_session_sync(),
+        DBusType::System => connection::new_system_sync(),
+    }
+    .expect("Failed to initialize DBus connection");
     tokio::spawn(async {
         let err = resource.await;
         panic!("Lost connection to D-Bus: {}", err);
