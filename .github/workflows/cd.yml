@@ -3,169 +3,105 @@ name: Continuous Deployment
 on:
   push:
     tags:
-      - 'v*.*.*'
+    - 'v*.*.*'
 
 jobs:
   publish:
-    name: Publishing ${{ matrix.build_target }}-${{ matrix.artifact_type }}
+    name: Publishing ${{ matrix.build_target }}-${{ matrix.arch}}-${{ matrix.artifact_type }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        build_target: [macos, linux, linux-armhf, linux-armv6]
-        rust: [stable]
-        artifact_type: ['slim', 'default', 'full']  # The build strategy will build all types for each OS specified
-        include:
-          - artifact_type: 'slim'               # Slim version has no features enabled by default.
-            feature: ''
-          - artifact_type: 'default'
-            feature: 'dbus_keyring,dbus_mpris'  # Default version has all extra features enabled
-          - artifact_type: 'full'
-            feature: 'dbus_keyring,dbus_mpris'  # Full version has all extra features and audio backends enabled
-          - build_target: macos
-            os: macos-latest
-            artifact_prefix: macos
-            target: x86_64-apple-darwin
-          - build_target: linux
-            os: ubuntu-latest
-            artifact_prefix: linux
-            target: x86_64-unknown-linux-gnu
-          - build_target: linux-armhf
-            os: ubuntu-18.04
-            artifact_prefix: linux-armhf
-            target: arm-unknown-linux-gnueabihf
-          - build_target: linux-armv6
-            os: ubuntu-18.04
-            artifact_prefix: linux-armv6
-            target: arm-unknown-linux-gnueabihf
-          - build_target: macos
-            artifact_type: slim
-            audio_backend: portaudio_backend
-          - build_target: linux
-            artifact_type: slim
-            audio_backend: pulseaudio_backend
-          - build_target: linux-armhf
-            artifact_type: slim
-            audio_backend: alsa_backend
-          - build_target: linux-armv6
-            artifact_type: slim
-            audio_backend: alsa_backend
-          - build_target: macos
-            artifact_type: default
-            audio_backend: portaudio_backend
-          - build_target: linux
-            artifact_type: default
-            audio_backend: pulseaudio_backend
-          - build_target: linux-armhf
-            artifact_type: default
-            audio_backend: alsa_backend
-          - build_target: linux
-            artifact_type: full
-            audio_backend: pulseaudio_backend,alsa_backend,rodio_backend
-          - build_target: macos
-            artifact_type: full
-            audio_backend: portaudio_backend,rodio_backend
-          - build_target: linux-armhf
-            artifact_type: full
-            audio_backend: alsa_backend
+        build_target: [linux, macos]
+        artifact_type: [slim, default, full]
+        arch: [x86_64, armhf, arm64] # "our" name of the arch. How debian, rust and gcc call them will be set later
+        # remove unwanted combinations. Arm64 macos is not supported by GH right now
         exclude:
-          - build_target: linux-armv6
-            artifact_type: 'default'            # Raspberry Pi toolchain is too old for dbus/systemd
-          - build_target: linux-armv6
-            artifact_type: 'full'               # Raspberry Pi toolchain is too old for dbus/systemd
-
+        - build_target: macos
+          arch: armhf
+        - build_target: macos
+          arch: arm64
+        include:
+        # Setup Arch-specific defaults. Different systems use different names
+        - arch: x86_64
+          abi: gnu
+          binarch: x86_64
+          debarch: amd64
+        - arch: armhf
+          abi: gnueabihf
+          binarch: arm
+          debarch: armhf
+        - arch: arm64
+          abi: gnu
+          binarch: aarch64
+          debarch: arm64
+        # Setup OS-specific defaults
+        - build_target: macos
+          os: macos-latest
+        - build_target: linux
+          os: ubuntu-20.04
+        ## Setup feature sets
+        - artifact_type: slim
+          features: ''                       # Slim version has no features enabled by default.
+        - artifact_type: 'default'
+          feature: 'dbus_keyring,dbus_mpris' # Default version has all extra features enabled
+        - artifact_type: 'full'
+          feature: 'dbus_keyring,dbus_mpris' # Full version has all extra features and audio backends enabled
+        ## Setup audio backends
+        # MacOS
+        - build_target: macos
+          artifact_type: slim
+          audio_backend: portaudio_backend
+        - build_target: macos
+          artifact_type: default
+          audio_backend: portaudio_backend
+        - build_target: macos
+          artifact_type: full
+          audio_backend: portaudio_backend,rodio_backend
+        # Linux
+        - build_target: linux
+          artifact_type: slim
+          audio_backend: alsa_backend
+        - build_target: linux
+          artifact_type: default
+          audio_backend: alsa_backend
+        - build_target: linux
+          artifact_type: full
+          audio_backend: pulseaudio_backend,alsa_backend,rodio_backend
     steps:
-      - name: Installing Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.target }}
-          override: true
-      - name: Installing needed macOS dependencies
-        if: matrix.os == 'macos-latest'
-        run: brew install awk dbus pkg-config portaudio
-      - name: Installing needed Ubuntu dependencies
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-18.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y -qq libasound2-dev libssl-dev libpulse-dev libdbus-1-dev
-      - name: Installing needed Ubuntu armhf dependencies
-        if: matrix.os == 'ubuntu-18.04' && matrix.build_target == 'linux-armhf'
-        run: |
-          sudo mkdir -p /build/sysroot
-          echo "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ bionic main" | sudo tee -a /etc/apt/sources.list
-          sudo apt-get update
-          sudo apt-get install -y -qq gcc-arm-linux-gnueabihf libc6-armhf-cross libc6-dev-armhf-cross
-          sudo apt-get download libasound2:armhf libasound2-dev:armhf libssl-dev:armhf libssl1.1:armhf
-          sudo dpkg -x libasound2_*.deb /build/sysroot/
-          sudo dpkg -x libssl-dev*.deb /build/sysroot/
-          sudo dpkg -x libssl1.1*.deb /build/sysroot/
-          sudo dpkg -x libasound2-dev*.deb /build/sysroot/
-          echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
-          echo "TEST=abc" >> $GITHUB_ENV
-          echo "RUSTFLAGS=-C linker=arm-linux-gnueabihf-gcc -L/usr/arm-linux-gnueabihf/lib -L/build/sysroot/usr/lib/arm-linux-gnueabihf -L/build/sysroot/lib/arm-linux-gnueabihf" >> $GITHUB_ENV
-          echo "C_INCLUDE_PATH=/build/sysroot/usr/include" >> $GITHUB_ENV
-          echo "OPENSSL_LIB_DIR=/build/sysroot/usr/lib/arm-linux-gnueabihf" >> $GITHUB_ENV
-          echo "OPENSSL_INCLUDE_DIR=/build/sysroot/usr/include/arm-linux-gnueabihf" >> $GITHUB_ENV
-      - name: Installing needed Ubuntu armv6 dependencies
-        if: matrix.os == 'ubuntu-18.04' && matrix.build_target == 'linux-armv6'
-        run: |
-          sudo mkdir -p /build/sysroot
-          echo "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ bionic main" | sudo tee -a /etc/apt/sources.list
-          sudo apt-get update
-          sudo apt-get install -y -qq git
-          sudo git -C /build clone --depth=1 https://github.com/raspberrypi/tools.git
-          sudo apt-get download libasound2:armhf libasound2-dev:armhf libssl-dev:armhf libssl1.1:armhf
-          sudo dpkg -x libasound2_*.deb /build/sysroot/
-          sudo dpkg -x libssl-dev*.deb /build/sysroot/
-          sudo dpkg -x libssl1.1*.deb /build/sysroot/
-          sudo dpkg -x libasound2-dev*.deb /build/sysroot/
-          echo "/build/tools/arm-bcm2708/arm-linux-gnueabihf/bin" >> $GITHUB_PATH
-          echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
-          echo "TEST=abcd" >> $GITHUB_ENV
-          echo "RUSTFLAGS=-C linker=/build/tools/arm-bcm2708/arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc -L/build/tools/arm-bcm2708/arm-linux-gnueabihf/arm-linux-gnueabihf/sysroot/lib -L/build/tools/arm-bcm2708/arm-linux-gnueabihf/arm-linux-gnueabihf/sysroot/usr/lib -L/build/sysroot/usr/lib/arm-linux-gnueabihf -L/build/sysroot/lib/arm-linux-gnueabihf" >> $GITHUB_ENV
-          echo "C_INCLUDE_PATH=/build/sysroot/usr/include" >> $GITHUB_ENV
-          echo "OPENSSL_LIB_DIR=/build/sysroot/usr/lib/arm-linux-gnueabihf" >> $GITHUB_ENV
-          echo "OPENSSL_INCLUDE_DIR=/build/sysroot/usr/include/arm-linux-gnueabihf" >> $GITHUB_ENV
-      - name: Installing needed Ubuntu armhf dependencies (full)
-        if: matrix.os == 'ubuntu-18.04' && matrix.build_target == 'linux-armhf' && matrix.artifact_type != 'slim'
-        run: |
-          # Make dbus-rs cross-compile, see https://github.com/diwic/dbus-rs/issues/184#issuecomment-520228758
-          sudo apt-get download libdbus-1-dev:armhf libdbus-1-3:armhf libsystemd0:armhf libgcrypt20:armhf liblzma5:armhf liblz4-1:armhf libgpg-error0:armhf
-          sudo dpkg -x libdbus-1-3*.deb /build/sysroot/
-          sudo dpkg -x libdbus-1-dev*.deb /build/sysroot/
-          sudo dpkg -x libsystemd0*.deb /build/sysroot/
-          sudo dpkg -x libgcrypt20_*.deb /build/sysroot/
-          sudo dpkg -x liblzma5_*.deb /build/sysroot/
-          sudo dpkg -x liblz4-1_*.deb /build/sysroot/
-          sudo dpkg -x libgpg-error0_*.deb /build/sysroot/
-          sudo cp -r /build/sysroot/lib/* /build/sysroot/usr/lib/
-          sudo ln -frs /build/sysroot/lib/arm-linux-gnueabihf/libdbus-1.so.3 /build/sysroot/lib/arm-linux-gnueabihf/libdbus-1.so
-          sudo ln -rs /build/sysroot/lib/arm-linux-gnueabihf/libgcrypt.so.20 /build/sysroot/lib/arm-linux-gnueabihf/libgcrypt.so
-          sudo ln -rs /build/sysroot/lib/arm-linux-gnueabihf/libgpg-error.so.0 /build/sysroot/lib/arm-linux-gnueabihf/libgpg-error.so
-          sudo ln -rs /build/sysroot/lib/arm-linux-gnueabihf/liblzma.so.5 /build/sysroot/lib/arm-linux-gnueabihf/liblzma.so
-          sudo ln -rs /build/sysroot/lib/arm-linux-gnueabihf/libsystemd.so.0 /build/sysroot/lib/arm-linux-gnueabihf/libsystemd.so
-          sudo ln -rs /build/sysroot/usr/lib/arm-linux-gnueabihf/liblz4.so.1 /build/sysroot/usr/lib/arm-linux-gnueabihf/liblz4.so
-          sudo mkdir -p /.cargo
-          echo -e '[target.arm-unknown-linux-gnueabihf.dbus]\nrustc-link-lib = ["dbus-1", "gcrypt", "gpg-error", "lz4", "lzma", "systemd"]' | sudo tee -a /.cargo/config
-      - name: Checking out sources
-        uses: actions/checkout@v1
-      - name: Running cargo build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          toolchain: ${{ matrix.rust }}
-          args: --locked --release --target ${{ matrix.target }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}"
-      - name: Packaging final binary
-        shell: bash
-        run: |
-          cd target/${{ matrix.target }}/release
-          tar czvf spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz spotifyd
-          shasum -a 512 spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz > spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.sha512
-      - name: Releasing assets
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            target/${{ matrix.target }}/release/spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.tar.gz
-            target/${{ matrix.target }}/release/spotifyd-${{ matrix.artifact_prefix }}-${{ matrix.artifact_type }}.sha512
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Checking out sources
+      uses: actions/checkout@v1
+    - name: Set vars
+      run: |
+        .github/scripts/setup-vars.sh ${{ matrix.build_target }} ${{ matrix.arch }} ${{ matrix.binarch }} ${{ matrix.abi }} ${{ matrix.artifact_type }} >> $GITHUB_ENV
+    - name: Installing Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: "${{ env.RUST_TARGET }}"
+        override: true
+    - name: Installing needed macOS dependencies
+      if: matrix.build_target == 'macos'
+      run: brew install awk dbus pkg-config portaudio
+    - name: Installing needed Ubuntu dependencies
+      if: matrix.build_target == 'linux'
+      run: sudo bash .github/scripts/install-dependencies.sh ${{ matrix.binarch }} ${{ matrix.abi }} ${{ matrix.debarch }} ${{ matrix.artifact_type }}
+    - name: Running cargo build
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        toolchain: ${{ matrix.rust }}
+        args: --locked --release --target ${{ env.RUST_TARGET }} --no-default-features --features "${{ matrix.feature }},${{ matrix.audio_backend }}"
+    - name: Packaging final binary
+      shell: bash
+      run: |
+        cd target/${{ env.RUST_TARGET }}/release
+        tar czvf ${{ env.ARTIFACT_NAME}}.tar.gz spotifyd
+        shasum -a 512 ${{ env.ARTIFACT_NAME }}.tar.gz > ${{ env.ARTIFACT_NAME }}.sha512
+    - name: Releasing assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          target/${{ env.RUST_TARGET }}/release/${{ env.ARTIFACT_NAME }}.tar.gz
+          target/${{ env.RUST_TARGET }}/release/${{ env.ARTIFACT_NAME }}.sha512
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
