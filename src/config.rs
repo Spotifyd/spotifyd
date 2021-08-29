@@ -103,6 +103,7 @@ static DEVICETYPE_VALUES: &[&str] = &[
 
 // Spotify's device type (copied from it's config.rs)
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
+#[allow(clippy::upper_case_acronyms)]
 #[serde(rename_all = "snake_case")]
 pub enum DeviceType {
     Unknown = 0,
@@ -202,9 +203,9 @@ impl FromStr for Bitrate {
     }
 }
 
-impl Into<LSBitrate> for Bitrate {
-    fn into(self) -> LSBitrate {
-        match self {
+impl From<Bitrate> for LSBitrate {
+    fn from(b: Bitrate) -> Self {
+        match b {
             Bitrate::Bitrate96 => LSBitrate::Bitrate96,
             Bitrate::Bitrate160 => LSBitrate::Bitrate160,
             Bitrate::Bitrate320 => LSBitrate::Bitrate320,

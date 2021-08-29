@@ -274,7 +274,7 @@ fn create_dbus_server(
             Ok(vec![m.msg.method_return()])
         })
     };
-    
+
     let method_next = {
         let local_spirc = spirc.clone();
         f.amethod("Next", (), move |m| {
