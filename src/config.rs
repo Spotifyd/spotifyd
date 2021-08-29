@@ -1,8 +1,4 @@
-use crate::{
-    error::{Error as CrateError, ParseError},
-    process::run_program,
-    utils,
-};
+use crate::{error::Error as CrateError, process::run_program, utils};
 use color_eyre::Report;
 use gethostname::gethostname;
 use librespot::{
@@ -40,7 +36,7 @@ pub enum Backend {
 }
 
 impl FromStr for Backend {
-    type Err = ParseError;
+    type Err = CrateError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -82,7 +78,7 @@ pub enum VolumeController {
 }
 
 impl FromStr for VolumeController {
-    type Err = ParseError;
+    type Err = CrateError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -153,7 +149,7 @@ impl From<&DeviceType> for LSDeviceType {
 }
 
 impl FromStr for DeviceType {
-    type Err = ParseError;
+    type Err = CrateError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let dt = LSDeviceType::from_str(s).unwrap();
@@ -194,7 +190,7 @@ impl<'de> Deserialize<'de> for Bitrate {
 }
 
 impl FromStr for Bitrate {
-    type Err = ParseError;
+    type Err = CrateError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -419,7 +415,7 @@ impl fmt::Debug for SharedConfigValues {
                     None => None,
                 }
             };
-        };
+        }
 
         let password_value = extract_credential!(&self.password);
 

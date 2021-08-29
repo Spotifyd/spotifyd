@@ -1,26 +1,8 @@
-use std::{
-    error::Error as StdError,
-    fmt::{self, Display},
-};
-
-#[derive(Clone, Debug)]
-pub struct ParseError(String);
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "failed to parse config entry: {}", self.0)
-    }
-}
-
-impl StdError for ParseError {
-    fn source(&self) -> Option<&(dyn StdError + 'static)> {
-        None
-    }
-}
+use std::fmt::{self, Display};
 
 /// This crate's error type.
 #[derive(Debug)]
-pub(crate) struct Error {
+pub struct Error {
     kind: ErrorKind,
 }
 
@@ -83,6 +65,8 @@ pub(crate) enum ErrorKind {
     },
     #[allow(unused)]
     NormalisationPregainInvalid,
+    #[allow(unused)]
+    ParseError(String),
 }
 
 impl Display for ErrorKind {
@@ -105,6 +89,9 @@ impl Display for ErrorKind {
                 f,
                 "normalisation-pregain must be a valid 32-bit floating point number."
             ),
+            ErrorKind::ParseError(s) => {
+                write!(f, "failed to parse config entry: {}", s)
+            }
         }
     }
 }
