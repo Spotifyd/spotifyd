@@ -20,6 +20,12 @@ __To read about how to install and configure Spotifyd, take a look at our [wiki]
 - [Contributing](#contributing)
 - [Credits](#credits)
 
+## This Fork
+
+This fork was created to fix an issue with the `on_song_change_hook` configuration command being triggered multiple times, even when the track was not changed. There is an [open issue](https://github.com/Spotifyd/spotifyd/issues/957) for this on the main repo with no official communication. Also, at the time of this fork, there had not been a commit for around 2 1/2 months on the main repo.
+
+This fork will focus on the previously mentioned issue and may include other updates and improvements afterwards.
+
 ## Common issues
 
 - Spotifyd will not work without Spotify Premium
