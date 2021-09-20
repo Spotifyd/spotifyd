@@ -21,6 +21,9 @@ This fork was created to fix an issue with the `on_song_change_hook` configurati
 
 This fork will focus on the previously mentioned issue and may include other updates and improvements afterwards.
 
+__Note:__
+The `on_song_change_hook` configuration variable was renamed to `on_track_change_hook` to be more consistent with the terminology of Spotify.
+
 ## Common issues
 
 - Spotifyd will not work without Spotify Premium
