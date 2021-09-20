@@ -1,6 +1,4 @@
-#[allow(dead_code)]
 use crate::error::Error;
-use librespot::playback::player::PlayerEvent;
 use log::info;
 use std::{
     collections::HashMap,
