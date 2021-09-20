@@ -298,10 +298,45 @@ pub struct SharedConfigValues {
     #[serde(skip)]
     debug_credentials: bool,
 
-    /// A script that gets evaluated in the user's shell when the song changes
-    #[structopt(visible_alias = "onevent", long, value_name = "string")]
-    #[serde(alias = "onevent")]
-    on_song_change_hook: Option<String>,
+    /// A script that gets evaluated in the user's shell when the track changes
+    #[structopt(long, value_name = "string")]
+    on_track_change_hook: Option<String>,
+
+    /// A script that gets evaluated in the user's shell when a track is started
+    #[structopt(long, value_name = "string")]
+    on_track_started_hook: Option<String>,
+
+    /// A script that gets evaluated in the user's shell when a track is stopped
+    #[structopt(long, value_name = "string")]
+    on_track_stopped_hook: Option<String>,
+
+    /// A script that gets evaluated in the user's shell when a track is loading
+    #[structopt(long, value_name = "string")]
+    on_track_loading_hook: Option<String>,
+
+    /// A script that gets evaluated in the user's shell when a track is playing
+    #[structopt(long, value_name = "string")]
+    on_track_playing_hook: Option<String>,
+
+    /// A script that gets evaluated in the user's shell when a track is paused
+    #[structopt(long, value_name = "string")]
+    on_track_paused_hook: Option<String>,
+
+    /// A script that gets evaluated in the user's shell when a track is preloading
+    #[structopt(long, value_name = "string")]
+    on_track_preload_hook: Option<String>,
+
+    /// A script that gets evaluated in the user's shell when a track has ended
+    #[structopt(long, value_name = "string")]
+    on_end_of_track_hook: Option<String>,
+
+    /// A script that gets evaluated in the user's shell when a the volume is set
+    #[structopt(long, value_name = "string")]
+    on_volume_set_hook: Option<String>,
+
+    /// A script that gets evaluated in the user's shell when a track is unavailable
+    #[structopt(long, value_name = "string")]
+    on_track_unavailable: Option<String>,
 
     /// The cache path used to store credentials and music file artifacts
     #[structopt(long, parse(from_os_str), short, value_name = "string")]
@@ -419,7 +454,7 @@ impl fmt::Debug for SharedConfigValues {
                     None => None,
                 }
             };
-        };
+        }
 
         let password_value = extract_credential!(&self.password);
 
@@ -436,7 +471,19 @@ impl fmt::Debug for SharedConfigValues {
             .field("password_cmd", &password_cmd_value)
             .field("use_keyring", &self.use_keyring)
             .field("use_mpris", &self.use_mpris)
-            .field("on_song_change_hook", &self.on_song_change_hook)
+            .field("on_track_change_hook", &self.on_track_change_hook)
+            .field("on_track_started_hook", &self.on_track_started_hook)
+            .field("on_track_started_hook", &self.on_track_stopped_hook)
+            .field("on_track_loading_hook", &self.on_track_loading_hook)
+            .field("on_track_playing_hook", &self.on_track_playing_hook)
+            .field("on_track_paused_hook", &self.on_track_paused_hook)
+            .field(
+                "on_time_to_preload_next_track_hook",
+                &self.on_track_preload_hook,
+            )
+            .field("on_end_of_track_hook", &self.on_end_of_track_hook)
+            .field("on_volume_set_hook", &self.on_volume_set_hook)
+            .field("on_track_unavailable", &self.on_track_unavailable)
             .field("cache_path", &self.cache_path)
             .field("no-audio-cache", &self.no_audio_cache)
             .field("backend", &self.backend)
@@ -510,7 +557,16 @@ impl SharedConfigValues {
             device,
             volume_controller,
             cache_path,
-            on_song_change_hook,
+            on_track_change_hook,
+            on_track_started_hook,
+            on_track_stopped_hook,
+            on_track_loading_hook,
+            on_track_playing_hook,
+            on_track_paused_hook,
+            on_track_preload_hook,
+            on_end_of_track_hook,
+            on_volume_set_hook,
+            on_track_unavailable,
             zeroconf_port,
             proxy,
             device_type,
@@ -561,7 +617,16 @@ pub(crate) struct SpotifydConfig {
     pub(crate) device_name: String,
     pub(crate) player_config: PlayerConfig,
     pub(crate) session_config: SessionConfig,
-    pub(crate) onevent: Option<String>,
+    pub(crate) on_track_change_hook: Option<String>,
+    pub(crate) on_track_started_hook: Option<String>,
+    pub(crate) on_track_stopped_hook: Option<String>,
+    pub(crate) on_track_loading_hook: Option<String>,
+    pub(crate) on_track_playing_hook: Option<String>,
+    pub(crate) on_track_paused_hook: Option<String>,
+    pub(crate) on_track_preload_hook: Option<String>,
+    pub(crate) on_end_of_track_hook: Option<String>,
+    pub(crate) on_volume_set_hook: Option<String>,
+    pub(crate) on_track_unavailable: Option<String>,
     pub(crate) pid: Option<String>,
     pub(crate) shell: String,
     pub(crate) zeroconf_port: Option<u16>,
@@ -701,7 +766,16 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
             proxy: proxy_url,
             ap_port: Some(443),
         },
-        onevent: config.shared_config.on_song_change_hook,
+        on_track_change_hook: config.shared_config.on_track_change_hook,
+        on_track_started_hook: config.shared_config.on_track_started_hook,
+        on_track_stopped_hook: config.shared_config.on_track_stopped_hook,
+        on_track_loading_hook: config.shared_config.on_track_loading_hook,
+        on_track_playing_hook: config.shared_config.on_track_playing_hook,
+        on_track_paused_hook: config.shared_config.on_track_paused_hook,
+        on_track_preload_hook: config.shared_config.on_track_preload_hook,
+        on_end_of_track_hook: config.shared_config.on_end_of_track_hook,
+        on_volume_set_hook: config.shared_config.on_volume_set_hook,
+        on_track_unavailable: config.shared_config.on_track_unavailable,
         pid,
         shell,
         zeroconf_port: config.shared_config.zeroconf_port,

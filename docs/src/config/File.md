@@ -57,7 +57,16 @@ mixer = "PCM"
 volume_controller = "alsa"  # use softvol for macOS
 
 # A command that gets executed in your shell after each song changes.
-on_song_change_hook = "command_to_run_on_playback_events"
+# on_track_change_hook = "command_to_run_on_track_change_events"
+# on_track_started_hook = "command_to_run_on_track_started_events"
+# on_track_stopped_hook = "command_to_run_on_track_stopped_events"
+# on_track_loading_hook = "command_to_run_on_track_loading_events"
+# on_track_playing_hook = "command_to_run_on_track_playing_events"
+# on_track_paused_hook = "command_to_run_on_track_paused_events"
+# on_track_preload_hook = "command_to_run_on_track_preload_events"
+# on_end_of_track_hook = "command_to_run_on_end_of_track_events"
+# on_volume_set_hook = "command_to_run_on_volume_set_events"
+# on_track_unavailable = "command_to_run_on_track_unavailable_event"
 
 # The name that gets displayed under the connect tab on
 # official clients. Spaces are not allowed!
