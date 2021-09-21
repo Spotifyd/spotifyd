@@ -1,6 +1,6 @@
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
-use crate::process::{spawn_program_on_event, Child};
+use crate::process::{spawn_program, Child};
 use futures::{self, Async, Future, Poll, Stream};
 use librespot::{
     connect::{
@@ -20,6 +20,7 @@ use librespot::{
     },
 };
 use log::error;
+use std::collections::HashMap;
 use std::{io, rc::Rc};
 use tokio_core::reactor::Handle;
 use tokio_io::IoStream;
@@ -57,7 +58,16 @@ pub struct SpotifydState {
     pub cache: Option<Cache>,
     pub device_name: String,
     pub player_event_channel: Option<futures::sync::mpsc::UnboundedReceiver<PlayerEvent>>,
-    pub player_event_program: Option<String>,
+    pub player_event_track_change_program: Option<String>,
+    pub player_event_track_started_program: Option<String>,
+    pub player_event_track_stopped_program: Option<String>,
+    pub player_event_track_loading_program: Option<String>,
+    pub player_event_track_playing_program: Option<String>,
+    pub player_event_track_paused_program: Option<String>,
+    pub player_event_track_preload_program: Option<String>,
+    pub player_event_track_end_program: Option<String>,
+    pub player_event_volume_set_program: Option<String>,
+    pub player_event_track_unavailable_program: Option<String>,
     pub dbus_mpris_server: Option<Box<dyn Future<Item = (), Error = ()>>>,
 }
 
@@ -136,10 +146,175 @@ impl Future for MainLoopState {
                 if let Some(ref mut player_event_channel) = self.spotifyd_state.player_event_channel
                 {
                     if let Async::Ready(Some(event)) = player_event_channel.poll().unwrap() {
-                        if let Some(ref cmd) = self.spotifyd_state.player_event_program {
-                            match spawn_program_on_event(&self.shell, cmd, event) {
-                                Ok(child) => self.running_event_program = Some(child),
-                                Err(e) => error!("{}", e),
+                        let mut env = HashMap::new();
+                        match event {
+                            PlayerEvent::Changed {
+                                old_track_id,
+                                new_track_id,
+                            } => {
+                                env.insert("OLD_TRACK_ID", old_track_id.to_base62());
+                                env.insert("PLAYER_EVENT", "change".to_string());
+                                env.insert("TRACK_ID", new_track_id.to_base62());
+                                if let Some(ref cmd) =
+                                    self.spotifyd_state.player_event_track_change_program
+                                {
+                                    match spawn_program(&self.shell, cmd, env) {
+                                        Ok(child) => self.running_event_program = Some(child),
+                                        Err(e) => error!("{}", e),
+                                    }
+                                }
+                            }
+                            PlayerEvent::Started {
+                                track_id,
+                                play_request_id,
+                                position_ms,
+                            } => {
+                                env.insert("PLAYER_EVENT", "start".to_string());
+                                env.insert("TRACK_ID", track_id.to_base62());
+                                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+                                env.insert("POSITION_MS", position_ms.to_string());
+                                if let Some(ref cmd) =
+                                    self.spotifyd_state.player_event_track_started_program
+                                {
+                                    match spawn_program(&self.shell, cmd, env) {
+                                        Ok(child) => self.running_event_program = Some(child),
+                                        Err(e) => error!("{}", e),
+                                    }
+                                }
+                            }
+                            PlayerEvent::Stopped {
+                                track_id,
+                                play_request_id,
+                            } => {
+                                env.insert("PLAYER_EVENT", "start".to_string());
+                                env.insert("TRACK_ID", track_id.to_base62());
+                                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+                                if let Some(ref cmd) =
+                                    self.spotifyd_state.player_event_track_stopped_program
+                                {
+                                    match spawn_program(&self.shell, cmd, env) {
+                                        Ok(child) => self.running_event_program = Some(child),
+                                        Err(e) => error!("{}", e),
+                                    }
+                                }
+                            }
+                            PlayerEvent::Loading {
+                                track_id,
+                                play_request_id,
+                                position_ms,
+                            } => {
+                                env.insert("PLAYER_EVENT", "start".to_string());
+                                env.insert("TRACK_ID", track_id.to_base62());
+                                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+                                env.insert("POSITION_MS", position_ms.to_string());
+                                if let Some(ref cmd) =
+                                    self.spotifyd_state.player_event_track_loading_program
+                                {
+                                    match spawn_program(&self.shell, cmd, env) {
+                                        Ok(child) => self.running_event_program = Some(child),
+                                        Err(e) => error!("{}", e),
+                                    }
+                                }
+                            }
+                            PlayerEvent::Playing {
+                                track_id,
+                                play_request_id,
+                                position_ms,
+                                duration_ms,
+                            } => {
+                                env.insert("PLAYER_EVENT", "play".to_string());
+                                env.insert("TRACK_ID", track_id.to_base62());
+                                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+                                env.insert("POSITION_MS", position_ms.to_string());
+                                env.insert("DURATION_MS", duration_ms.to_string());
+                                if let Some(ref cmd) =
+                                    self.spotifyd_state.player_event_track_playing_program
+                                {
+                                    match spawn_program(&self.shell, cmd, env) {
+                                        Ok(child) => self.running_event_program = Some(child),
+                                        Err(e) => error!("{}", e),
+                                    }
+                                }
+                            }
+                            PlayerEvent::Paused {
+                                track_id,
+                                play_request_id,
+                                position_ms,
+                                duration_ms,
+                            } => {
+                                env.insert("PLAYER_EVENT", "pause".to_string());
+                                env.insert("TRACK_ID", track_id.to_base62());
+                                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+                                env.insert("POSITION_MS", position_ms.to_string());
+                                env.insert("DURATION_MS", duration_ms.to_string());
+                                if let Some(ref cmd) =
+                                    self.spotifyd_state.player_event_track_paused_program
+                                {
+                                    match spawn_program(&self.shell, cmd, env) {
+                                        Ok(child) => self.running_event_program = Some(child),
+                                        Err(e) => error!("{}", e),
+                                    }
+                                }
+                            }
+                            PlayerEvent::TimeToPreloadNextTrack {
+                                track_id,
+                                play_request_id,
+                            } => {
+                                env.insert("PLAYER_EVENT", "preload".to_string());
+                                env.insert("TRACK_ID", track_id.to_base62());
+                                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+                                if let Some(ref cmd) =
+                                    self.spotifyd_state.player_event_track_preload_program
+                                {
+                                    match spawn_program(&self.shell, cmd, env) {
+                                        Ok(child) => self.running_event_program = Some(child),
+                                        Err(e) => error!("{}", e),
+                                    }
+                                }
+                            }
+                            PlayerEvent::EndOfTrack {
+                                track_id,
+                                play_request_id,
+                            } => {
+                                env.insert("PLAYER_EVENT", "endoftrack".to_string());
+                                env.insert("TRACK_ID", track_id.to_base62());
+                                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+                                if let Some(ref cmd) =
+                                    self.spotifyd_state.player_event_track_end_program
+                                {
+                                    match spawn_program(&self.shell, cmd, env) {
+                                        Ok(child) => self.running_event_program = Some(child),
+                                        Err(e) => error!("{}", e),
+                                    }
+                                }
+                            }
+                            PlayerEvent::VolumeSet { volume } => {
+                                env.insert("PLAYER_EVENT", "volumeset".to_string());
+                                env.insert("VOLUME", volume.to_string());
+                                if let Some(ref cmd) =
+                                    self.spotifyd_state.player_event_volume_set_program
+                                {
+                                    match spawn_program(&self.shell, cmd, env) {
+                                        Ok(child) => self.running_event_program = Some(child),
+                                        Err(e) => error!("{}", e),
+                                    }
+                                }
+                            }
+                            PlayerEvent::Unavailable {
+                                play_request_id,
+                                track_id,
+                            } => {
+                                env.insert("PLAYER_EVENT", "unavailable".to_string());
+                                env.insert("TRACK_ID", track_id.to_base62());
+                                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+                                if let Some(ref cmd) =
+                                    self.spotifyd_state.player_event_track_unavailable_program
+                                {
+                                    match spawn_program(&self.shell, cmd, env) {
+                                        Ok(child) => self.running_event_program = Some(child),
+                                        Err(e) => error!("{}", e),
+                                    }
+                                }
                             }
                         }
                     }

@@ -1,5 +1,4 @@
 use crate::error::Error;
-use librespot::playback::player::PlayerEvent;
 use log::info;
 use std::{
     collections::HashMap,
@@ -26,7 +25,11 @@ pub(crate) fn run_program(shell: &str, cmd: &str) -> Result<String, Error> {
 }
 
 /// Spawns provided command in a subprocess using the provided shell.
-fn spawn_program(shell: &str, cmd: &str, env: HashMap<&str, String>) -> Result<Child, Error> {
+pub(crate) fn spawn_program(
+    shell: &str,
+    cmd: &str,
+    env: HashMap<&str, String>,
+) -> Result<Child, Error> {
     info!(
         "Running {:?} using {:?} with environment variables {:?}",
         cmd, shell, env
@@ -42,108 +45,6 @@ fn spawn_program(shell: &str, cmd: &str, env: HashMap<&str, String>) -> Result<C
         .map_err(|e| Error::subprocess_with_err(shell, cmd, e))?;
     let child = Child::new(cmd.to_string(), inner, shell.to_string());
     Ok(child)
-}
-
-/// Spawns provided command in a subprocess using the provided shell.
-/// Various environment variables are included in the subprocess's environment
-/// depending on the `PlayerEvent` that was passed in.
-pub(crate) fn spawn_program_on_event(
-    shell: &str,
-    cmd: &str,
-    event: PlayerEvent,
-) -> Result<Child, Error> {
-    let mut env = HashMap::new();
-    match event {
-        PlayerEvent::Changed {
-            old_track_id,
-            new_track_id,
-        } => {
-            env.insert("OLD_TRACK_ID", old_track_id.to_base62());
-            env.insert("PLAYER_EVENT", "change".to_string());
-            env.insert("TRACK_ID", new_track_id.to_base62());
-        }
-        PlayerEvent::Started {
-            track_id,
-            play_request_id,
-            position_ms,
-        } => {
-            env.insert("PLAYER_EVENT", "start".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-            env.insert("POSITION_MS", position_ms.to_string());
-        }
-        PlayerEvent::Stopped {
-            track_id,
-            play_request_id,
-        } => {
-            env.insert("PLAYER_EVENT", "stop".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-        }
-        PlayerEvent::Loading {
-            track_id,
-            play_request_id,
-            position_ms,
-        } => {
-            env.insert("PLAYER_EVENT", "load".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-            env.insert("POSITION_MS", position_ms.to_string());
-        }
-        PlayerEvent::Playing {
-            track_id,
-            play_request_id,
-            position_ms,
-            duration_ms,
-        } => {
-            env.insert("PLAYER_EVENT", "play".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-            env.insert("POSITION_MS", position_ms.to_string());
-            env.insert("DURATION_MS", duration_ms.to_string());
-        }
-        PlayerEvent::Paused {
-            track_id,
-            play_request_id,
-            position_ms,
-            duration_ms,
-        } => {
-            env.insert("PLAYER_EVENT", "pause".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-            env.insert("POSITION_MS", position_ms.to_string());
-            env.insert("DURATION_MS", duration_ms.to_string());
-        }
-        PlayerEvent::TimeToPreloadNextTrack {
-            track_id,
-            play_request_id,
-        } => {
-            env.insert("PLAYER_EVENT", "preload".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-        }
-        PlayerEvent::EndOfTrack {
-            track_id,
-            play_request_id,
-        } => {
-            env.insert("PLAYER_EVENT", "endoftrack".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-        }
-        PlayerEvent::VolumeSet { volume } => {
-            env.insert("PLAYER_EVENT", "volumeset".to_string());
-            env.insert("VOLUME", volume.to_string());
-        }
-        PlayerEvent::Unavailable {
-            play_request_id,
-            track_id,
-        } => {
-            env.insert("PLAYER_EVENT", "unavailable".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-        }
-    }
-    spawn_program(shell, cmd, env)
 }
 
 /// Same as a `std::process::Child` except when this `Child` exits:
