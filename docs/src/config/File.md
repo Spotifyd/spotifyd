@@ -38,7 +38,7 @@ use_mpris = true
 
 # The audio backend used to play the your music. To get
 # a list of possible backends, run `spotifyd --help`.
-backend = "alsa"
+backend = "alsa" # use portaudio for macOS [homebrew]
 
 # The alsa audio device to stream audio to. To get a
 # list of valid devices, run `aplay -L`,
@@ -49,7 +49,7 @@ device = "alsa_audio_device"  # omit for macOS
 control = "alsa_audio_device"  # omit for macOS
 
 # The alsa mixer used by `spotifyd`.
-mixer = "PCM"
+mixer = "PCM"  # omit for macOS
 
 # The volume controller. Each one behaves different to
 # volume increases. For possible values, run
@@ -114,7 +114,7 @@ device_type = "speaker"
 
 - **`use_keyring`** config entry / **`--use-keyring`** CLI flag <!-- omit in toc -->
 
-  This features leverages [Linux's DBus Secret Service API][secret-storage-specification] or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, complile with the `dbus_keyring` feature and set the `use-keyring` config entry to `true` or pass the `--use-keyring` CLI flag  during start to the daemon. Remove the `password` and/or `password_cmd` config entries.
+  This features leverages [Linux's DBus Secret Service API][secret-storage-specification] or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, compile with the `dbus_keyring` feature and set the `use-keyring` config entry to `true` or pass the `--use-keyring` CLI flag  during start to the daemon. Remove the `password` and/or `password_cmd` config entries.
 
   Your keyring entry needs to have the following attributes set:
 
