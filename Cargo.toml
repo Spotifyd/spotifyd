@@ -22,7 +22,7 @@ libc = "0.2.82"
 log = "0.4.6"
 percent-encoding = "2.1.0"
 rspotify = "0.8.0"
-serde = { version = "1.0.115", features = ["derive"] }
+serde = { version = "1.0.130", features = ["derive"] }
 sha-1 = "0.9"
 structopt = "0.3.17"
 syslog = "4"
