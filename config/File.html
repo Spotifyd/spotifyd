@@ -194,7 +194,7 @@ use_mpris = true
 
 # The audio backend used to play the your music. To get
 # a list of possible backends, run `spotifyd --help`.
-backend = &quot;alsa&quot;
+backend = &quot;alsa&quot; # use portaudio for macOS [homebrew]
 
 # The alsa audio device to stream audio to. To get a
 # list of valid devices, run `aplay -L`,
@@ -205,7 +205,7 @@ device = &quot;alsa_audio_device&quot;  # omit for macOS
 control = &quot;alsa_audio_device&quot;  # omit for macOS
 
 # The alsa mixer used by `spotifyd`.
-mixer = &quot;PCM&quot;
+mixer = &quot;PCM&quot;  # omit for macOS
 
 # The volume controller. Each one behaves different to
 # volume increases. For possible values, run
@@ -266,7 +266,7 @@ password_cmd = &quot;pass spotify&quot;
 </li>
 <li>
 <p><strong><code>use_keyring</code></strong> config entry / <strong><code>--use-keyring</code></strong> CLI flag <!-- omit in toc --></p>
-<p>This features leverages <a href="https://www.freedesktop.org/wiki/Specifications/secret-storage-spec/">Linux's DBus Secret Service API</a> or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, complile with the <code>dbus_keyring</code> feature and set the <code>use-keyring</code> config entry to <code>true</code> or pass the <code>--use-keyring</code> CLI flag  during start to the daemon. Remove the <code>password</code> and/or <code>password_cmd</code> config entries.</p>
+<p>This features leverages <a href="https://www.freedesktop.org/wiki/Specifications/secret-storage-spec/">Linux's DBus Secret Service API</a> or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, compile with the <code>dbus_keyring</code> feature and set the <code>use-keyring</code> config entry to <code>true</code> or pass the <code>--use-keyring</code> CLI flag  during start to the daemon. Remove the <code>password</code> and/or <code>password_cmd</code> config entries.</p>
 <p>Your keyring entry needs to have the following attributes set:</p>
 <pre><code class="language-yaml">application: rust-keyring
 service: spotifyd
