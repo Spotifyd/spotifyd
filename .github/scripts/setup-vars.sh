@@ -22,7 +22,13 @@ fi
 
 # only when cross-building on linux
 if [ "${BUILD_TARGET}" == "linux" ] && [ "${ARCH}" != "$(uname -m)" ]; then
-	echo "RUSTFLAGS=-C linker=${BINARCH}-linux-${ABI}-gcc"
 	echo "PKG_CONFIG_ALLOW_CROSS=1"
 	echo "PKG_CONFIG_LIBDIR=/usr/lib/${BINARCH}-linux-${ABI}/pkgconfig/"
+fi
+
+# raspberry pi toolchain doesn't search in the right places automatically
+if [ "${ARCH}" == "armv6" ]; then
+	echo "CC=arm-buildroot-linux-gnueabihf-gcc"
+	echo "CFLAGS=-march=armv6 -I/usr/include -I/usr/include/arm-linux-gnueabihf -L/usr/lib/arm-linux-gnueabihf" # needed for cc crate in rust-openssl's build main.rs (expando)
+	echo "RUSTFLAGS=-Clinker=arm-buildroot-linux-gnueabihf-gcc -L/usr/lib/arm-linux-gnueabihf"
 fi
