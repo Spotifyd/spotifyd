@@ -6,13 +6,11 @@ use dbus_crossroads::{Crossroads, IfaceToken};
 use dbus_tokio::connection;
 use futures::task::{Context, Poll};
 use futures::{self, Future};
-use librespot::{
-    connect::spirc::Spirc,
-    core::{
-        keymaster::{get_token, Token as LibrespotToken},
-        mercury::MercuryError,
-        session::Session,
-    },
+use librespot_connect::spirc::Spirc;
+use librespot_core::{
+    keymaster::{get_token, Token as LibrespotToken},
+    mercury::MercuryError,
+    session::Session,
 };
 use log::info;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
