@@ -186,7 +186,13 @@ impl Future for MainLoopState {
                         self.spotifyd_state.device_name.clone(),
                     );
                 }
-            } else if let Poll::Ready(_) = self.spotifyd_state.ctrl_c_stream.as_mut().poll(cx) {
+            } else if self
+                .spotifyd_state
+                .ctrl_c_stream
+                .as_mut()
+                .poll(cx)
+                .is_ready()
+            {
                 if !self.spotifyd_state.shutting_down {
                     if let Some(ref spirc) = self.librespot_connection.spirc {
                         spirc.shutdown();

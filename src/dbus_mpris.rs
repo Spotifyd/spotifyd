@@ -26,6 +26,7 @@ pub struct DbusServer {
     session: Session,
     spirc: Arc<Spirc>,
     api_token: RspotifyToken,
+    #[allow(clippy::type_complexity)]
     token_request: Option<Pin<Box<dyn Future<Output = Result<LibrespotToken, MercuryError>>>>>,
     dbus_future: Option<Pin<Box<dyn Future<Output = ()>>>>,
     device_name: String,
@@ -420,7 +421,7 @@ async fn create_dbus_server(api_token: RspotifyToken, spirc: Arc<Spirc>, device_
                                     .external_urls
                                     .iter()
                                     .next()
-                                    .map_or("", |(_, v)| &v)
+                                    .map_or("", |(_, v)| v)
                                     .to_string(),
                             )),
                         );
@@ -432,7 +433,7 @@ async fn create_dbus_server(api_token: RspotifyToken, spirc: Arc<Spirc>, device_
                 Ok(m)
             });
 
-        for prop in vec![
+        for prop in &[
             "CanPlay",
             "CanPause",
             "CanSeek",
@@ -440,7 +441,7 @@ async fn create_dbus_server(api_token: RspotifyToken, spirc: Arc<Spirc>, device_
             "CanGoPrevious",
             "CanGoNext",
         ] {
-            b.property(prop).emits_changed_const().get(|_, _| Ok(true));
+            b.property(*prop).emits_changed_const().get(|_, _| Ok(true));
         }
     });
 

@@ -211,9 +211,9 @@ impl FromStr for Bitrate {
     }
 }
 
-impl Into<LSBitrate> for Bitrate {
-    fn into(self) -> LSBitrate {
-        match self {
+impl From<Bitrate> for LSBitrate {
+    fn from(bitrate: Bitrate) -> Self {
+        match bitrate {
             Bitrate::Bitrate96 => LSBitrate::Bitrate96,
             Bitrate::Bitrate160 => LSBitrate::Bitrate160,
             Bitrate::Bitrate320 => LSBitrate::Bitrate320,
@@ -586,11 +586,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .map(|path| {
             Cache::new(
                 Some(path.clone()),
-                if audio_cache {
-                    Some(path.clone())
-                } else {
-                    None
-                },
+                if audio_cache { Some(path) } else { None },
                 None,
             )
             .ok()
@@ -699,16 +695,15 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     // TODO: when we were on librespot 0.1.5, all PlayerConfig values were available in the
     //  Spotifyd config. The upgrade to librespot 0.2.0 introduces new config variables, and we
     //  should consider adding them to Spotifyd's config system.
-    let pc = {
-        let mut pc = PlayerConfig::default();
-        pc.bitrate = bitrate;
-        pc.normalisation = config.shared_config.volume_normalisation;
-        pc.normalisation_pregain = normalisation_pregain;
+    let pc = PlayerConfig {
+        bitrate,
+        normalisation: config.shared_config.volume_normalisation,
+        normalisation_pregain,
         // Sensible default; the "default" supplied by PlayerConfig::default() sets this to -1.0,
         // which turns the output to garbage.
-        pc.normalisation_threshold = 1.0;
-        pc.gapless = true;
-        pc
+        normalisation_threshold: 1.0,
+        gapless: true,
+        ..Default::default()
     };
 
     SpotifydConfig {
@@ -757,7 +752,7 @@ mod tests {
         };
 
         // The test only makes sense if both sections differ.
-        assert!(spotifyd_section != global_section, true);
+        assert_ne!(spotifyd_section, global_section);
 
         let file_config = FileConfig {
             global: Some(global_section),
