@@ -114,9 +114,12 @@ pub enum DeviceType {
     Tablet = 2,
     Smartphone = 3,
     Speaker = 4,
-    TV = 5,
-    AVR = 6,
-    STB = 7,
+    #[serde(rename = "t_v")]
+    Tv = 5,
+    #[serde(rename = "a_v_r")]
+    Avr = 6,
+    #[serde(rename = "s_t_b")]
+    Stb = 7,
     AudioDongle = 8,
 }
 
@@ -128,9 +131,9 @@ impl From<LSDeviceType> for DeviceType {
             LSDeviceType::Tablet => DeviceType::Tablet,
             LSDeviceType::Smartphone => DeviceType::Smartphone,
             LSDeviceType::Speaker => DeviceType::Speaker,
-            LSDeviceType::Tv => DeviceType::TV,
-            LSDeviceType::Avr => DeviceType::AVR,
-            LSDeviceType::Stb => DeviceType::STB,
+            LSDeviceType::Tv => DeviceType::Tv,
+            LSDeviceType::Avr => DeviceType::Avr,
+            LSDeviceType::Stb => DeviceType::Stb,
             LSDeviceType::AudioDongle => DeviceType::AudioDongle,
             // TODO: Implement new LibreSpot device types in Spotifyd
             _ => DeviceType::Unknown,
@@ -146,9 +149,9 @@ impl From<&DeviceType> for LSDeviceType {
             DeviceType::Tablet => LSDeviceType::Tablet,
             DeviceType::Smartphone => LSDeviceType::Smartphone,
             DeviceType::Speaker => LSDeviceType::Speaker,
-            DeviceType::TV => LSDeviceType::Tv,
-            DeviceType::AVR => LSDeviceType::Avr,
-            DeviceType::STB => LSDeviceType::Stb,
+            DeviceType::Tv => LSDeviceType::Tv,
+            DeviceType::Avr => LSDeviceType::Avr,
+            DeviceType::Stb => LSDeviceType::Stb,
             DeviceType::AudioDongle => LSDeviceType::AudioDongle,
         }
     }
