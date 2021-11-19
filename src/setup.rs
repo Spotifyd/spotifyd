@@ -13,8 +13,8 @@ use librespot_core::{
     session::SessionError,
 };
 use librespot_playback::{
-    config::AudioFormat,
     audio_backend::{Sink, BACKENDS},
+    config::AudioFormat,
     mixer::{self, Mixer},
 };
 use log::info;

@@ -5,7 +5,9 @@ use crate::{
 };
 use color_eyre::Report;
 use gethostname::gethostname;
-use librespot_core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version};
+use librespot_core::{
+    cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version,
+};
 use librespot_playback::config::{Bitrate as LSBitrate, PlayerConfig};
 use log::{error, info, warn};
 use reqwest::Url;
