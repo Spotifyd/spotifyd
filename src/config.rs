@@ -393,6 +393,7 @@ impl FileConfig {
         // section.
         if let Some(mut spotifyd_section) = spotifyd_config_section {
             // spotifyd section exists. Try to merge it with global section.
+            #[allow(clippy::branches_sharing_code)]
             if let Some(global_section) = global_config_section {
                 spotifyd_section.merge_with(global_section);
                 merged_config = Some(spotifyd_section);
