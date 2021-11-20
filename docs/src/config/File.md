@@ -105,7 +105,7 @@ device_type = "speaker"
 
   Spotifyd is able to advertise itself on the network without credentials. To enable this, you must omit / comment any `username` / `username_cmd` or `password` / `password_cmd` in the configuration. Spotifyd will receive an authentication blob from Spotify when you choose it from the devices list.
 
-  > __Note:__ If you choose to go with this, it is also recommended to omit the `cache_path` option. Otherwise the first user to connect to the service will have its authentication blob cached by the service and nobody else will be able to connect to the service without clearing the cache.
+  > __Note:__ If you choose to go with this, it is also recommended to omit the `cache_path` and `cache_directory` options. Otherwise the first user to connect to the service will have its authentication blob cached by the service and nobody else will be able to connect to the service without clearing the cache.
 
   This way, a Spotifyd instance can also be made available to multiple users.
 
