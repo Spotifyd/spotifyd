@@ -119,15 +119,20 @@ pub(crate) fn initial_state(
         }
     }
 
-    let connection = if let Some(credentials) = get_credentials(
-        username,
-        password,
-        cache.as_ref().and_then(Cache::credentials),
-        |_| {
-            error!("No password found.");
-            exit(1);
-        },
-    ) {
+    let credentials = match (username, password, cache.as_ref().and_then(Cache::credentials)) {
+        (None, _, Some(_)) => None,
+        (username, password, cache) => get_credentials(
+                username,
+                password,
+                cache,
+                |_| {
+                    error!("No password found.");
+                    exit(1);
+                },
+        ),
+    };
+
+    let connection = if let Some(credentials) = credentials {
         Session::connect(
             session_config.clone(),
             credentials,
