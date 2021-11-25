@@ -419,7 +419,7 @@ impl fmt::Debug for SharedConfigValues {
                     None => None,
                 }
             };
-        };
+        }
 
         let password_value = extract_credential!(&self.password);
 
