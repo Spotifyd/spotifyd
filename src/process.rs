@@ -1,5 +1,5 @@
 use crate::error::Error;
-use librespot::playback::player::PlayerEvent;
+use librespot_playback::player::PlayerEvent;
 use log::info;
 use std::{
     collections::HashMap,
@@ -141,6 +141,10 @@ pub(crate) fn spawn_program_on_event(
             env.insert("PLAYER_EVENT", "unavailable".to_string());
             env.insert("TRACK_ID", track_id.to_base62());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+        }
+        PlayerEvent::Preloading { track_id } => {
+            env.insert("PLAYER_EVENT", "preloading".to_string());
+            env.insert("TRACK_ID", track_id.to_base62());
         }
     }
     spawn_program(shell, cmd, env)
