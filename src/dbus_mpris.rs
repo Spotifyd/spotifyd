@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use dbus::arg::{RefArg, Variant};
-use dbus::channel::MatchingReceiver;
-use dbus::message::MatchRule;
+use dbus::channel::{MatchingReceiver, Sender};
+use dbus::message::{MatchRule, SignalArgs};
 use dbus_crossroads::{Crossroads, IfaceToken};
 use dbus_tokio::connection;
 use futures::task::{Context, Poll};
@@ -12,15 +12,20 @@ use librespot_core::{
     mercury::MercuryError,
     session::Session,
 };
+use librespot_playback::player::PlayerEvent;
 use log::info;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use rspotify::spotify::{
-    client::Spotify, model::offset::for_position, oauth2::TokenInfo as RspotifyToken, senum::*,
+    client::Spotify,
+    model::{offset::for_position, track::FullTrack},
+    oauth2::TokenInfo as RspotifyToken,
+    senum::*,
     util::datetime_to_timestamp,
 };
 use std::pin::Pin;
 use std::sync::Arc;
 use std::{collections::HashMap, env};
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 pub struct DbusServer {
     session: Session,
@@ -30,6 +35,8 @@ pub struct DbusServer {
     token_request: Option<Pin<Box<dyn Future<Output = Result<LibrespotToken, MercuryError>>>>>,
     dbus_future: Option<Pin<Box<dyn Future<Output = ()>>>>,
     device_name: String,
+    event_rx: UnboundedReceiver<PlayerEvent>,
+    event_tx: Option<UnboundedSender<PlayerEvent>>,
 }
 
 const CLIENT_ID: &str = "2c1ea588dfbc4a989e2426f8385297c3";
@@ -41,7 +48,12 @@ const SCOPE: &str = "user-read-playback-state,user-read-private,\
                      user-read-recently-played";
 
 impl DbusServer {
-    pub fn new(session: Session, spirc: Arc<Spirc>, device_name: String) -> DbusServer {
+    pub fn new(
+        session: Session,
+        spirc: Arc<Spirc>,
+        device_name: String,
+        event_rx: UnboundedReceiver<PlayerEvent>,
+    ) -> DbusServer {
         DbusServer {
             session,
             spirc,
@@ -49,6 +61,8 @@ impl DbusServer {
             token_request: None,
             dbus_future: None,
             device_name,
+            event_rx,
+            event_tx: None,
         }
     }
 
@@ -65,6 +79,11 @@ impl Future for DbusServer {
     type Output = ();
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+        if self.event_tx.is_some() {
+            if let Poll::Ready(Some(msg)) = self.event_rx.poll_recv(cx) {
+                self.event_tx.as_ref().unwrap().send(msg).unwrap();
+            }
+        }
         let mut got_new_token = false;
         if self.is_token_expired() {
             if let Some(ref mut fut) = self.token_request {
@@ -73,10 +92,13 @@ impl Future for DbusServer {
                         .access_token(&token.access_token)
                         .expires_in(token.expires_in)
                         .expires_at(datetime_to_timestamp(token.expires_in));
+                    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+                    self.event_tx = Some(tx);
                     self.dbus_future = Some(Box::pin(create_dbus_server(
                         self.api_token.clone(),
                         self.spirc.clone(),
                         self.device_name.clone(),
+                        rx,
                     )));
                     // TODO: for reasons I don't _entirely_ understand, the token request completing
                     // convinces callers that they don't need to re-check the status of this future
@@ -110,7 +132,12 @@ fn create_spotify_api(token: &RspotifyToken) -> Spotify {
     Spotify::default().access_token(&token.access_token).build()
 }
 
-async fn create_dbus_server(api_token: RspotifyToken, spirc: Arc<Spirc>, device_name: String) {
+async fn create_dbus_server(
+    api_token: RspotifyToken,
+    spirc: Arc<Spirc>,
+    device_name: String,
+    mut event_rx: UnboundedReceiver<PlayerEvent>,
+) {
     // TODO: allow other DBus types through CLI and config entry.
     let (resource, conn) =
         connection::new_session_sync().expect("Failed to initialize DBus connection");
@@ -357,74 +384,7 @@ async fn create_dbus_server(api_token: RspotifyToken, spirc: Arc<Spirc>, device_
 
                 if let Ok(Some(playing)) = v {
                     if let Some(track) = playing.item {
-                        m.insert("mpris:trackid".to_string(), Variant(Box::new(track.uri)));
-
-                        m.insert(
-                            "mpris:length".to_string(),
-                            Variant(Box::new(i64::from(track.duration_ms) * 1000)),
-                        );
-
-                        m.insert(
-                            "mpris:artUrl".to_string(),
-                            Variant(Box::new(track.album.images.first().unwrap().url.clone())),
-                        );
-
-                        m.insert("xesam:title".to_string(), Variant(Box::new(track.name)));
-
-                        m.insert(
-                            "xesam:album".to_string(),
-                            Variant(Box::new(track.album.name)),
-                        );
-
-                        m.insert(
-                            "xesam:artist".to_string(),
-                            Variant(Box::new(
-                                track
-                                    .artists
-                                    .iter()
-                                    .map(|a| a.name.to_string())
-                                    .collect::<Vec<_>>(),
-                            )),
-                        );
-
-                        m.insert(
-                            "xesam:albumArtist".to_string(),
-                            Variant(Box::new(
-                                track
-                                    .album
-                                    .artists
-                                    .iter()
-                                    .map(|a| a.name.to_string())
-                                    .collect::<Vec<_>>(),
-                            )),
-                        );
-
-                        m.insert(
-                            "xesam:autoRating".to_string(),
-                            Variant(Box::new((f64::from(track.popularity) / 100.0) as f64)),
-                        );
-
-                        m.insert(
-                            "xesam:trackNumber".to_string(),
-                            Variant(Box::new(track.track_number)),
-                        );
-
-                        m.insert(
-                            "xesam:discNumber".to_string(),
-                            Variant(Box::new(track.disc_number)),
-                        );
-
-                        m.insert(
-                            "xesam:url".to_string(),
-                            Variant(Box::new(
-                                track
-                                    .external_urls
-                                    .iter()
-                                    .next()
-                                    .map_or("", |(_, v)| v)
-                                    .to_string(),
-                            )),
-                        );
+                        insert_metadata(&mut m, track);
                     }
                 } else {
                     info!("Couldn't fetch metadata from spotify: {:?}", v);
@@ -459,7 +419,128 @@ async fn create_dbus_server(api_token: RspotifyToken, spirc: Arc<Spirc>, device_
         }),
     );
 
-    // run forever
-    futures::future::pending::<()>().await;
-    unreachable!();
+    loop {
+        let event = event_rx
+            .recv()
+            .await
+            .expect("Changed track channel was unexpectedly closed");
+        let mut changed_properties: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
+        let track_id = match event {
+            PlayerEvent::Changed { new_track_id, .. } => Some(new_track_id),
+            PlayerEvent::Started { track_id, .. } => {
+                changed_properties.insert(
+                    "PlaybackStatus".to_owned(),
+                    Variant(Box::new("Playing".to_owned())),
+                );
+                Some(track_id)
+            }
+            PlayerEvent::Stopped { .. } => {
+                changed_properties.insert(
+                    "PlaybackStatus".to_owned(),
+                    Variant(Box::new("Stopped".to_owned())),
+                );
+                None
+            }
+            PlayerEvent::Paused { .. } => {
+                changed_properties.insert(
+                    "PlaybackStatus".to_owned(),
+                    Variant(Box::new("Paused".to_owned())),
+                );
+                None
+            }
+            _ => None,
+        };
+        if let Some(track_id) = track_id {
+            let sp = create_spotify_api(&api_token);
+            let track = sp.track(&track_id.to_base62());
+            if let Ok(track) = track {
+                let mut m: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
+                insert_metadata(&mut m, track);
+
+                changed_properties.insert("Metadata".to_owned(), Variant(Box::new(m)));
+            } else {
+                info!("Couldn't fetch metadata from spotify: {:?}", track);
+            }
+        }
+        if !changed_properties.is_empty() {
+            let msg = dbus::nonblock::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged {
+                interface_name: "org.mpris.MediaPlayer2.Player".to_owned(),
+                changed_properties,
+                invalidated_properties: Vec::new(),
+            };
+            conn.send(msg.to_emit_message(&dbus::Path::new("/org/mpris/MediaPlayer2").unwrap()))
+                .unwrap();
+        }
+    }
+}
+
+fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, track: FullTrack) {
+    m.insert("mpris:trackid".to_string(), Variant(Box::new(track.uri)));
+
+    m.insert(
+        "mpris:length".to_string(),
+        Variant(Box::new(i64::from(track.duration_ms) * 1000)),
+    );
+
+    m.insert(
+        "mpris:artUrl".to_string(),
+        Variant(Box::new(track.album.images.first().unwrap().url.clone())),
+    );
+
+    m.insert("xesam:title".to_string(), Variant(Box::new(track.name)));
+
+    m.insert(
+        "xesam:album".to_string(),
+        Variant(Box::new(track.album.name)),
+    );
+
+    m.insert(
+        "xesam:artist".to_string(),
+        Variant(Box::new(
+            track
+                .artists
+                .iter()
+                .map(|a| a.name.to_string())
+                .collect::<Vec<_>>(),
+        )),
+    );
+
+    m.insert(
+        "xesam:albumArtist".to_string(),
+        Variant(Box::new(
+            track
+                .album
+                .artists
+                .iter()
+                .map(|a| a.name.to_string())
+                .collect::<Vec<_>>(),
+        )),
+    );
+
+    m.insert(
+        "xesam:autoRating".to_string(),
+        Variant(Box::new((f64::from(track.popularity) / 100.0) as f64)),
+    );
+
+    m.insert(
+        "xesam:trackNumber".to_string(),
+        Variant(Box::new(track.track_number)),
+    );
+
+    m.insert(
+        "xesam:discNumber".to_string(),
+        Variant(Box::new(track.disc_number)),
+    );
+
+    m.insert(
+        "xesam:url".to_string(),
+        Variant(Box::new(
+            track
+                .external_urls
+                .iter()
+                .next()
+                .map_or("", |(_, v)| &v)
+                .to_string(),
+        )),
+    );
 }
