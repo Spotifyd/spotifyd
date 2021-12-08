@@ -148,6 +148,8 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
         device_type,
         autoplay,
         use_mpris: config.use_mpris,
+        #[cfg(feature = "dbus_mpris")]
+        mpris_event_tx: None,
     }
 }
 
