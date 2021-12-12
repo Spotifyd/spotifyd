@@ -425,6 +425,7 @@ async fn create_dbus_server(
             .await
             .expect("Changed track channel was unexpectedly closed");
         let mut changed_properties: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
+        let mut seeked_position = None;
         let track_id = match event {
             PlayerEvent::Changed { new_track_id, .. } => Some(new_track_id),
             PlayerEvent::Started { track_id, .. } => {
@@ -446,6 +447,10 @@ async fn create_dbus_server(
                     "PlaybackStatus".to_owned(),
                     Variant(Box::new("Paused".to_owned())),
                 );
+                None
+            }
+            PlayerEvent::Playing { position_ms, .. } => {
+                seeked_position = Some(position_ms);
                 None
             }
             _ => None,
@@ -470,6 +475,15 @@ async fn create_dbus_server(
             };
             conn.send(msg.to_emit_message(&dbus::Path::new("/org/mpris/MediaPlayer2").unwrap()))
                 .unwrap();
+        }
+        if let Some(position) = seeked_position {
+            let msg = dbus::message::Message::signal(
+                &dbus::Path::new("/org/mpris/MediaPlayer2").unwrap(),
+                &dbus::strings::Interface::new("org.mpris.MediaPlayer2.Player").unwrap(),
+                &dbus::strings::Member::new("Seeked").unwrap(),
+            )
+            .append1(position as i64);
+            conn.send(msg).unwrap();
         }
     }
 }
