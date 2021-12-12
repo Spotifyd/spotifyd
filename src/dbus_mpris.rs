@@ -427,12 +427,12 @@ async fn create_dbus_server(
         let mut changed_properties: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
         let mut seeked_position = None;
         let track_id = match event {
-            PlayerEvent::Changed { new_track_id, .. } => Some(new_track_id),
-            PlayerEvent::Started { track_id, .. } => {
+            PlayerEvent::Playing { track_id, position_ms, .. } => {
                 changed_properties.insert(
                     "PlaybackStatus".to_owned(),
                     Variant(Box::new("Playing".to_owned())),
                 );
+                seeked_position = Some(position_ms);
                 Some(track_id)
             }
             PlayerEvent::Stopped { .. } => {
@@ -447,10 +447,6 @@ async fn create_dbus_server(
                     "PlaybackStatus".to_owned(),
                     Variant(Box::new("Paused".to_owned())),
                 );
-                None
-            }
-            PlayerEvent::Playing { position_ms, .. } => {
-                seeked_position = Some(position_ms);
                 None
             }
             _ => None,
