@@ -1,39 +1,38 @@
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
 use crate::process::{spawn_program_on_event, Child};
-use futures::{self, Async, Future, Poll, Stream};
-use librespot::{
-    connect::{
-        discovery::DiscoveryStream,
-        spirc::{Spirc, SpircTask},
-    },
-    core::{
-        cache::Cache,
-        config::{ConnectConfig, DeviceType, SessionConfig, VolumeCtrl},
-        session::Session,
-    },
-    playback::{
-        audio_backend::Sink,
-        config::PlayerConfig,
-        mixer::Mixer,
-        player::{Player, PlayerEvent},
-    },
+use futures::{self, Future, Stream, StreamExt};
+use librespot_connect::{discovery::DiscoveryStream, spirc::Spirc};
+use librespot_core::session::SessionError;
+use librespot_core::{
+    cache::Cache,
+    config::{ConnectConfig, DeviceType, SessionConfig, VolumeCtrl},
+    session::Session,
+};
+use librespot_playback::config::AudioFormat;
+use librespot_playback::{
+    audio_backend::Sink,
+    config::PlayerConfig,
+    mixer::Mixer,
+    player::{Player, PlayerEvent},
 };
 use log::error;
-use std::{io, rc::Rc};
-use tokio_core::reactor::Handle;
-use tokio_io::IoStream;
+use std::io;
+use std::pin::Pin;
+use std::sync::Arc;
+use std::task::{Context, Poll};
+use tokio_stream::wrappers::UnboundedReceiverStream;
 
 pub struct LibreSpotConnection {
-    connection: Box<dyn Future<Item = Session, Error = io::Error>>,
-    spirc_task: Option<SpircTask>,
-    spirc: Option<Rc<Spirc>>,
+    connection: Pin<Box<dyn Future<Output = Result<Session, SessionError>>>>,
+    spirc_task: Option<Pin<Box<dyn Future<Output = ()>>>>,
+    spirc: Option<Arc<Spirc>>,
     discovery_stream: DiscoveryStream,
 }
 
 impl LibreSpotConnection {
     pub fn new(
-        connection: Box<dyn Future<Item = Session, Error = io::Error>>,
+        connection: Pin<Box<dyn Future<Output = Result<Session, SessionError>>>>,
         discovery_stream: DiscoveryStream,
     ) -> LibreSpotConnection {
         LibreSpotConnection {
@@ -47,43 +46,37 @@ impl LibreSpotConnection {
 
 pub struct AudioSetup {
     pub mixer: Box<dyn FnMut() -> Box<dyn Mixer>>,
-    pub backend: fn(Option<String>) -> Box<dyn Sink>,
+    pub backend: fn(Option<String>, AudioFormat) -> Box<dyn Sink>,
     pub audio_device: Option<String>,
 }
 
 pub struct SpotifydState {
-    pub ctrl_c_stream: IoStream<()>,
+    // TODO: this ain't a stream anymore, rename
+    pub ctrl_c_stream: Pin<Box<dyn Future<Output = Result<(), io::Error>>>>,
     pub shutting_down: bool,
     pub cache: Option<Cache>,
     pub device_name: String,
-    pub player_event_channel: Option<futures::sync::mpsc::UnboundedReceiver<PlayerEvent>>,
+    pub player_event_channel: Option<Pin<Box<dyn Stream<Item = PlayerEvent>>>>,
     pub player_event_program: Option<String>,
-    pub dbus_mpris_server: Option<Box<dyn Future<Item = (), Error = ()>>>,
+    pub dbus_mpris_server: Option<Pin<Box<dyn Future<Output = ()>>>>,
 }
 
 #[cfg(feature = "dbus_mpris")]
 #[allow(clippy::unnecessary_wraps)]
 fn new_dbus_server(
     session: Session,
-    handle: Handle,
-    spirc: Rc<Spirc>,
+    spirc: Arc<Spirc>,
     device_name: String,
-) -> Option<Box<dyn Future<Item = (), Error = ()>>> {
-    Some(Box::new(DbusServer::new(
-        session,
-        handle,
-        spirc,
-        device_name,
-    )))
+) -> Option<Pin<Box<dyn Future<Output = ()>>>> {
+    Some(Box::pin(DbusServer::new(session, spirc, device_name)))
 }
 
 #[cfg(not(feature = "dbus_mpris"))]
 fn new_dbus_server(
     _: Session,
-    _: Handle,
-    _: Rc<Spirc>,
+    _: Arc<Spirc>,
     _: String,
-) -> Option<Box<dyn Future<Item = (), Error = ()>>> {
+) -> Option<Pin<Box<dyn Future<Output = ()>>>> {
     None
 }
 
@@ -93,7 +86,6 @@ pub(crate) struct MainLoopState {
     pub(crate) spotifyd_state: SpotifydState,
     pub(crate) player_config: PlayerConfig,
     pub(crate) session_config: SessionConfig,
-    pub(crate) handle: Handle,
     pub(crate) autoplay: bool,
     pub(crate) volume_ctrl: VolumeCtrl,
     pub(crate) initial_volume: Option<u16>,
@@ -104,22 +96,24 @@ pub(crate) struct MainLoopState {
 }
 
 impl Future for MainLoopState {
-    type Error = ();
-    type Item = ();
+    type Output = ();
 
-    fn poll(&mut self) -> Poll<(), ()> {
+    fn poll(mut self: Pin<&mut MainLoopState>, cx: &mut Context<'_>) -> Poll<()> {
         loop {
-            if let Async::Ready(Some(creds)) =
-                self.librespot_connection.discovery_stream.poll().unwrap()
+            if let Poll::Ready(Some(creds)) = self
+                .as_mut()
+                .librespot_connection
+                .discovery_stream
+                .poll_next_unpin(cx)
             {
                 if let Some(ref mut spirc) = self.librespot_connection.spirc {
                     spirc.shutdown();
                 }
                 let session_config = self.session_config.clone();
                 let cache = self.spotifyd_state.cache.clone();
-                let handle = self.handle.clone();
+                // TODO: a bunch of this init logic can probably be unrolled using async / await
                 self.librespot_connection.connection =
-                    Session::connect(session_config, creds, cache, handle);
+                    Box::pin(Session::connect(session_config, creds, cache));
             }
 
             if let Some(mut child) = self.running_event_program.take() {
@@ -135,7 +129,7 @@ impl Future for MainLoopState {
             if self.running_event_program.is_none() {
                 if let Some(ref mut player_event_channel) = self.spotifyd_state.player_event_channel
                 {
-                    if let Async::Ready(Some(event)) = player_event_channel.poll().unwrap() {
+                    if let Poll::Ready(Some(event)) = player_event_channel.poll_next_unpin(cx) {
                         if let Some(ref cmd) = self.spotifyd_state.player_event_program {
                             match spawn_program_on_event(&self.shell, cmd, event) {
                                 Ok(child) => self.running_event_program = Some(child),
@@ -147,23 +141,27 @@ impl Future for MainLoopState {
             }
 
             if let Some(ref mut fut) = self.spotifyd_state.dbus_mpris_server {
-                let _ = fut.poll();
+                let _ = fut.as_mut().poll(cx);
             }
 
-            if let Async::Ready(session) = self.librespot_connection.connection.poll().unwrap() {
+            if let Poll::Ready(Ok(session)) = self.librespot_connection.connection.as_mut().poll(cx)
+            {
                 let mixer = (self.audio_setup.mixer)();
                 let audio_filter = mixer.get_audio_filter();
-                self.librespot_connection.connection = Box::new(futures::future::empty());
+                self.librespot_connection.connection = Box::pin(futures::future::pending());
                 let backend = self.audio_setup.backend;
                 let audio_device = self.audio_setup.audio_device.clone();
                 let (player, event_channel) = Player::new(
                     self.player_config.clone(),
                     session.clone(),
                     audio_filter,
-                    move || (backend)(audio_device),
+                    // TODO: dunno how to work with AudioFormat yet, maybe dig further if this
+                    // doesn't work for all configurations
+                    move || (backend)(audio_device, AudioFormat::default()),
                 );
 
-                self.spotifyd_state.player_event_channel = Some(event_channel);
+                self.spotifyd_state.player_event_channel =
+                    Some(Box::pin(UnboundedReceiverStream::new(event_channel)));
 
                 let (spirc, spirc_task) = Spirc::new(
                     ConnectConfig {
@@ -177,36 +175,40 @@ impl Future for MainLoopState {
                     player,
                     mixer,
                 );
-                self.librespot_connection.spirc_task = Some(spirc_task);
-                let shared_spirc = Rc::new(spirc);
+                self.librespot_connection.spirc_task = Some(Box::pin(spirc_task));
+                let shared_spirc = Arc::new(spirc);
                 self.librespot_connection.spirc = Some(shared_spirc.clone());
 
                 if self.use_mpris {
                     self.spotifyd_state.dbus_mpris_server = new_dbus_server(
                         session,
-                        self.handle.clone(),
                         shared_spirc,
                         self.spotifyd_state.device_name.clone(),
                     );
                 }
-            } else if let Async::Ready(_) = self.spotifyd_state.ctrl_c_stream.poll().unwrap() {
+            } else if self
+                .spotifyd_state
+                .ctrl_c_stream
+                .as_mut()
+                .poll(cx)
+                .is_ready()
+            {
                 if !self.spotifyd_state.shutting_down {
                     if let Some(ref spirc) = self.librespot_connection.spirc {
                         spirc.shutdown();
                         self.spotifyd_state.shutting_down = true;
-                    } else {
-                        return Ok(Async::Ready(()));
                     }
+                    return Poll::Ready(());
                 }
-            } else if let Some(Async::Ready(_)) = self
+            } else if let Some(Poll::Ready(_)) = self
                 .librespot_connection
                 .spirc_task
                 .as_mut()
-                .map(|ref mut st| st.poll().unwrap())
+                .map(|ref mut st| st.as_mut().poll(cx))
             {
-                return Ok(Async::Ready(()));
+                return Poll::Ready(());
             } else {
-                return Ok(Async::NotReady);
+                return Poll::Pending;
             }
         }
     }

@@ -5,16 +5,16 @@ use crate::{
 };
 use color_eyre::Report;
 use gethostname::gethostname;
-use librespot::{
-    core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version},
-    playback::config::{Bitrate as LSBitrate, PlayerConfig},
+use librespot_core::{
+    cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version,
 };
+use librespot_playback::config::{Bitrate as LSBitrate, PlayerConfig};
 use log::{error, info, warn};
+use reqwest::Url;
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
 use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
-use url::Url;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
@@ -114,9 +114,12 @@ pub enum DeviceType {
     Tablet = 2,
     Smartphone = 3,
     Speaker = 4,
-    TV = 5,
-    AVR = 6,
-    STB = 7,
+    #[serde(rename = "t_v")]
+    Tv = 5,
+    #[serde(rename = "a_v_r")]
+    Avr = 6,
+    #[serde(rename = "s_t_b")]
+    Stb = 7,
     AudioDongle = 8,
 }
 
@@ -128,10 +131,12 @@ impl From<LSDeviceType> for DeviceType {
             LSDeviceType::Tablet => DeviceType::Tablet,
             LSDeviceType::Smartphone => DeviceType::Smartphone,
             LSDeviceType::Speaker => DeviceType::Speaker,
-            LSDeviceType::TV => DeviceType::TV,
-            LSDeviceType::AVR => DeviceType::AVR,
-            LSDeviceType::STB => DeviceType::STB,
+            LSDeviceType::Tv => DeviceType::Tv,
+            LSDeviceType::Avr => DeviceType::Avr,
+            LSDeviceType::Stb => DeviceType::Stb,
             LSDeviceType::AudioDongle => DeviceType::AudioDongle,
+            // TODO: Implement new LibreSpot device types in Spotifyd
+            _ => DeviceType::Unknown,
         }
     }
 }
@@ -144,9 +149,9 @@ impl From<&DeviceType> for LSDeviceType {
             DeviceType::Tablet => LSDeviceType::Tablet,
             DeviceType::Smartphone => LSDeviceType::Smartphone,
             DeviceType::Speaker => LSDeviceType::Speaker,
-            DeviceType::TV => LSDeviceType::TV,
-            DeviceType::AVR => LSDeviceType::AVR,
-            DeviceType::STB => LSDeviceType::STB,
+            DeviceType::Tv => LSDeviceType::Tv,
+            DeviceType::Avr => LSDeviceType::Avr,
+            DeviceType::Stb => LSDeviceType::Stb,
             DeviceType::AudioDongle => LSDeviceType::AudioDongle,
         }
     }
@@ -206,9 +211,9 @@ impl FromStr for Bitrate {
     }
 }
 
-impl Into<LSBitrate> for Bitrate {
-    fn into(self) -> LSBitrate {
-        match self {
+impl From<Bitrate> for LSBitrate {
+    fn from(bitrate: Bitrate) -> Self {
+        match bitrate {
             Bitrate::Bitrate96 => LSBitrate::Bitrate96,
             Bitrate::Bitrate160 => LSBitrate::Bitrate160,
             Bitrate::Bitrate320 => LSBitrate::Bitrate320,
@@ -388,6 +393,7 @@ impl FileConfig {
         // section.
         if let Some(mut spotifyd_section) = spotifyd_config_section {
             // spotifyd section exists. Try to merge it with global section.
+            #[allow(clippy::branches_sharing_code)]
             if let Some(global_section) = global_config_section {
                 spotifyd_section.merge_with(global_section);
                 merged_config = Some(spotifyd_section);
@@ -576,7 +582,17 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .shared_config
         .cache_path
         .map(PathBuf::from)
-        .map(|path| Cache::new(path, audio_cache));
+        // TODO: plumb size limits, check audio_cache?
+        // TODO: rather than silently disabling cache if constructor fails, maybe we should handle the error?
+        .map(|path| {
+            Cache::new(
+                Some(path.clone()),
+                if audio_cache { Some(path) } else { None },
+                None,
+            )
+            .ok()
+        })
+        .flatten();
 
     let bitrate: LSBitrate = config
         .shared_config
@@ -676,6 +692,21 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         },
         None => info!("No proxy specified"),
     }
+
+    // TODO: when we were on librespot 0.1.5, all PlayerConfig values were available in the
+    //  Spotifyd config. The upgrade to librespot 0.2.0 introduces new config variables, and we
+    //  should consider adding them to Spotifyd's config system.
+    let pc = PlayerConfig {
+        bitrate,
+        normalisation: config.shared_config.volume_normalisation,
+        normalisation_pregain,
+        // Sensible default; the "default" supplied by PlayerConfig::default() sets this to -1.0,
+        // which turns the output to garbage.
+        normalisation_threshold: 1.0,
+        gapless: true,
+        ..Default::default()
+    };
+
     SpotifydConfig {
         username,
         password,
@@ -689,14 +720,9 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         volume_controller,
         initial_volume,
         device_name,
-        player_config: PlayerConfig {
-            bitrate,
-            normalisation: config.shared_config.volume_normalisation,
-            normalisation_pregain,
-            gapless: true,
-        },
+        player_config: pc,
         session_config: SessionConfig {
-            user_agent: version::version_string(),
+            user_agent: version::VERSION_STRING.to_string(),
             device_id,
             proxy: proxy_url,
             ap_port: Some(443),
@@ -727,7 +753,7 @@ mod tests {
         };
 
         // The test only makes sense if both sections differ.
-        assert!(spotifyd_section != global_section, true);
+        assert_ne!(spotifyd_section, global_section);
 
         let file_config = FileConfig {
             global: Some(global_section),
