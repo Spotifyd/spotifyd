@@ -371,7 +371,7 @@ pub struct SharedConfigValues {
     #[structopt(long, possible_values = &DEVICETYPE_VALUES, value_name = "string")]
     device_type: Option<DeviceType>,
 
-    /// Autoplay on connect
+    /// Start playing similar songs after your music has ended
     #[structopt(long)]
     #[serde(default)]
     autoplay: bool,
@@ -458,6 +458,7 @@ impl fmt::Debug for SharedConfigValues {
             .field("zeroconf_port", &self.zeroconf_port)
             .field("proxy", &self.proxy)
             .field("device_type", &self.device_type)
+            .field("autoplay", &self.autoplay)
             .finish()
     }
 }
@@ -527,6 +528,7 @@ impl SharedConfigValues {
         self.use_keyring |= other.use_keyring;
         self.volume_normalisation |= other.volume_normalisation;
         self.no_audio_cache |= other.no_audio_cache;
+        self.autoplay |= other.autoplay;
     }
 }
 
