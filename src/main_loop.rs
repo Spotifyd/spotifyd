@@ -144,47 +144,57 @@ impl Future for MainLoopState {
                 let _ = fut.as_mut().poll(cx);
             }
 
-            if let Poll::Ready(Ok(session)) = self.librespot_connection.connection.as_mut().poll(cx)
+            if let Poll::Ready(session_result) =
+                self.librespot_connection.connection.as_mut().poll(cx)
             {
-                let mixer = (self.audio_setup.mixer)();
-                let audio_filter = mixer.get_audio_filter();
-                self.librespot_connection.connection = Box::pin(futures::future::pending());
-                let backend = self.audio_setup.backend;
-                let audio_device = self.audio_setup.audio_device.clone();
-                let (player, event_channel) = Player::new(
-                    self.player_config.clone(),
-                    session.clone(),
-                    audio_filter,
-                    // TODO: dunno how to work with AudioFormat yet, maybe dig further if this
-                    // doesn't work for all configurations
-                    move || (backend)(audio_device, AudioFormat::default()),
-                );
+                match session_result {
+                    Ok(session) => {
+                        let mixer = (self.audio_setup.mixer)();
+                        let audio_filter = mixer.get_audio_filter();
+                        self.librespot_connection.connection = Box::pin(futures::future::pending());
+                        let backend = self.audio_setup.backend;
+                        let audio_device = self.audio_setup.audio_device.clone();
+                        let (player, event_channel) = Player::new(
+                            self.player_config.clone(),
+                            session.clone(),
+                            audio_filter,
+                            // TODO: dunno how to work with AudioFormat yet, maybe dig further if this
+                            // doesn't work for all configurations
+                            move || (backend)(audio_device, AudioFormat::default()),
+                        );
 
-                self.spotifyd_state.player_event_channel =
-                    Some(Box::pin(UnboundedReceiverStream::new(event_channel)));
+                        self.spotifyd_state.player_event_channel =
+                            Some(Box::pin(UnboundedReceiverStream::new(event_channel)));
 
-                let (spirc, spirc_task) = Spirc::new(
-                    ConnectConfig {
-                        autoplay: self.autoplay,
-                        name: self.spotifyd_state.device_name.clone(),
-                        device_type: self.device_type,
-                        volume: self.initial_volume.unwrap_or_else(|| mixer.volume()),
-                        volume_ctrl: self.volume_ctrl.clone(),
-                    },
-                    session.clone(),
-                    player,
-                    mixer,
-                );
-                self.librespot_connection.spirc_task = Some(Box::pin(spirc_task));
-                let shared_spirc = Arc::new(spirc);
-                self.librespot_connection.spirc = Some(shared_spirc.clone());
+                        let (spirc, spirc_task) = Spirc::new(
+                            ConnectConfig {
+                                autoplay: self.autoplay,
+                                name: self.spotifyd_state.device_name.clone(),
+                                device_type: self.device_type,
+                                volume: self.initial_volume.unwrap_or_else(|| mixer.volume()),
+                                volume_ctrl: self.volume_ctrl.clone(),
+                            },
+                            session.clone(),
+                            player,
+                            mixer,
+                        );
+                        self.librespot_connection.spirc_task = Some(Box::pin(spirc_task));
+                        let shared_spirc = Arc::new(spirc);
+                        self.librespot_connection.spirc = Some(shared_spirc.clone());
 
-                if self.use_mpris {
-                    self.spotifyd_state.dbus_mpris_server = new_dbus_server(
-                        session,
-                        shared_spirc,
-                        self.spotifyd_state.device_name.clone(),
-                    );
+                        if self.use_mpris {
+                            self.spotifyd_state.dbus_mpris_server = new_dbus_server(
+                                session,
+                                shared_spirc,
+                                self.spotifyd_state.device_name.clone(),
+                            );
+                        }
+                    }
+                    Err(err) => {
+                        error!("Failed to connect to spotify: {}", err);
+                        // no need to shutdown, session hasn't yet been initialized
+                        return Poll::Ready(());
+                    }
                 }
             } else if self
                 .spotifyd_state
