@@ -18,7 +18,7 @@ parts:
   spotifyd:
     plugin: rust
     rust-channel: nightly
-    source: https://github.com/Spotifyd/spotifyd.git
+    source: .
     rust-features: ["pulseaudio_backend"]
     build-packages:
       - libssl-dev
