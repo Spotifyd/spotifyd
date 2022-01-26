@@ -4,12 +4,14 @@ use librespot_playback::player::PlayerEvent;
 use log::info;
 use std::{
     collections::HashMap,
-    io::{self, Write},
     pin::Pin,
     process::{Output, Stdio},
     task::{Context, Poll},
 };
-use tokio::process::Command;
+use tokio::{
+    io::{self, AsyncWrite},
+    process::Command,
+};
 
 /// Blocks while provided command is run in a subprocess using the provided
 /// shell. If successful, returns the contents of the subprocess's `stdout` as a
@@ -154,6 +156,13 @@ pub(crate) fn spawn_program_on_event(
     spawn_program(shell, cmd, env)
 }
 
+enum ChildFuture {
+    Process(Pin<Box<dyn Future<Output = io::Result<Output>>>>),
+    Stdout(io::Stdout, Vec<u8>),
+    Flush(io::Stdout),
+    Done(Result<(), Error>),
+}
+
 /// Wraps a process into a Future that executes something after the process has
 /// exited:
 /// * successfully: It writes the contents of it's stdout to the stdout of the
@@ -163,7 +172,7 @@ pub(crate) fn spawn_program_on_event(
 ///   invoked it.
 pub(crate) struct Child {
     cmd: String,
-    future: Pin<Box<dyn Future<Output = io::Result<Output>>>>,
+    future: ChildFuture,
     shell: String,
 }
 
@@ -171,7 +180,7 @@ impl Child {
     pub(crate) fn new(cmd: String, child: tokio::process::Child, shell: String) -> Self {
         Self {
             cmd,
-            future: Box::pin(child.wait_with_output()),
+            future: ChildFuture::Process(Box::pin(child.wait_with_output())),
             shell,
         }
     }
@@ -181,42 +190,85 @@ impl Future for Child {
     type Output = Result<(), Error>;
 
     fn poll(mut self: Pin<&mut Child>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if let Poll::Ready(result) = self.future.as_mut().poll(cx) {
-            let output = match result {
-                Ok(output) => output,
-                Err(err) => {
-                    return Poll::Ready(Err(Error::subprocess_with_err(
-                        &self.shell,
-                        &self.cmd,
-                        err,
-                    )));
-                }
-            };
-
-            if output.status.success() {
-                // If successful, write subprocess's stdout to main process's stdout...
-                let stdout = io::stdout();
-                let mut writer = stdout.lock();
-
-                writer
-                    .write_all(&output.stdout)
-                    .map_err(|e| Error::subprocess_with_err(&self.shell, &self.cmd, e))?;
-
-                writer
-                    .flush()
-                    .map_err(|e| Error::subprocess_with_err(&self.shell, &self.cmd, e))?;
-
-                Poll::Ready(Ok(()))
+        if let ChildFuture::Process(ref mut process) = self.future {
+            if let Poll::Ready(result) = process.as_mut().poll(cx) {
+                match result {
+                    Ok(output) => {
+                        if output.status.success() {
+                            // If successful, write subprocess's stdout to main process's stdout...
+                            let stdout = io::stdout();
+                            self.future = ChildFuture::Stdout(stdout, output.stdout);
+                        } else {
+                            // If unsuccessful, return an error that includes the contents of stderr...
+                            let stderr = String::from_utf8(output.stderr);
+                            let err = match stderr {
+                                Ok(stderr) => {
+                                    Error::subprocess_with_str(&self.shell, &self.cmd, &stderr)
+                                }
+                                Err(_) => Error::subprocess(&self.shell, &self.cmd),
+                            };
+                            self.future = ChildFuture::Done(Err(err));
+                        }
+                    }
+                    Err(err) => {
+                        self.future = ChildFuture::Done(Err(Error::subprocess_with_err(
+                            &self.shell,
+                            &self.cmd,
+                            err,
+                        )));
+                    }
+                };
             } else {
-                // If unsuccessful, return an error that includes the contents of stderr...
-                let stderr = String::from_utf8(output.stderr);
-                match stderr {
-                    Ok(stderr) => Err(Error::subprocess_with_str(&self.shell, &self.cmd, &stderr)),
-                    Err(_) => Err(Error::subprocess(&self.shell, &self.cmd)),
-                }?
+                return Poll::Pending;
             }
+        }
+
+        if let ChildFuture::Stdout(ref mut stdout, ref output) = self.future {
+            let stdout = Pin::new(stdout);
+            if let Poll::Ready(result) = stdout.poll_write(cx, output) {
+                match result {
+                    Ok(_) => {
+                        let stdout = io::stdout();
+                        self.future = ChildFuture::Flush(stdout);
+                    }
+                    Err(e) => {
+                        self.future = ChildFuture::Done(Err(Error::subprocess_with_err(
+                            &self.shell,
+                            &self.cmd,
+                            e,
+                        )));
+                    }
+                }
+            } else {
+                return Poll::Pending;
+            }
+        }
+
+        if let ChildFuture::Flush(ref mut stdout) = self.future {
+            let stdout = Pin::new(stdout);
+            if let Poll::Ready(result) = stdout.poll_flush(cx) {
+                match result {
+                    Ok(_) => self.future = ChildFuture::Done(Ok(())),
+                    Err(e) => {
+                        self.future = ChildFuture::Done(Err(Error::subprocess_with_err(
+                            &self.shell,
+                            &self.cmd,
+                            e,
+                        )))
+                    }
+                }
+            } else {
+                return Poll::Pending;
+            }
+        }
+
+        let new_error = Error::subprocess(&self.shell, &self.cmd);
+        if let ChildFuture::Done(ref mut result) = self.future {
+            // we can't clone the result (errors don't need to be clonable), so we just replace it with a simpler version
+            let result = std::mem::replace(result, Err(new_error));
+            Poll::Ready(result)
         } else {
-            Poll::Pending
+            unreachable!("every other case is handled above")
         }
     }
 }
