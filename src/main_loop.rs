@@ -1,6 +1,7 @@
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
-use crate::process::{spawn_program_on_event, Child};
+use crate::error::Error;
+use crate::process::spawn_program_on_event;
 use futures::{self, Future, Stream, StreamExt};
 use librespot_connect::{discovery::DiscoveryStream, spirc::Spirc};
 use librespot_core::session::SessionError;
@@ -80,6 +81,8 @@ fn new_dbus_server(
     None
 }
 
+type ProcessWaitFuture = Pin<Box<dyn Future<Output = Result<(), Error>>>>;
+
 pub(crate) struct MainLoopState {
     pub(crate) librespot_connection: LibreSpotConnection,
     pub(crate) audio_setup: AudioSetup,
@@ -89,7 +92,7 @@ pub(crate) struct MainLoopState {
     pub(crate) autoplay: bool,
     pub(crate) volume_ctrl: VolumeCtrl,
     pub(crate) initial_volume: Option<u16>,
-    pub(crate) running_event_program: Option<Pin<Box<Child>>>,
+    pub(crate) running_event_program: Option<ProcessWaitFuture>,
     pub(crate) shell: String,
     pub(crate) device_type: DeviceType,
     pub(crate) use_mpris: bool,
@@ -138,13 +141,9 @@ impl Future for MainLoopState {
                         if let Some(ref cmd) = self.spotifyd_state.player_event_program {
                             match spawn_program_on_event(&self.shell, cmd, event) {
                                 Ok(child) => {
-                                    self.running_event_program = Some({
-                                        let mut child = Box::pin(child);
-                                        // We poll the child once, so the waker is awoken once the process finishes.
-                                        // Polling on a Poll::Ready(...) is allowed in this case.
-                                        let _ = child.as_mut().poll(cx);
-                                        child
-                                    })
+                                    self.running_event_program = Some(Box::pin(child.wait()));
+                                    // start the `loop {...}` block again so that we at least poll the program once
+                                    continue;
                                 }
                                 Err(e) => error!("{}", e),
                             }
