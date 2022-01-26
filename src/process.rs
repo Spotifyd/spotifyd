@@ -1,18 +1,22 @@
 use crate::error::Error;
+use futures::Future;
 use librespot_playback::player::PlayerEvent;
 use log::info;
 use std::{
     collections::HashMap,
-    io::{self, Read, Write},
-    process::{Command, ExitStatus, Stdio},
+    io::{self, Write},
+    pin::Pin,
+    process::{Output, Stdio},
+    task::{Context, Poll},
 };
+use tokio::process::Command;
 
 /// Blocks while provided command is run in a subprocess using the provided
 /// shell. If successful, returns the contents of the subprocess's `stdout` as a
 /// `String`.
 pub(crate) fn run_program(shell: &str, cmd: &str) -> Result<String, Error> {
     info!("Running {:?} using {:?}", cmd, shell);
-    let output = Command::new(shell)
+    let output = std::process::Command::new(shell)
         .arg("-c")
         .arg(cmd)
         .output()
@@ -150,96 +154,69 @@ pub(crate) fn spawn_program_on_event(
     spawn_program(shell, cmd, env)
 }
 
-/// Same as a `std::process::Child` except when this `Child` exits:
+/// Wraps a process into a Future that executes something after the process has
+/// exited:
 /// * successfully: It writes the contents of it's stdout to the stdout of the
 ///   main process.
 /// * unsuccesfully: It returns an error that includes the contents it's stderr
 ///   as well as information on the command that was run and the shell that
 ///   invoked it.
-#[derive(Debug)]
 pub(crate) struct Child {
     cmd: String,
-    inner: std::process::Child,
+    future: Pin<Box<dyn Future<Output = io::Result<Output>>>>,
     shell: String,
 }
 
 impl Child {
-    pub(crate) fn new(cmd: String, child: std::process::Child, shell: String) -> Self {
+    pub(crate) fn new(cmd: String, child: tokio::process::Child, shell: String) -> Self {
         Self {
             cmd,
-            inner: child,
+            future: Box::pin(child.wait_with_output()),
             shell,
         }
     }
+}
 
-    #[allow(unused)]
-    pub(crate) fn wait(&mut self) -> Result<(), Error> {
-        match self.inner.wait() {
-            Ok(status) => {
-                self.write_output(status)?;
-                Ok(())
+impl Future for Child {
+    type Output = Result<(), Error>;
+
+    fn poll(mut self: Pin<&mut Child>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        if let Poll::Ready(result) = self.future.as_mut().poll(cx) {
+            let output = match result {
+                Ok(output) => output,
+                Err(err) => {
+                    return Poll::Ready(Err(Error::subprocess_with_err(
+                        &self.shell,
+                        &self.cmd,
+                        err,
+                    )));
+                }
+            };
+
+            if output.status.success() {
+                // If successful, write subprocess's stdout to main process's stdout...
+                let stdout = io::stdout();
+                let mut writer = stdout.lock();
+
+                writer
+                    .write_all(&output.stdout)
+                    .map_err(|e| Error::subprocess_with_err(&self.shell, &self.cmd, e))?;
+
+                writer
+                    .flush()
+                    .map_err(|e| Error::subprocess_with_err(&self.shell, &self.cmd, e))?;
+
+                Poll::Ready(Ok(()))
+            } else {
+                // If unsuccessful, return an error that includes the contents of stderr...
+                let stderr = String::from_utf8(output.stderr);
+                match stderr {
+                    Ok(stderr) => Err(Error::subprocess_with_str(&self.shell, &self.cmd, &stderr)),
+                    Err(_) => Err(Error::subprocess(&self.shell, &self.cmd)),
+                }?
             }
-            Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
-        }
-    }
-
-    #[allow(unused)]
-    pub(crate) fn try_wait(&mut self) -> Result<Option<()>, Error> {
-        match self.inner.try_wait() {
-            Ok(Some(status)) => {
-                self.write_output(status)?;
-                Ok(Some(()))
-            }
-            Ok(None) => Ok(None),
-            Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
-        }
-    }
-
-    fn write_output(&mut self, status: ExitStatus) -> Result<(), Error> {
-        if status.success() {
-            // If successful, write subprocess's stdout to main process's stdout...
-            let mut stdout_of_child = self.inner.stdout.as_mut().unwrap();
-            let reader = &mut stdout_of_child;
-
-            let stdout_of_main = io::stdout();
-            let mut guard = stdout_of_main.lock();
-            let writer = &mut guard;
-
-            io::copy(reader, writer)
-                .map_err(|e| Error::subprocess_with_err(&self.shell, &self.cmd, e))?;
-
-            writer
-                .flush()
-                .map_err(|e| Error::subprocess_with_err(&self.shell, &self.cmd, e))?;
-
-            Ok(())
         } else {
-            // If unsuccessful, return an error that includes the contents of stderr...
-            let mut buf = String::new();
-            match self.inner.stderr.as_mut().unwrap().read_to_string(&mut buf) {
-                Ok(_nread) => Err(Error::subprocess_with_str(&self.shell, &self.cmd, &buf)),
-                Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
-            }
+            Poll::Pending
         }
-    }
-}
-
-impl std::ops::Deref for Child {
-    type Target = std::process::Child;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl std::ops::DerefMut for Child {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
-}
-
-impl From<Child> for std::process::Child {
-    fn from(child: Child) -> Self {
-        child.inner
     }
 }
