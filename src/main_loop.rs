@@ -88,7 +88,7 @@ pub(crate) struct MainLoopState {
     pub(crate) autoplay: bool,
     pub(crate) volume_ctrl: VolumeCtrl,
     pub(crate) initial_volume: Option<u16>,
-    pub(crate) running_event_program: Option<Child>,
+    pub(crate) running_event_program: Option<Pin<Box<Child>>>,
     pub(crate) shell: String,
     pub(crate) device_type: DeviceType,
     // Command line option should still be available without dbus_mpris feature
@@ -120,15 +120,20 @@ impl Future for MainLoopState {
             }
 
             if let Some(mut child) = self.running_event_program.take() {
-                match child.try_wait() {
-                    // Still running...
-                    Ok(None) => self.running_event_program = Some(child),
-                    // Exited with error...
-                    Err(e) => error!("{}", e),
-                    // Exited without error...
-                    Ok(Some(_)) => (),
+                // check if child has already exited
+                if let Poll::Ready(result) = child.as_mut().poll(cx) {
+                    match result {
+                        // Exited without error...
+                        Ok(_) => (),
+                        // Exited with error...
+                        Err(e) => error!("{}", e),
+                    }
+                } else {
+                    // drop the Box that holds a reference to our child
+                    self.running_event_program = Some(child);
                 }
             }
+
             if self.running_event_program.is_none() {
                 if let Some(ref mut player_event_channel) = self.spotifyd_state.player_event_channel
                 {
@@ -139,7 +144,15 @@ impl Future for MainLoopState {
                         }
                         if let Some(ref cmd) = self.spotifyd_state.player_event_program {
                             match spawn_program_on_event(&self.shell, cmd, event) {
-                                Ok(child) => self.running_event_program = Some(child),
+                                Ok(child) => {
+                                    self.running_event_program = Some({
+                                        let mut child = Box::pin(child);
+                                        // We poll the child once, so the waker is awoken once the process finishes.
+                                        // Polling on a Poll::Ready(...) is allowed in this case.
+                                        let _ = child.as_mut().poll(cx);
+                                        child
+                                    })
+                                }
                                 Err(e) => error!("{}", e),
                             }
                         }
