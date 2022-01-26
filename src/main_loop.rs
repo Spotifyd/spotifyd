@@ -119,9 +119,9 @@ impl Future for MainLoopState {
                     Box::pin(Session::connect(session_config, creds, cache));
             }
 
-            if let Some(mut child) = self.running_event_program.take() {
+            if let Some(mut future) = self.running_event_program.take() {
                 // check if child has already exited
-                if let Poll::Ready(result) = child.as_mut().poll(cx) {
+                if let Poll::Ready(result) = future.as_mut().poll(cx) {
                     match result {
                         // Exited without error...
                         Ok(_) => (),
@@ -129,8 +129,8 @@ impl Future for MainLoopState {
                         Err(e) => error!("{}", e),
                     }
                 } else {
-                    // drop the Box that holds a reference to our child
-                    self.running_event_program = Some(child);
+                    // not yet done, put it back into the `Option`
+                    self.running_event_program = Some(future);
                 }
             }
 
