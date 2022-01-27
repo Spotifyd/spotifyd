@@ -10,7 +10,7 @@ The provided binaries come in two flavours, `slim` and `full`. Each are compiled
 
 There are packages for the following systems:
 
-- [Arch Linux (via an AUR)](https://aur.archlinux.org/packages/?O=0&K=spotifyd)
+- [Arch Linux (via the Community repository)](https://archlinux.org/packages/community/x86_64/spotifyd/)
 - [MacOS (via homebrew)](./MacOS.md)
 
 It is also available as a [snap package](https://snapcraft.io/spotifyd).
