@@ -456,13 +456,17 @@ async fn create_dbus_server(
             _ => (last_track_id, last_playback_status, last_volume),
         };
 
-        // if playback_status or track_id have changed, emit a PropertiesChanged signal
+        // if playback_status, track_id or volume have changed, emit a PropertiesChanged signal
         if last_playback_status != playback_status || last_track_id != track_id || last_volume != player_volume {
             let mut changed_properties: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
 
             if last_volume != player_volume {
                 if let Some(player_volume) = player_volume {
-                    changed_properties.insert("Volume".to_owned(), Variant(Box::new(player_volume.to_owned())));
+                    // convert u16 to float
+                    let mut vol_mpris = player_volume as f64;
+                    // max. vol = 1.0 according to mpris spec, round to two decimal places
+                    vol_mpris = (vol_mpris / 65535.0 * 100.0).round() / 100.0;
+                    changed_properties.insert("Volume".to_owned(), Variant(Box::new(vol_mpris.to_owned())));
                 }
             }
             else {
