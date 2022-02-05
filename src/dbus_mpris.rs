@@ -453,7 +453,7 @@ async fn create_dbus_server(
             PlayerEvent::Paused { .. } => {
                 (last_track_id, Some(PlaybackStatus::Paused), last_volume)
             }
-            _ => (last_track_id, last_playback_status, last_volume),
+            _ => continue,
         };
 
         // if playback_status, track_id or volume have changed, emit a PropertiesChanged signal
