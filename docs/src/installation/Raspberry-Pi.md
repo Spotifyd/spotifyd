@@ -40,16 +40,18 @@ Input the following data. Change the **username**, **password**, **device_name**
 username = "USER"
 password = "PASS"
 backend = "alsa"
-device = alsa_audio_device # Given by `aplay -L`
+device = "default" # possible values are listed by `aplay -L`
 mixer = "PCM"
 volume-controller = "alsa" # or alsa_linear, or softvol
-#onevent = command_run_on_playback_event
+#onevent = "command_run_on_playback_event"
 device_name = "name_in_spotify_connect"
-bitrate = 96|160|320
+bitrate = 160 # possible values: 96, 160, 320
 cache_path = "cache_directory"
 volume-normalisation = true
 normalisation-pregain = -10
 ```
+
+For a full list of options, see [here](../config/File.md).
 
 ## Start the service
 
