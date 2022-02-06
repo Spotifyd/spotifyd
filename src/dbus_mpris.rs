@@ -443,7 +443,11 @@ async fn create_dbus_server(
             PlayerEvent::VolumeSet { volume } => {
                 (last_track_id, last_playback_status, Some(volume))
             }
-            PlayerEvent::Playing { track_id, position_ms, .. } => {
+            PlayerEvent::Playing {
+                track_id,
+                position_ms,
+                ..
+            } => {
                 seeked_position = Some(position_ms);
                 (Some(track_id), Some(PlaybackStatus::Playing), last_volume)
             }
@@ -457,7 +461,10 @@ async fn create_dbus_server(
         };
 
         // if playback_status, track_id or volume have changed, emit a PropertiesChanged signal
-        if last_playback_status != playback_status || last_track_id != track_id || last_volume != player_volume {
+        if last_playback_status != playback_status
+            || last_track_id != track_id
+            || last_volume != player_volume
+        {
             let mut changed_properties: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
 
             if last_volume != player_volume {
@@ -466,10 +473,10 @@ async fn create_dbus_server(
                     let mut vol_mpris = player_volume as f64;
                     // max. vol = 1.0 according to mpris spec, round to two decimal places
                     vol_mpris = (vol_mpris / 65535.0 * 100.0).round() / 100.0;
-                    changed_properties.insert("Volume".to_owned(), Variant(Box::new(vol_mpris.to_owned())));
+                    changed_properties
+                        .insert("Volume".to_owned(), Variant(Box::new(vol_mpris.to_owned())));
                 }
-            }
-            else {
+            } else {
                 if let Some(track_id) = track_id {
                     let sp = create_spotify_api(&api_token);
                     let track = sp.track(&track_id.to_base62());
@@ -483,11 +490,14 @@ async fn create_dbus_server(
                     }
                 }
                 if let Some(playback_status) = playback_status {
-                    changed_properties.insert("PlaybackStatus".to_owned(), Variant(Box::new(match playback_status {
-                        PlaybackStatus::Playing => "Playing".to_owned(),
-                        PlaybackStatus::Paused => "Paused".to_owned(),
-                        PlaybackStatus::Stopped => "Stopped".to_owned(),
-                    })));
+                    changed_properties.insert(
+                        "PlaybackStatus".to_owned(),
+                        Variant(Box::new(match playback_status {
+                            PlaybackStatus::Playing => "Playing".to_owned(),
+                            PlaybackStatus::Paused => "Paused".to_owned(),
+                            PlaybackStatus::Stopped => "Stopped".to_owned(),
+                        })),
+                    );
                 }
             }
 
