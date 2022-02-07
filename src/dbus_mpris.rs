@@ -429,6 +429,7 @@ async fn create_dbus_server(
     // Store current playback state to be able to detect changes
     let mut last_track_id = None;
     let mut last_playback_status = None;
+    let mut last_volume = None;
 
     loop {
         let event = event_rx
@@ -438,42 +439,68 @@ async fn create_dbus_server(
         let mut seeked_position = None;
 
         // Update playback state from event
-        let (track_id, playback_status) = match event {
-            PlayerEvent::Playing { track_id, position_ms, .. } => {
+        let (track_id, playback_status, player_volume) = match event {
+            PlayerEvent::VolumeSet { volume } => {
+                (last_track_id, last_playback_status, Some(volume))
+            }
+            PlayerEvent::Playing {
+                track_id,
+                position_ms,
+                ..
+            } => {
                 seeked_position = Some(position_ms);
-                (Some(track_id), Some(PlaybackStatus::Playing))
+                (Some(track_id), Some(PlaybackStatus::Playing), last_volume)
             }
             PlayerEvent::Stopped { .. } => {
-                (last_track_id, Some(PlaybackStatus::Stopped))
+                (last_track_id, Some(PlaybackStatus::Stopped), last_volume)
             }
             PlayerEvent::Paused { .. } => {
-                (last_track_id, Some(PlaybackStatus::Paused))
+                (last_track_id, Some(PlaybackStatus::Paused), last_volume)
             }
-            _ => (last_track_id, last_playback_status),
+            _ => continue,
         };
 
-        // if playback_status or track_id have changed, emit a PropertiesChanged signal
-        if last_playback_status != playback_status || last_track_id != track_id {
+        // if playback_status, track_id or volume have changed, emit a PropertiesChanged signal
+        if last_playback_status != playback_status
+            || last_track_id != track_id
+            || last_volume != player_volume
+        {
             let mut changed_properties: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
-            if let Some(track_id) = track_id {
-                let sp = create_spotify_api(&api_token);
-                let track = sp.track(&track_id.to_base62());
-                if let Ok(track) = track {
-                    let mut m: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
-                    insert_metadata(&mut m, track);
 
-                    changed_properties.insert("Metadata".to_owned(), Variant(Box::new(m)));
-                } else {
-                    info!("Couldn't fetch metadata from spotify: {:?}", track);
+            if last_volume != player_volume {
+                if let Some(player_volume) = player_volume {
+                    // convert u16 to float
+                    let mut vol_mpris = player_volume as f64;
+                    // max. vol = 1.0 according to mpris spec, round to two decimal places
+                    vol_mpris = (vol_mpris / 65535.0 * 100.0).round() / 100.0;
+                    changed_properties
+                        .insert("Volume".to_owned(), Variant(Box::new(vol_mpris.to_owned())));
+                }
+            } else {
+                if let Some(track_id) = track_id {
+                    let sp = create_spotify_api(&api_token);
+                    let track = sp.track(&track_id.to_base62());
+                    if let Ok(track) = track {
+                        let mut m: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
+                        insert_metadata(&mut m, track);
+
+                        changed_properties.insert("Metadata".to_owned(), Variant(Box::new(m)));
+                    } else {
+                        info!("Couldn't fetch metadata from spotify: {:?}", track);
+                    }
+                }
+                if let Some(playback_status) = playback_status {
+                    changed_properties.insert(
+                        "PlaybackStatus".to_owned(),
+                        Variant(Box::new(match playback_status {
+                            PlaybackStatus::Playing => "Playing".to_owned(),
+                            PlaybackStatus::Paused => "Paused".to_owned(),
+                            PlaybackStatus::Stopped => "Stopped".to_owned(),
+                        })),
+                    );
                 }
             }
-            if let Some(playback_status) = playback_status {
-                changed_properties.insert("PlaybackStatus".to_owned(), Variant(Box::new(match playback_status {
-                    PlaybackStatus::Playing => "Playing".to_owned(),
-                    PlaybackStatus::Paused => "Paused".to_owned(),
-                    PlaybackStatus::Stopped => "Stopped".to_owned(),
-                })));
-            }
+
             let msg = dbus::nonblock::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged {
                 interface_name: "org.mpris.MediaPlayer2.Player".to_owned(),
                 changed_properties,
@@ -484,6 +511,7 @@ async fn create_dbus_server(
 
             last_playback_status = playback_status;
             last_track_id = track_id;
+            last_volume = player_volume;
         }
 
         // if position in track has changed emit a Seeked signal
