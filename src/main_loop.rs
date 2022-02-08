@@ -91,6 +91,8 @@ pub(crate) struct MainLoopState {
     pub(crate) running_event_program: Option<Child>,
     pub(crate) shell: String,
     pub(crate) device_type: DeviceType,
+    // Command line option should still be available without dbus_mpris feature
+    #[allow(dead_code)]
     pub(crate) use_mpris: bool,
     #[cfg(feature = "dbus_mpris")]
     pub(crate) mpris_event_tx: Option<UnboundedSender<PlayerEvent>>,

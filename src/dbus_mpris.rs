@@ -592,7 +592,7 @@ fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, track: Ful
                 .external_urls
                 .iter()
                 .next()
-                .map_or("", |(_, v)| &v)
+                .map_or("", |(_, v)| v)
                 .to_string(),
         )),
     );
