@@ -1,6 +1,9 @@
 #[cfg(feature = "alsa_backend")]
 use crate::alsa_mixer;
-use crate::{config, main_loop};
+use crate::{
+    config,
+    main_loop::{self, CredentialsProvider},
+};
 #[cfg(feature = "dbus_keyring")]
 use keyring::Keyring;
 use librespot_connect::discovery::discovery;
@@ -8,8 +11,6 @@ use librespot_core::{
     authentication::Credentials,
     cache::Cache,
     config::{ConnectConfig, DeviceType, VolumeCtrl},
-    session::Session,
-    session::SessionError,
 };
 use librespot_playback::{
     audio_backend::{Sink, BACKENDS},
@@ -17,11 +18,9 @@ use librespot_playback::{
     mixer::{self, Mixer},
 };
 use log::info;
-use std::pin::Pin;
 use std::str::FromStr;
-use tokio::signal::ctrl_c;
 
-pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoopState {
+pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
     #[cfg(feature = "alsa_backend")]
     let mut mixer = {
         let local_audio_device = config.audio_device.clone();
@@ -84,20 +83,6 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
 
     let device_type: DeviceType = DeviceType::from_str(&config.device_type).unwrap_or_default();
 
-    #[allow(clippy::or_fun_call)]
-    let discovery_stream = discovery(
-        ConnectConfig {
-            autoplay,
-            name: config.device_name.clone(),
-            device_type,
-            volume: mixer().volume(),
-            volume_ctrl: volume_ctrl.clone(),
-        },
-        device_id,
-        zeroconf_port,
-    )
-    .unwrap();
-
     let username = config.username;
     #[allow(unused_mut)] // mut is needed behind the dbus_keyring flag.
     let mut password = config.password;
@@ -113,43 +98,47 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
         }
     }
 
-    let connection = if let Some(credentials) = get_credentials(&cache, &username, &password) {
-        let sess: Pin<Box<dyn futures::Future<Output = Result<Session, SessionError>>>> = Box::pin(
-            Session::connect(session_config.clone(), credentials, cache.clone()),
-        );
-        sess
-    } else {
-        Box::pin(futures::future::pending())
-    };
+    let credentials_provider =
+        if let Some(credentials) = get_credentials(&cache, &username, &password) {
+            CredentialsProvider::SpotifyCredentials(credentials)
+        } else {
+            info!("no usable credentials found, enabling discovery");
+            let discovery_stream = discovery(
+                ConnectConfig {
+                    autoplay,
+                    name: config.device_name.clone(),
+                    device_type,
+                    volume: mixer().volume(),
+                    volume_ctrl: volume_ctrl.clone(),
+                },
+                device_id,
+                zeroconf_port,
+            )
+            .unwrap();
+            discovery_stream.into()
+        };
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
-    main_loop::MainLoopState {
-        librespot_connection: main_loop::LibreSpotConnection::new(connection, discovery_stream),
+    main_loop::MainLoop {
+        credentials_provider,
         audio_setup: main_loop::AudioSetup {
             mixer,
             backend,
             audio_device: config.audio_device.clone(),
         },
         spotifyd_state: main_loop::SpotifydState {
-            ctrl_c_stream: Box::pin(ctrl_c()),
-            shutting_down: false,
             cache,
             device_name: config.device_name,
-            player_event_channel: None,
             player_event_program: config.onevent,
-            dbus_mpris_server: None,
         },
         player_config,
         session_config,
         initial_volume: config.initial_volume,
         volume_ctrl,
-        running_event_program: None,
         shell: config.shell,
         device_type,
         autoplay,
         use_mpris: config.use_mpris,
-        #[cfg(feature = "dbus_mpris")]
-        mpris_event_tx: None,
     }
 }
 
