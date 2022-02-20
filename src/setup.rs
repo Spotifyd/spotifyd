@@ -23,9 +23,9 @@ use std::str::FromStr;
 pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
     #[cfg(feature = "alsa_backend")]
     let mut mixer = {
-        let local_audio_device = config.audio_device.clone();
-        let local_control_device = config.control_device.clone();
-        let local_mixer = config.mixer.clone();
+        let audio_device = config.audio_device.clone();
+        let control_device = config.control_device.clone();
+        let mixer = config.mixer.clone();
         match config.volume_controller {
             config::VolumeController::SoftVolume => {
                 info!("Using software volume controller.");
@@ -40,11 +40,11 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
                 );
                 Box::new(move || {
                     Box::new(alsa_mixer::AlsaMixer {
-                        device: local_control_device
+                        device: control_device
                             .clone()
-                            .or_else(|| local_audio_device.clone())
+                            .or_else(|| audio_device.clone())
                             .unwrap_or_else(|| "default".to_string()),
-                        mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
+                        mixer: mixer.clone().unwrap_or_else(|| "Master".to_string()),
                         linear_scaling: linear,
                     }) as Box<dyn mixer::Mixer>
                 }) as Box<dyn FnMut() -> Box<dyn Mixer>>
@@ -124,7 +124,7 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
         audio_setup: main_loop::AudioSetup {
             mixer,
             backend,
-            audio_device: config.audio_device.clone(),
+            audio_device: config.audio_device,
         },
         spotifyd_state: main_loop::SpotifydState {
             cache,
