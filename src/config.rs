@@ -584,15 +584,14 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .map(PathBuf::from)
         // TODO: plumb size limits, check audio_cache?
         // TODO: rather than silently disabling cache if constructor fails, maybe we should handle the error?
-        .map(|path| {
+        .and_then(|path| {
             Cache::new(
                 Some(path.clone()),
                 if audio_cache { Some(path) } else { None },
                 None,
             )
             .ok()
-        })
-        .flatten();
+        });
 
     let bitrate: LSBitrate = config
         .shared_config
@@ -614,14 +613,13 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let initial_volume: Option<u16> = config
         .shared_config
         .initial_volume
-        .map(|input| match input.parse::<i16>() {
+        .and_then(|input| match input.parse::<i16>() {
             Ok(v) if (0..=100).contains(&v) => Some(v),
             _ => {
                 warn!("Could not parse initial_volume (must be in the range 0-100)");
                 None
             }
         })
-        .flatten()
         .map(|volume| (volume as i32 * 0xFFFF / 100) as u16);
 
     let device_name = config
