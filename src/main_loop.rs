@@ -79,8 +79,7 @@ pub(crate) struct MainLoop {
     pub(crate) initial_volume: Option<u16>,
     pub(crate) shell: String,
     pub(crate) device_type: DeviceType,
-    // Command line option should still be available without dbus_mpris feature
-    #[cfg_attr(not(feature = "dbus_mpris"), allow(dead_code))]
+    #[cfg_attr(not(feature = "dbus_mpris"), allow(unused))]
     pub(crate) use_mpris: bool,
     pub(crate) credentials_provider: CredentialsProvider,
 }
@@ -96,7 +95,9 @@ impl MainLoop {
     }
 
     pub(crate) async fn run(&mut self) {
-        let mut ctrl_c = Box::pin(tokio::signal::ctrl_c());
+        tokio::pin! {
+            let ctrl_c = tokio::signal::ctrl_c();
+        }
 
         'mainloop: loop {
             let session = tokio::select!(
@@ -140,7 +141,7 @@ impl MainLoop {
                 mixer,
             );
 
-            let mut spirc_task = Box::pin(spirc_task);
+            tokio::pin!(spirc_task);
 
             let shared_spirc = Arc::new(spirc);
 
