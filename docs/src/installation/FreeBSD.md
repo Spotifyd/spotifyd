@@ -16,7 +16,9 @@ sudo pkg install spotifyd
 
 ## Configuring spotifyd
 
-Spotifyd comes pre-configured with defaults that should be working in most cases, but if you want to tweak it further to your needs, have a look at the [configuration section](../config/) of this book.
+If you installed spotifyd using the above method, you'll either need to supply `--backend portaudio` as a command-line argument or add `backend = "portaudio"` to `/usr/local/etc/spotifyd.conf`.
+
+Apart from that, spotifyd comes pre-configured with defaults that should be working in most cases, but if you want to tweak it further to your needs, have a look at the [configuration section](../config/) of this book.
 
 ## Start the service
 
