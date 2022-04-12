@@ -1,36 +1,38 @@
 use chrono::prelude::*;
+use chrono::Duration;
 use dbus::arg::{RefArg, Variant};
 use dbus::channel::{MatchingReceiver, Sender};
 use dbus::message::{MatchRule, SignalArgs};
+use dbus::MethodErr;
 use dbus_crossroads::{Crossroads, IfaceToken};
 use dbus_tokio::connection;
 use futures::task::{Context, Poll};
 use futures::{self, Future};
 use librespot_connect::spirc::Spirc;
-use librespot_core::{
-    keymaster::{get_token, Token as LibrespotToken},
-    mercury::MercuryError,
-    session::Session,
-};
+use librespot_core::keymaster::{get_token, Token as LibrespotToken};
+use librespot_core::mercury::MercuryError;
+use librespot_core::session::Session;
 use librespot_playback::player::PlayerEvent;
 use log::info;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
-use rspotify::spotify::{
-    client::Spotify,
-    model::{offset::for_position, track::FullTrack},
-    oauth2::TokenInfo as RspotifyToken,
-    senum::*,
-    util::datetime_to_timestamp,
+use rspotify::model::offset::Offset;
+use rspotify::model::track::FullTrack;
+use rspotify::model::{
+    AlbumId, ArtistId, EpisodeId, IdError, PlayableItem, PlaylistId, RepeatState, ShowId, TrackId,
+    Type,
 };
+use rspotify::prelude::*;
+use rspotify::{AuthCodeSpotify, Token as RspotifyToken};
+use std::collections::HashMap;
+use std::env;
 use std::pin::Pin;
 use std::sync::Arc;
-use std::{collections::HashMap, env};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 pub struct DbusServer {
     session: Session,
     spirc: Arc<Spirc>,
-    api_token: RspotifyToken,
+    spotify_client: Arc<AuthCodeSpotify>,
     #[allow(clippy::type_complexity)]
     token_request: Option<Pin<Box<dyn Future<Output = Result<LibrespotToken, MercuryError>>>>>,
     dbus_future: Option<Pin<Box<dyn Future<Output = ()>>>>,
@@ -57,20 +59,12 @@ impl DbusServer {
         DbusServer {
             session,
             spirc,
-            api_token: RspotifyToken::default(),
+            spotify_client: Default::default(),
             token_request: None,
             dbus_future: None,
             device_name,
             event_rx,
             event_tx: None,
-        }
-    }
-
-    fn is_token_expired(&self) -> bool {
-        let now: DateTime<Utc> = Utc::now();
-        match self.api_token.expires_at {
-            Some(expires_at) => now.timestamp() > expires_at - 100,
-            None => true,
         }
     }
 }
@@ -84,28 +78,44 @@ impl Future for DbusServer {
                 self.event_tx.as_ref().unwrap().send(msg).unwrap();
             }
         }
-        let mut got_new_token = false;
-        if self.is_token_expired() {
-            if let Some(ref mut fut) = self.token_request {
+        let needs_token = match *self.spotify_client.get_token().lock().unwrap() {
+            Some(ref token) => token.is_expired(),
+            None => true,
+        };
+
+        if needs_token {
+            if let Some(mut fut) = self.token_request.take() {
                 if let Poll::Ready(Ok(token)) = fut.as_mut().poll(cx) {
-                    self.api_token = RspotifyToken::default()
-                        .access_token(&token.access_token)
-                        .expires_in(token.expires_in)
-                        .expires_at(datetime_to_timestamp(token.expires_in));
-                    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-                    self.event_tx = Some(tx);
-                    self.dbus_future = Some(Box::pin(create_dbus_server(
-                        self.api_token.clone(),
-                        self.spirc.clone(),
-                        self.device_name.clone(),
-                        rx,
-                    )));
+                    let expires_in = Duration::seconds(token.expires_in as i64);
+                    let api_token = RspotifyToken {
+                        access_token: token.access_token,
+                        expires_in,
+                        expires_at: Some(Utc::now() + expires_in),
+                        ..RspotifyToken::default()
+                    };
+
+                    if self.dbus_future.is_none() {
+                        self.spotify_client = Arc::new(AuthCodeSpotify::from_token(api_token));
+
+                        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+                        self.event_tx = Some(tx);
+                        self.dbus_future = Some(Box::pin(create_dbus_server(
+                            Arc::clone(&self.spotify_client),
+                            self.spirc.clone(),
+                            self.device_name.clone(),
+                            rx,
+                        )));
+                    } else {
+                        *self.spotify_client.get_token().lock().unwrap() = Some(api_token);
+                    }
+
                     // TODO: for reasons I don't _entirely_ understand, the token request completing
                     // convinces callers that they don't need to re-check the status of this future
                     // until we start playing. This causes DBUS to not respond until that point in
                     // time. So, fire a "wake" here, which tells callers to keep checking.
                     cx.waker().clone().wake();
-                    got_new_token = true;
+                } else {
+                    self.token_request = Some(fut);
                 }
             } else {
                 self.token_request = Some(Box::pin({
@@ -116,12 +126,10 @@ impl Future for DbusServer {
                     async move { get_token(&sess, &client_id, SCOPE).await }
                 }));
             }
-        } else if let Some(ref mut fut) = self.dbus_future {
-            return fut.as_mut().poll(cx);
         }
 
-        if got_new_token {
-            self.token_request = None;
+        if let Some(ref mut fut) = self.dbus_future {
+            return fut.as_mut().poll(cx);
         }
 
         Poll::Pending
@@ -135,12 +143,8 @@ enum PlaybackStatus {
     Stopped,
 }
 
-fn create_spotify_api(token: &RspotifyToken) -> Spotify {
-    Spotify::default().access_token(&token.access_token).build()
-}
-
 async fn create_dbus_server(
-    api_token: RspotifyToken,
+    spotify_api_client: Arc<AuthCodeSpotify>,
     spirc: Arc<Spirc>,
     device_name: String,
     mut event_rx: UnboundedReceiver<PlayerEvent>,
@@ -247,79 +251,151 @@ async fn create_dbus_server(
         });
 
         let mv_device_name = device_name.clone();
-        let mv_api_token = api_token.clone();
+        let sp_client = Arc::clone(&spotify_api_client);
         b.method("Seek", ("pos",), (), move |_, _, (pos,): (u32,)| {
             let device_name = utf8_percent_encode(&mv_device_name, NON_ALPHANUMERIC).to_string();
-            let sp = create_spotify_api(&mv_api_token);
-            if let Ok(Some(playing)) = sp.current_user_playing_track() {
-                let _ = sp.seek_track(playing.progress_ms.unwrap_or(0) + pos, Some(device_name));
+            if let Ok(Some(playing)) = sp_client.current_user_playing_item() {
+                let _ = sp_client.seek_track(
+                    playing.progress.map(|d| d.as_millis()).unwrap_or(0) as u32 + pos,
+                    Some(&device_name),
+                );
             }
             Ok(())
         });
 
         let mv_device_name = device_name.clone();
-        let mv_api_token = api_token.clone();
+        let sp_client = Arc::clone(&spotify_api_client);
         b.method("SetPosition", ("pos",), (), move |_, _, (pos,): (u32,)| {
             let device_name = utf8_percent_encode(&mv_device_name, NON_ALPHANUMERIC).to_string();
-            let sp = create_spotify_api(&mv_api_token);
-            let _ = sp.seek_track(pos, Some(device_name));
+            let _ = sp_client.seek_track(pos, Some(&device_name));
             Ok(())
         });
 
         let mv_device_name = device_name.clone();
-        let mv_api_token = api_token.clone();
+        let sp_client = Arc::clone(&spotify_api_client);
         b.method("OpenUri", ("uri",), (), move |_, _, (uri,): (String,)| {
-            let device_name = utf8_percent_encode(&mv_device_name, NON_ALPHANUMERIC).to_string();
-            let sp = create_spotify_api(&mv_api_token);
-            let device_id = match sp.device() {
-                Ok(device_payload) => {
-                    match device_payload
-                        .devices
-                        .into_iter()
-                        .find(|d| d.is_active && d.name == device_name)
-                    {
-                        Some(device) => Some(device.id),
-                        None => None,
-                    }
-                }
-                Err(_) => None,
-            };
+            struct AnyContextId(Box<dyn PlayContextId>);
 
-            if uri.contains("spotify:track") {
-                let _ = sp.start_playback(device_id, None, Some(vec![uri]), for_position(0), None);
-            } else {
-                let _ = sp.start_playback(device_id, Some(uri), None, for_position(0), None);
+            impl Id for AnyContextId {
+                fn id(&self) -> &str {
+                    self.0.id()
+                }
+
+                fn _type(&self) -> Type {
+                    self.0._type()
+                }
+
+                fn _type_static() -> Type
+                where
+                    Self: Sized,
+                {
+                    unreachable!("never called");
+                }
+
+                unsafe fn from_id_unchecked(_id: &str) -> Self
+                where
+                    Self: Sized,
+                {
+                    unreachable!("never called");
+                }
+            }
+            impl PlayContextId for AnyContextId {}
+
+            enum Uri {
+                Playable(Box<dyn PlayableId>),
+                Context(AnyContextId),
+            }
+
+            impl Uri {
+                fn from_id(id_type: Type, id: &str) -> Result<Uri, IdError> {
+                    use Uri::*;
+                    let uri = match id_type {
+                        Type::Track => Playable(Box::new(TrackId::from_id(id)?)),
+                        Type::Episode => Playable(Box::new(EpisodeId::from_id(id)?)),
+                        Type::Artist => Context(AnyContextId(Box::new(ArtistId::from_id(id)?))),
+                        Type::Album => Context(AnyContextId(Box::new(AlbumId::from_id(id)?))),
+                        Type::Playlist => Context(AnyContextId(Box::new(PlaylistId::from_id(id)?))),
+                        Type::Show => Context(AnyContextId(Box::new(ShowId::from_id(id)?))),
+                        Type::User | Type::Collection => Err(IdError::InvalidType)?,
+                    };
+                    Ok(uri)
+                }
+            }
+
+            let mut chars = uri
+                .strip_prefix("spotify")
+                .ok_or(MethodErr::invalid_arg(&uri))?
+                .chars();
+
+            let sep = match chars.next() {
+                Some(ch) if ch == '/' || ch == ':' => ch,
+                _ => return Err(MethodErr::invalid_arg(&uri)),
+            };
+            let rest = chars.as_str();
+
+            let (id_type, id) = rest
+                .rsplit_once(sep)
+                .and_then(|(id_type, id)| Some((id_type.parse::<Type>().ok()?, id)))
+                .ok_or(MethodErr::invalid_arg(&uri))?;
+
+            let uri = Uri::from_id(id_type, id).map_err(|_| MethodErr::invalid_arg(&uri))?;
+
+            let device_name = utf8_percent_encode(&mv_device_name, NON_ALPHANUMERIC).to_string();
+            let device_id = sp_client.device().ok().and_then(|devices| {
+                devices.into_iter().find_map(|d| {
+                    if d.is_active && d.name == device_name {
+                        d.id
+                    } else {
+                        None
+                    }
+                })
+            });
+
+            match uri {
+                Uri::Playable(id) => {
+                    let _ = sp_client.start_uris_playback(
+                        Some(id.as_ref()),
+                        device_id.as_deref(),
+                        Some(Offset::for_position(0)),
+                        None,
+                    );
+                }
+                Uri::Context(id) => {
+                    let _ = sp_client.start_context_playback(
+                        &id,
+                        device_id.as_deref(),
+                        Some(Offset::for_position(0)),
+                        None,
+                    );
+                }
             }
             Ok(())
         });
 
         let mv_device_name = device_name.clone();
-        let mv_api_token = api_token.clone();
+        let sp_client = Arc::clone(&spotify_api_client);
         b.property("PlaybackStatus")
             .emits_changed_false()
             .get(move |_, _| {
-                let sp = create_spotify_api(&mv_api_token);
-                if let Ok(Some(player)) = sp.current_playback(None) {
-                    if player.device.name == mv_device_name {
-                        if let Ok(Some(track)) = sp.current_user_playing_track() {
-                            if track.is_playing {
-                                return Ok("Playing".to_string());
-                            } else {
-                                return Ok("Paused".to_string());
-                            }
+                if let Ok(Some(playing_context)) = sp_client.current_playback(None, None::<Vec<_>>)
+                {
+                    if playing_context.device.name == mv_device_name {
+                        if playing_context.is_playing {
+                            return Ok("Playing".to_string());
+                        } else {
+                            return Ok("Paused".to_string());
                         }
                     }
                 }
                 Ok("Stopped".to_string())
             });
 
-        let mv_api_token = api_token.clone();
+        let sp_client = Arc::clone(&spotify_api_client);
         b.property("Shuffle")
             .emits_changed_false()
             .get(move |_, _| {
-                let sp = create_spotify_api(&mv_api_token);
-                let shuffle_status = sp
-                    .current_playback(None)
+                let shuffle_status = sp_client
+                    .current_playback(None, None::<Vec<_>>)
                     .ok()
                     .flatten()
                     .map_or(false, |p| p.shuffle_state);
@@ -328,14 +404,15 @@ async fn create_dbus_server(
 
         b.property("Rate").emits_changed_const().get(|_, _| Ok(1.0));
 
-        let mv_api_token = api_token.clone();
+        let sp_client = Arc::clone(&spotify_api_client);
         b.property("Volume").emits_changed_false().get(move |_, _| {
-            let sp = create_spotify_api(&mv_api_token);
-            let vol = sp
-                .current_playback(None)
+            let vol = sp_client
+                .current_playback(None, None::<Vec<_>>)
                 .ok()
                 .flatten()
-                .map_or(0.0, |p| p.device.volume_percent as f64);
+                .and_then(|p| p.device.volume_percent)
+                .unwrap_or(0) as f64;
+
             Ok(vol)
         });
 
@@ -346,52 +423,53 @@ async fn create_dbus_server(
             .emits_changed_const()
             .get(|_, _| Ok(1.0));
 
-        let mv_api_token = api_token.clone();
+        let sp_client = Arc::clone(&spotify_api_client);
         b.property("LoopStatus")
             .emits_changed_false()
             .get(move |_, _| {
-                let sp = create_spotify_api(&mv_api_token);
-                let status = if let Ok(Some(player)) = sp.current_playback(None) {
-                    match player.repeat_state {
-                        RepeatState::Off => "None",
-                        RepeatState::Track => "Track",
-                        RepeatState::Context => "Playlist",
+                let status =
+                    if let Ok(Some(player)) = sp_client.current_playback(None, None::<Vec<_>>) {
+                        match player.repeat_state {
+                            RepeatState::Off => "None",
+                            RepeatState::Track => "Track",
+                            RepeatState::Context => "Playlist",
+                        }
+                    } else {
+                        "None"
                     }
-                } else {
-                    "None"
-                }
-                .to_string();
+                    .to_string();
                 Ok(status)
             });
 
-        let mv_api_token = api_token.clone();
+        let sp_client = Arc::clone(&spotify_api_client);
         b.property("Position")
             .emits_changed_false()
             .get(move |_, _| {
-                let sp = create_spotify_api(&mv_api_token);
-                let val = if let Ok(Some(pos)) = sp
-                    .current_playback(None)
-                    .map(|maybe_player| maybe_player.and_then(|p| p.progress_ms))
-                {
-                    i64::from(pos) * 1000
-                } else {
-                    0
-                };
-                Ok(val)
+                let pos = sp_client
+                    .current_playback(None, None::<Vec<_>>)
+                    .ok()
+                    .flatten()
+                    .and_then(|p| Some(p.progress?.as_nanos() as i64))
+                    .unwrap_or(0);
+
+                Ok(pos)
             });
 
-        let mv_api_token = api_token.clone();
+        let sp_client = Arc::clone(&spotify_api_client);
         b.property("Metadata")
             .emits_changed_false()
             .get(move |_, _| {
-                let sp = create_spotify_api(&mv_api_token);
-
                 let mut m: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
-                let v = sp.current_user_playing_track();
+                let v = sp_client
+                    .current_playing(None, None::<Vec<_>>)
+                    .ok()
+                    .flatten();
 
-                if let Ok(Some(playing)) = v {
-                    if let Some(track) = playing.item {
-                        insert_metadata(&mut m, track);
+                if let Some(playing) = v {
+                    match playing.item {
+                        Some(PlayableItem::Track(track)) => insert_metadata(&mut m, track),
+                        Some(PlayableItem::Episode(_episode)) => todo!(),
+                        None => (),
                     }
                 } else {
                     info!("Couldn't fetch metadata from spotify: {:?}", v);
@@ -478,8 +556,8 @@ async fn create_dbus_server(
                 }
             } else {
                 if let Some(track_id) = track_id {
-                    let sp = create_spotify_api(&api_token);
-                    let track = sp.track(&track_id.to_base62());
+                    let track_id = TrackId::from_id(&track_id.to_base62()).unwrap();
+                    let track = spotify_api_client.track(&track_id);
                     if let Ok(track) = track {
                         let mut m: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
                         insert_metadata(&mut m, track);
@@ -528,16 +606,27 @@ async fn create_dbus_server(
 }
 
 fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, track: FullTrack) {
-    m.insert("mpris:trackid".to_string(), Variant(Box::new(track.uri)));
+    m.insert(
+        "mpris:trackid".to_string(),
+        Variant(Box::new(track.id.map(|t| t.uri()).unwrap_or_default())),
+    );
 
     m.insert(
         "mpris:length".to_string(),
-        Variant(Box::new(i64::from(track.duration_ms) * 1000)),
+        Variant(Box::new(track.duration.as_micros() as i64)),
     );
 
     m.insert(
         "mpris:artUrl".to_string(),
-        Variant(Box::new(track.album.images.first().unwrap().url.clone())),
+        Variant(Box::new(
+            track
+                .album
+                .images
+                .into_iter()
+                .next()
+                .map(|i| i.url)
+                .unwrap_or_default(),
+        )),
     );
 
     m.insert("xesam:title".to_string(), Variant(Box::new(track.name)));
@@ -552,8 +641,8 @@ fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, track: Ful
         Variant(Box::new(
             track
                 .artists
-                .iter()
-                .map(|a| a.name.to_string())
+                .into_iter()
+                .map(|a| a.name)
                 .collect::<Vec<_>>(),
         )),
     );
@@ -564,15 +653,15 @@ fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, track: Ful
             track
                 .album
                 .artists
-                .iter()
-                .map(|a| a.name.to_string())
+                .into_iter()
+                .map(|a| a.name)
                 .collect::<Vec<_>>(),
         )),
     );
 
     m.insert(
         "xesam:autoRating".to_string(),
-        Variant(Box::new((f64::from(track.popularity) / 100.0) as f64)),
+        Variant(Box::new(f64::from(track.popularity) / 100.0)),
     );
 
     m.insert(
@@ -585,15 +674,11 @@ fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, track: Ful
         Variant(Box::new(track.disc_number)),
     );
 
+    let mut external_urls = track.external_urls;
     m.insert(
         "xesam:url".to_string(),
         Variant(Box::new(
-            track
-                .external_urls
-                .iter()
-                .next()
-                .map_or("", |(_, v)| v)
-                .to_string(),
+            external_urls.remove("spotify").unwrap_or_default(),
         )),
     );
 }
