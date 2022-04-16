@@ -12,11 +12,11 @@ use librespot_connect::spirc::Spirc;
 use librespot_core::keymaster::{get_token, Token as LibrespotToken};
 use librespot_core::mercury::MercuryError;
 use librespot_core::session::Session;
+use librespot_core::spotify_id::SpotifyAudioType;
 use librespot_playback::player::PlayerEvent;
 use log::info;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use rspotify::model::offset::Offset;
-use rspotify::model::track::FullTrack;
 use rspotify::model::{
     AlbumId, ArtistId, EpisodeId, IdError, PlayableItem, PlaylistId, RepeatState, ShowId, TrackId,
     Type,
@@ -458,25 +458,24 @@ async fn create_dbus_server(
             .emits_changed_false()
             .get(move |_, _| {
                 let mut m: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
-                let v = sp_client
-                    .current_playing(None, None::<Vec<_>>)
-                    .ok()
-                    .flatten();
-
-                if let Some(playing) = v {
-                    match playing.item {
-                        Some(PlayableItem::Track(track)) => insert_metadata(&mut m, track),
-                        Some(PlayableItem::Episode(_episode)) => todo!(),
-                        None => (),
+                let item = match sp_client.current_playing(None, None::<Vec<_>>) {
+                    Ok(playing) => playing.and_then(|playing| playing.item),
+                    Err(e) => {
+                        info!("Couldn't fetch metadata from spotify: {:?}", e);
+                        return Ok(m);
                     }
+                };
+
+                if let Some(item) = item {
+                    insert_metadata(&mut m, item);
                 } else {
-                    info!("Couldn't fetch metadata from spotify: {:?}", v);
+                    info!("Couldn't fetch metadata from spotify: Nothing playing at the moment.");
                 }
 
                 Ok(m)
             });
 
-        for prop in &[
+        for prop in [
             "CanPlay",
             "CanPause",
             "CanSeek",
@@ -484,7 +483,7 @@ async fn create_dbus_server(
             "CanGoPrevious",
             "CanGoNext",
         ] {
-            b.property(*prop).emits_changed_const().get(|_, _| Ok(true));
+            b.property(prop).emits_changed_const().get(|_, _| Ok(true));
         }
     });
 
@@ -554,15 +553,35 @@ async fn create_dbus_server(
                 }
             } else {
                 if let Some(track_id) = track_id {
-                    let track_id = TrackId::from_id(&track_id.to_base62()).unwrap();
-                    let track = spotify_api_client.track(&track_id);
-                    if let Ok(track) = track {
-                        let mut m: HashMap<String, Variant<Box<dyn RefArg>>> = HashMap::new();
-                        insert_metadata(&mut m, track);
+                    let item = match track_id.audio_type {
+                        SpotifyAudioType::Track => {
+                            let track_id = TrackId::from_id(&track_id.to_base62()).unwrap();
+                            let track =
+                                spotify_api_client.track(&track_id).map(PlayableItem::Track);
+                            Some(track)
+                        }
+                        SpotifyAudioType::Podcast => {
+                            let id = EpisodeId::from_id(&track_id.to_base62()).unwrap();
+                            let episode = spotify_api_client
+                                .get_an_episode(&id, None)
+                                .map(PlayableItem::Episode);
+                            Some(episode)
+                        }
+                        SpotifyAudioType::NonPlayable => None,
+                    };
 
-                        changed_properties.insert("Metadata".to_owned(), Variant(Box::new(m)));
-                    } else {
-                        info!("Couldn't fetch metadata from spotify: {:?}", track);
+                    if let Some(item) = item {
+                        match item {
+                            Ok(item) => {
+                                let mut m: HashMap<String, Variant<Box<dyn RefArg>>> =
+                                    HashMap::new();
+                                insert_metadata(&mut m, item);
+
+                                changed_properties
+                                    .insert("Metadata".to_owned(), Variant(Box::new(m)));
+                            }
+                            Err(e) => info!("Couldn't fetch metadata from spotify: {:?}", e),
+                        }
                     }
                 }
                 if let Some(playback_status) = playback_status {
@@ -603,23 +622,74 @@ async fn create_dbus_server(
     }
 }
 
-fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, track: FullTrack) {
+fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, item: PlayableItem) {
+    use rspotify::model::{
+        Image,
+        PlayableItem::{Episode, Track},
+    };
+
+    // some fields that only make sense or only exist for tracks
+    struct TrackFields {
+        artists: Vec<String>,
+        popularity: u32,
+        track_number: u32,
+        disc_number: i32,
+    }
+
+    // a common denominator struct for FullEpisode and FullTrack
+    struct TrackOrEpisode {
+        id: Option<String>,
+        duration: std::time::Duration,
+        images: Vec<Image>,
+        name: String,
+        album_name: String,
+        album_artists: Vec<String>,
+        external_urls: HashMap<String, String>,
+        track_fields: Option<TrackFields>,
+    }
+
+    let item = match item {
+        Track(t) => TrackOrEpisode {
+            id: t.id.map(|t| t.uri()),
+            duration: t.duration,
+            images: t.album.images,
+            name: t.name,
+            album_name: t.album.name,
+            album_artists: t.album.artists.into_iter().map(|a| a.name).collect(),
+            external_urls: t.external_urls,
+            track_fields: Some(TrackFields {
+                artists: t.artists.into_iter().map(|a| a.name).collect(),
+                popularity: t.popularity,
+                track_number: t.track_number,
+                disc_number: t.disc_number,
+            }),
+        },
+        Episode(e) => TrackOrEpisode {
+            id: Some(e.id.uri()),
+            duration: e.duration,
+            images: e.show.images,
+            name: e.name,
+            album_name: e.show.name,
+            album_artists: vec![e.show.publisher],
+            external_urls: e.external_urls,
+            track_fields: None,
+        },
+    };
+
     m.insert(
         "mpris:trackid".to_string(),
-        Variant(Box::new(track.id.map(|t| t.uri()).unwrap_or_default())),
+        Variant(Box::new(item.id.unwrap_or_default())),
     );
 
     m.insert(
         "mpris:length".to_string(),
-        Variant(Box::new(track.duration.as_micros() as i64)),
+        Variant(Box::new(item.duration.as_micros() as i64)),
     );
 
     m.insert(
         "mpris:artUrl".to_string(),
         Variant(Box::new(
-            track
-                .album
-                .images
+            item.images
                 .into_iter()
                 .next()
                 .map(|i| i.url)
@@ -627,52 +697,39 @@ fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, track: Ful
         )),
     );
 
-    m.insert("xesam:title".to_string(), Variant(Box::new(track.name)));
+    m.insert("xesam:title".to_string(), Variant(Box::new(item.name)));
 
     m.insert(
         "xesam:album".to_string(),
-        Variant(Box::new(track.album.name)),
-    );
-
-    m.insert(
-        "xesam:artist".to_string(),
-        Variant(Box::new(
-            track
-                .artists
-                .into_iter()
-                .map(|a| a.name)
-                .collect::<Vec<_>>(),
-        )),
+        Variant(Box::new(item.album_name)),
     );
 
     m.insert(
         "xesam:albumArtist".to_string(),
-        Variant(Box::new(
-            track
-                .album
-                .artists
-                .into_iter()
-                .map(|a| a.name)
-                .collect::<Vec<_>>(),
-        )),
+        Variant(Box::new(item.album_artists)),
     );
 
-    m.insert(
-        "xesam:autoRating".to_string(),
-        Variant(Box::new(f64::from(track.popularity) / 100.0)),
-    );
+    if let Some(track) = item.track_fields {
+        m.insert("xesam:artist".to_string(), Variant(Box::new(track.artists)));
 
-    m.insert(
-        "xesam:trackNumber".to_string(),
-        Variant(Box::new(track.track_number)),
-    );
+        m.insert(
+            "xesam:autoRating".to_string(),
+            Variant(Box::new(f64::from(track.popularity) / 100.0)),
+        );
 
-    m.insert(
-        "xesam:discNumber".to_string(),
-        Variant(Box::new(track.disc_number)),
-    );
+        m.insert(
+            "xesam:trackNumber".to_string(),
+            Variant(Box::new(track.track_number)),
+        );
 
-    let mut external_urls = track.external_urls;
+        m.insert(
+            "xesam:discNumber".to_string(),
+            Variant(Box::new(track.disc_number)),
+        );
+    }
+
+    // to avoid cloning here, we take the relevant url directly from the HashMap
+    let mut external_urls = item.external_urls;
     m.insert(
         "xesam:url".to_string(),
         Variant(Box::new(
