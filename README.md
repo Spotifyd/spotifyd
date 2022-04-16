@@ -4,7 +4,6 @@
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Cargo Downloads](https://img.shields.io/crates/d/spotifyd)](https://crates.io/crates/spotifyd)
-[![Dependabot Status][dependabot-badge]](https://dependabot.com)
 [![Github Actions - CD][cd-badge]][github-actions]
 [![Github Actions - CI][ci-badge]][github-actions]
 
