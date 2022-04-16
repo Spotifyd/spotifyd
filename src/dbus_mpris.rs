@@ -108,12 +108,6 @@ impl Future for DbusServer {
                     } else {
                         *self.spotify_client.get_token().lock().unwrap() = Some(api_token);
                     }
-
-                    // TODO: for reasons I don't _entirely_ understand, the token request completing
-                    // convinces callers that they don't need to re-check the status of this future
-                    // until we start playing. This causes DBUS to not respond until that point in
-                    // time. So, fire a "wake" here, which tells callers to keep checking.
-                    cx.waker().clone().wake();
                 } else {
                     self.token_request = Some(fut);
                 }
@@ -128,8 +122,12 @@ impl Future for DbusServer {
             }
         }
 
-        if let Some(ref mut fut) = self.dbus_future {
-            return fut.as_mut().poll(cx);
+        // not polling the future here in some cases is fine, since we will poll it
+        // immediately after the token request has completed
+        if self.token_request.is_none() {
+            if let Some(ref mut fut) = self.dbus_future {
+                return fut.as_mut().poll(cx);
+            }
         }
 
         Poll::Pending
