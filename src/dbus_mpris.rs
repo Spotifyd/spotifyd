@@ -314,7 +314,7 @@ async fn create_dbus_server(
                         Type::Album => Context(AnyContextId(Box::new(AlbumId::from_id(id)?))),
                         Type::Playlist => Context(AnyContextId(Box::new(PlaylistId::from_id(id)?))),
                         Type::Show => Context(AnyContextId(Box::new(ShowId::from_id(id)?))),
-                        Type::User | Type::Collection => Err(IdError::InvalidType)?,
+                        Type::User | Type::Collection => return Err(IdError::InvalidType),
                     };
                     Ok(uri)
                 }
@@ -322,7 +322,7 @@ async fn create_dbus_server(
 
             let mut chars = uri
                 .strip_prefix("spotify")
-                .ok_or(MethodErr::invalid_arg(&uri))?
+                .ok_or_else(|| MethodErr::invalid_arg(&uri))?
                 .chars();
 
             let sep = match chars.next() {
@@ -334,7 +334,7 @@ async fn create_dbus_server(
             let (id_type, id) = rest
                 .rsplit_once(sep)
                 .and_then(|(id_type, id)| Some((id_type.parse::<Type>().ok()?, id)))
-                .ok_or(MethodErr::invalid_arg(&uri))?;
+                .ok_or_else(|| MethodErr::invalid_arg(&uri))?;
 
             let uri = Uri::from_id(id_type, id).map_err(|_| MethodErr::invalid_arg(&uri))?;
 
