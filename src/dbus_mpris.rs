@@ -1,32 +1,36 @@
-use chrono::prelude::*;
-use chrono::Duration;
-use dbus::arg::{RefArg, Variant};
-use dbus::channel::{MatchingReceiver, Sender};
-use dbus::message::{MatchRule, SignalArgs};
-use dbus::MethodErr;
+use chrono::{prelude::*, Duration};
+use dbus::{
+    arg::{RefArg, Variant},
+    channel::{MatchingReceiver, Sender},
+    message::{MatchRule, SignalArgs},
+    MethodErr,
+};
 use dbus_crossroads::{Crossroads, IfaceToken};
 use dbus_tokio::connection;
-use futures::task::{Context, Poll};
-use futures::{self, Future};
+use futures::{
+    self,
+    task::{Context, Poll},
+    Future,
+};
 use librespot_connect::spirc::Spirc;
-use librespot_core::keymaster::{get_token, Token as LibrespotToken};
-use librespot_core::mercury::MercuryError;
-use librespot_core::session::Session;
-use librespot_core::spotify_id::SpotifyAudioType;
+use librespot_core::{
+    keymaster::{get_token, Token as LibrespotToken},
+    mercury::MercuryError,
+    session::Session,
+    spotify_id::SpotifyAudioType,
+};
 use librespot_playback::player::PlayerEvent;
 use log::info;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
-use rspotify::model::offset::Offset;
-use rspotify::model::{
-    AlbumId, ArtistId, EpisodeId, IdError, PlayableItem, PlaylistId, RepeatState, ShowId, TrackId,
-    Type,
+use rspotify::{
+    model::{
+        offset::Offset, AlbumId, ArtistId, EpisodeId, IdError, PlayableItem, PlaylistId,
+        RepeatState, ShowId, TrackId, Type,
+    },
+    prelude::*,
+    AuthCodeSpotify, Token as RspotifyToken,
 };
-use rspotify::prelude::*;
-use rspotify::{AuthCodeSpotify, Token as RspotifyToken};
-use std::collections::HashMap;
-use std::env;
-use std::pin::Pin;
-use std::sync::Arc;
+use std::{collections::HashMap, env, pin::Pin, sync::Arc};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 pub struct DbusServer {
