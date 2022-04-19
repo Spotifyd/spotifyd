@@ -8,7 +8,9 @@ use gethostname::gethostname;
 use librespot_core::{
     cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version,
 };
-use librespot_playback::config::{Bitrate as LSBitrate, PlayerConfig};
+use librespot_playback::config::{
+    AudioFormat as LSAudioFormat, Bitrate as LSBitrate, PlayerConfig,
+};
 use log::{error, info, warn};
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
@@ -266,6 +268,57 @@ impl ToString for DBusType {
     }
 }
 
+/// LibreSpot supported audio formats
+static AUDIO_FORMAT_VALUES: &[&str] = &["F32", "S32", "S24", "S24_3", "S16"];
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
+pub enum AudioFormat {
+    F32,
+    S32,
+    S24,
+    S24_3,
+    S16,
+}
+
+impl FromStr for AudioFormat {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "F32" => Ok(AudioFormat::F32),
+            "S32" => Ok(AudioFormat::S32),
+            "S24" => Ok(AudioFormat::S24),
+            "S24_3" => Ok(AudioFormat::S24_3),
+            "S16" => Ok(AudioFormat::S16),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl ToString for AudioFormat {
+    fn to_string(&self) -> String {
+        match self {
+            AudioFormat::F32 => "F32".to_string(),
+            AudioFormat::S32 => "S32".to_string(),
+            AudioFormat::S24 => "S24".to_string(),
+            AudioFormat::S24_3 => "S24_3".to_string(),
+            AudioFormat::S16 => "S16".to_string(),
+        }
+    }
+}
+
+impl From<AudioFormat> for LSAudioFormat {
+    fn from(audio_format: AudioFormat) -> Self {
+        match audio_format {
+            AudioFormat::F32 => LSAudioFormat::F32,
+            AudioFormat::S32 => LSAudioFormat::S32,
+            AudioFormat::S24 => LSAudioFormat::S24,
+            AudioFormat::S24_3 => LSAudioFormat::S24_3,
+            AudioFormat::S16 => LSAudioFormat::S16,
+        }
+    }
+}
+
 #[derive(Debug, Default, StructOpt)]
 #[structopt(
     about = "A Spotify daemon",
@@ -404,6 +457,10 @@ pub struct SharedConfigValues {
     #[structopt(long, short = "B", possible_values = &BITRATE_VALUES, value_name = "number")]
     bitrate: Option<Bitrate>,
 
+    /// The audio format of the streamed audio data
+    #[structopt(long, possible_values = &AUDIO_FORMAT_VALUES, value_name = "string")]
+    audio_format: Option<AudioFormat>,
+
     /// Initial volume between 0 and 100
     #[structopt(long, value_name = "initial_volume")]
     initial_volume: Option<String>,
@@ -511,6 +568,7 @@ impl fmt::Debug for SharedConfigValues {
             .field("mixer", &self.mixer)
             .field("device_name", &self.device_name)
             .field("bitrate", &self.bitrate)
+            .field("audio_format", &self.audio_format)
             .field("initial_volume", &self.initial_volume)
             .field("volume_normalisation", &self.volume_normalisation)
             .field("normalisation_pregain", &self.normalisation_pregain)
@@ -583,7 +641,8 @@ impl SharedConfigValues {
             device_type,
             use_mpris,
             max_cache_size,
-            dbus_type
+            dbus_type,
+            audio_format
         );
 
         // Handles boolean merging.
@@ -622,6 +681,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) cache: Option<Cache>,
     pub(crate) backend: Option<String>,
     pub(crate) audio_device: Option<String>,
+    pub(crate) audio_format: LSAudioFormat,
     #[allow(unused)]
     pub(crate) control_device: Option<String>,
     #[allow(unused)]
@@ -658,6 +718,12 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .shared_config
         .bitrate
         .unwrap_or(Bitrate::Bitrate160)
+        .into();
+
+    let audio_format: LSAudioFormat = config
+        .shared_config
+        .audio_format
+        .unwrap_or(AudioFormat::S16)
         .into();
 
     let backend = config
@@ -776,6 +842,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         cache,
         backend: Some(backend),
         audio_device: config.shared_config.device,
+        audio_format,
         control_device: config.shared_config.control,
         mixer: config.shared_config.mixer,
         volume_controller,
