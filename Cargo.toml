@@ -21,7 +21,6 @@ hex = "0.4"
 keyring = { version = "0.10.1", optional = true }
 libc = "0.2.82"
 log = "0.4.6"
-percent-encoding = "2.1.0"
 reqwest = "0.11.3"
 rspotify = { version = "0.11.5", features = ["client-ureq", "ureq-rustls-tls"], default-features = false, optional = true }
 serde = { version = "1.0.115", features = ["derive"] }

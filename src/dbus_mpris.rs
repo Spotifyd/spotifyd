@@ -21,7 +21,6 @@ use librespot_core::{
 };
 use librespot_playback::player::PlayerEvent;
 use log::{error, info};
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use rspotify::{
     model::{
         offset::Offset, AlbumId, ArtistId, EpisodeId, IdError, PlayableItem, PlaylistId,
@@ -265,12 +264,13 @@ async fn create_dbus_server(
         let mv_device_name = device_name.clone();
         let sp_client = Arc::clone(&spotify_api_client);
         b.method("Seek", ("pos",), (), move |_, _, (pos,): (u32,)| {
-            let device_name = utf8_percent_encode(&mv_device_name, NON_ALPHANUMERIC).to_string();
-            if let Ok(Some(playing)) = sp_client.current_user_playing_item() {
-                let _ = sp_client.seek_track(
-                    playing.progress.map(|d| d.as_millis()).unwrap_or(0) as u32 + pos,
-                    Some(&device_name),
-                );
+            if let Ok(Some(playback)) = sp_client.current_playback(None, None::<Vec<_>>) {
+                if playback.device.name == mv_device_name {
+                    let _ = sp_client.seek_track(
+                        playback.progress.map(|d| d.as_millis()).unwrap_or(0) as u32 + pos,
+                        playback.device.id.as_deref(),
+                    );
+                }
             }
             Ok(())
         });
@@ -278,8 +278,11 @@ async fn create_dbus_server(
         let mv_device_name = device_name.clone();
         let sp_client = Arc::clone(&spotify_api_client);
         b.method("SetPosition", ("pos",), (), move |_, _, (pos,): (u32,)| {
-            let device_name = utf8_percent_encode(&mv_device_name, NON_ALPHANUMERIC).to_string();
-            let _ = sp_client.seek_track(pos, Some(&device_name));
+            if let Ok(Some(playback)) = sp_client.current_playback(None, None::<Vec<_>>) {
+                if playback.device.name == mv_device_name {
+                    let _ = sp_client.seek_track(pos, playback.device.id.as_deref());
+                }
+            }
             Ok(())
         });
 
@@ -352,33 +355,34 @@ async fn create_dbus_server(
 
             let uri = Uri::from_id(id_type, id).map_err(|_| MethodErr::invalid_arg(&uri))?;
 
-            let device_name = utf8_percent_encode(&mv_device_name, NON_ALPHANUMERIC).to_string();
             let device_id = sp_client.device().ok().and_then(|devices| {
                 devices.into_iter().find_map(|d| {
-                    if d.is_active && d.name == device_name {
-                        d.id
+                    if d.is_active && d.name == mv_device_name {
+                        Some(d.id)
                     } else {
                         None
                     }
                 })
             });
 
-            match uri {
-                Uri::Playable(id) => {
-                    let _ = sp_client.start_uris_playback(
-                        Some(id.as_ref()),
-                        device_id.as_deref(),
-                        Some(Offset::for_position(0)),
-                        None,
-                    );
-                }
-                Uri::Context(id) => {
-                    let _ = sp_client.start_context_playback(
-                        &id,
-                        device_id.as_deref(),
-                        Some(Offset::for_position(0)),
-                        None,
-                    );
+            if let Some(device_id) = device_id {
+                match uri {
+                    Uri::Playable(id) => {
+                        let _ = sp_client.start_uris_playback(
+                            Some(id.as_ref()),
+                            device_id.as_deref(),
+                            Some(Offset::for_position(0)),
+                            None,
+                        );
+                    }
+                    Uri::Context(id) => {
+                        let _ = sp_client.start_context_playback(
+                            &id,
+                            device_id.as_deref(),
+                            Some(Offset::for_position(0)),
+                            None,
+                        );
+                    }
                 }
             }
             Ok(())
@@ -389,10 +393,9 @@ async fn create_dbus_server(
         b.property("PlaybackStatus")
             .emits_changed_false()
             .get(move |_, _| {
-                if let Ok(Some(playing_context)) = sp_client.current_playback(None, None::<Vec<_>>)
-                {
-                    if playing_context.device.name == mv_device_name {
-                        if playing_context.is_playing {
+                if let Ok(Some(playback)) = sp_client.current_playback(None, None::<Vec<_>>) {
+                    if playback.device.name == mv_device_name {
+                        if playback.is_playing {
                             return Ok("Playing".to_string());
                         } else {
                             return Ok("Paused".to_string());
