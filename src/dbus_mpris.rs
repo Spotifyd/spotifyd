@@ -20,7 +20,7 @@ use librespot_core::{
     spotify_id::SpotifyAudioType,
 };
 use librespot_playback::player::PlayerEvent;
-use log::info;
+use log::{error, info};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use rspotify::{
     model::{
@@ -89,7 +89,16 @@ impl Future for DbusServer {
 
         if needs_token {
             if let Some(mut fut) = self.token_request.take() {
-                if let Poll::Ready(Ok(token)) = fut.as_mut().poll(cx) {
+                if let Poll::Ready(token) = fut.as_mut().poll(cx) {
+                    let token = match token {
+                        Ok(token) => token,
+                        Err(_) => {
+                            error!("failed to request a token for the web API");
+                            // shutdown DBus-Server
+                            return Poll::Ready(());
+                        }
+                    };
+
                     let expires_in = Duration::seconds(token.expires_in as i64);
                     let api_token = RspotifyToken {
                         access_token: token.access_token,
@@ -126,8 +135,9 @@ impl Future for DbusServer {
             }
         }
 
-        // not polling the future here in some cases is fine, since we will poll it
-        // immediately after the token request has completed
+        // Not polling the future here in some cases is fine, since we will poll it
+        // immediately after the token request has completed.
+        // If we would poll the future in any case, we would risk using invalid tokens for API requests.
         if self.token_request.is_none() {
             if let Some(ref mut fut) = self.dbus_future {
                 return fut.as_mut().poll(cx);
