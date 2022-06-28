@@ -312,6 +312,10 @@ pub struct SharedConfigValues {
     #[structopt(long, parse(from_os_str), short, value_name = "string")]
     cache_path: Option<PathBuf>,
 
+    /// The maximal cache size in bytes
+    #[structopt(long)]
+    max_cache_size: Option<u64>,
+
     /// Disable the use of audio cache
     #[structopt(long)]
     #[serde(default)]
@@ -580,6 +584,7 @@ pub(crate) struct SpotifydConfig {
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let audio_cache = !config.shared_config.no_audio_cache;
 
+    let size_limit = config.shared_config.max_cache_size;
     let cache = config
         .shared_config
         .cache_path
@@ -590,7 +595,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
             Cache::new(
                 Some(path.clone()),
                 if audio_cache { Some(path) } else { None },
-                None,
+                size_limit,
             )
             .ok()
         });
