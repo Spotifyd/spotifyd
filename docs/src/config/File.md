@@ -72,6 +72,10 @@ bitrate = 160
 # shell placeholders like $HOME or ~ don't work!
 cache_path = "cache_directory"
 
+# The maximal size of the cache directory in bytes
+# The example value corresponds to ~ 1GB
+max_cache_size = 1000000000
+
 # If set to true, audio data does NOT get cached.
 no_audio_cache = true
 

@@ -463,6 +463,7 @@ impl fmt::Debug for SharedConfigValues {
             .field("proxy", &self.proxy)
             .field("device_type", &self.device_type)
             .field("autoplay", &self.autoplay)
+            .field("max_cache_size", &self.max_cache_size)
             .finish()
     }
 }
@@ -525,7 +526,8 @@ impl SharedConfigValues {
             zeroconf_port,
             proxy,
             device_type,
-            use_mpris
+            use_mpris,
+            max_cache_size
         );
 
         // Handles boolean merging.
