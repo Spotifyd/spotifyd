@@ -1,10 +1,12 @@
 #![cfg(unix)]
 
 use crate::config::CliConfig;
-use color_eyre::{eyre::Context, Help, Report, SectionExt};
+use color_eyre::{
+    eyre::{self, eyre, Context},
+    Help, SectionExt,
+};
 use daemonize::Daemonize;
 use log::{error, info, trace, LevelFilter};
-use std::panic;
 use structopt::StructOpt;
 use tokio::runtime::Runtime;
 
@@ -24,7 +26,7 @@ enum LogTarget {
     Syslog,
 }
 
-fn setup_logger(log_target: LogTarget, verbose: bool) {
+fn setup_logger(log_target: LogTarget, verbose: bool) -> eyre::Result<()> {
     let log_level = if verbose {
         LevelFilter::Trace
     } else {
@@ -46,14 +48,19 @@ fn setup_logger(log_target: LogTarget, verbose: bool) {
                 process: "spotifyd".to_owned(),
                 pid: 0,
             };
-            logger.chain(syslog::unix(log_format).expect("Couldn't initialize logger"))
+            logger.chain(
+                syslog::unix(log_format)
+                    .map_err(|e| eyre!("Couldn't connect to syslog instance: {}", e))?,
+            )
         }
     };
 
-    logger.apply().expect("Couldn't initialize logger");
+    logger.apply().wrap_err("Couldn't initialize logger")
 }
 
-fn main() -> Result<(), Report> {
+fn main() -> eyre::Result<()> {
+    color_eyre::install().wrap_err("Couldn't initialize error reporting")?;
+
     let mut cli_config: CliConfig = CliConfig::from_args();
 
     let is_daemon = !cli_config.no_daemon;
@@ -64,8 +71,7 @@ fn main() -> Result<(), Report> {
         LogTarget::Terminal
     };
 
-    setup_logger(log_target, cli_config.verbose);
-    color_eyre::install().expect("Coundn't initialize error reporting");
+    setup_logger(log_target, cli_config.verbose)?;
 
     cli_config
         .load_config_file_values()
@@ -94,20 +100,6 @@ fn main() -> Result<(), Report> {
             Err(e) => error!("Something went wrong while daemonizing: {}", e),
         };
     }
-
-    panic::set_hook(Box::new(|panic_info| {
-        error!(
-            "PANIC: Shutting down spotifyd. Error message: {}",
-            match (
-                panic_info.payload().downcast_ref::<String>(),
-                panic_info.payload().downcast_ref::<&str>(),
-            ) {
-                (Some(s), _) => &**s,
-                (_, Some(&s)) => s,
-                _ => "Unknown error type, can't produce message.",
-            }
-        );
-    }));
 
     let runtime = Runtime::new().unwrap();
     runtime.block_on(async {
