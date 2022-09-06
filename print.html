@@ -429,6 +429,15 @@ device_type = &quot;speaker&quot;
 <h2><a class="header" href="#alternatives-to-storing-your-password-in-the-config-file----omit-in-toc---" id="alternatives-to-storing-your-password-in-the-config-file----omit-in-toc---">Alternatives to storing your password in the config file <!-- omit in toc --></a></h2>
 <ul>
 <li>
+<p>use zeroconf authentication from Spotify Connect</p>
+<p>Spotifyd is able to advertise itself on the network without credentials. To enable this, you must omit / comment any <code>username</code> / <code>username_cmd</code> or <code>password</code> / <code>password_cmd</code> in the configuration. Spotifyd will receive an authentication blob from Spotify when you choose it from the devices list.</p>
+<blockquote>
+<p><strong>Note:</strong> If you choose to go with this, it is also recommended to omit the <code>cache_path</code> and <code>cache_directory</code> options. Otherwise the first user to connect to the service will have its authentication blob cached by the service and nobody else will be able to connect to the service without clearing the cache.</p>
+</blockquote>
+<p>This way, a Spotifyd instance can also be made available to multiple users.</p>
+<p>For more information, have a look at the <a href="https://github.com/librespot-org/librespot/blob/master/docs/authentication.md#zeroconf-based-authentication">librespot documentation</a>.</p>
+</li>
+<li>
 <p><strong><code>password_cmd</code></strong> config entry</p>
 <p>This feature allows you to provide a command that prints your password to <code>stdout</code>, which saves you from having to store your password in the config file directly. To use it, set the <code>password_cmd</code> config entry to the command you would like to use and remove the <code>password</code> config entry.</p>
 <p>For example (using the password-management utility <a href="https://www.passwordstore.org/">pass</a>).</p>
