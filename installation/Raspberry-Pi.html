@@ -93,7 +93,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../Introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="../installation/index.html"><strong aria-hidden="true">1.</strong> Installation Instructions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../installation/Raspberry-Pi.html" class="active"><strong aria-hidden="true">1.1.</strong> Installing on a Raspberry Pi</a></li><li class="chapter-item expanded "><a href="../installation/Ubuntu.html"><strong aria-hidden="true">1.2.</strong> Installing on Ubuntu (from source)</a></li><li class="chapter-item expanded "><a href="../installation/Cross-Compiling-on-Ubuntu.html"><strong aria-hidden="true">1.3.</strong> Cross Compiling on Ubuntu</a></li><li class="chapter-item expanded "><a href="../installation/MacOS.html"><strong aria-hidden="true">1.4.</strong> Installing with Homebrew on macOS</a></li><li class="chapter-item expanded "><a href="../Feature-flags.html"><strong aria-hidden="true">1.5.</strong> Feature Flags</a></li></ol></li><li class="chapter-item expanded "><a href="../config/index.html"><strong aria-hidden="true">2.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../config/Cli.html"><strong aria-hidden="true">2.1.</strong> CLI options</a></li><li class="chapter-item expanded "><a href="../config/File.html"><strong aria-hidden="true">2.2.</strong> Configuration file</a></li><li class="chapter-item expanded "><strong aria-hidden="true">2.3.</strong> Running as a Service</li><li><ol class="section"><li class="chapter-item expanded "><a href="../config/services/Sytemd.html"><strong aria-hidden="true">2.3.1.</strong> Running as systemd service</a></li><li class="chapter-item expanded "><a href="../config/services/MacOS.html"><strong aria-hidden="true">2.3.2.</strong> Running as launchd service (MacOS)</a></li></ol></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../Introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="../installation/index.html"><strong aria-hidden="true">1.</strong> Installation Instructions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../installation/Raspberry-Pi.html" class="active"><strong aria-hidden="true">1.1.</strong> Installing on a Raspberry Pi</a></li><li class="chapter-item expanded "><a href="../installation/Ubuntu.html"><strong aria-hidden="true">1.2.</strong> Installing on Ubuntu (from source)</a></li><li class="chapter-item expanded "><a href="../installation/Cross-Compiling-on-Ubuntu.html"><strong aria-hidden="true">1.3.</strong> Cross Compiling on Ubuntu</a></li><li class="chapter-item expanded "><a href="../installation/MacOS.html"><strong aria-hidden="true">1.4.</strong> Installing with Homebrew on macOS</a></li><li class="chapter-item expanded "><a href="../installation/FreeBSD.html"><strong aria-hidden="true">1.5.</strong> Installing on FreeBSD</a></li></ol></li><li class="chapter-item expanded "><a href="../config/index.html"><strong aria-hidden="true">2.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../config/Cli.html"><strong aria-hidden="true">2.1.</strong> CLI options</a></li><li class="chapter-item expanded "><a href="../config/File.html"><strong aria-hidden="true">2.2.</strong> Configuration file</a></li><li class="chapter-item expanded "><a href="../config/services/index.html"><strong aria-hidden="true">2.3.</strong> Running as a Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../config/services/Systemd.html"><strong aria-hidden="true">2.3.1.</strong> Running as systemd service</a></li><li class="chapter-item expanded "><a href="../config/services/MacOS.html"><strong aria-hidden="true">2.3.2.</strong> Running as launchd service (MacOS)</a></li></ol></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -168,7 +168,7 @@
 You will now see a file called <code>spotifyd</code>. You can run it with <code>./spotifyd --no-daemon</code></li>
 </ol>
 <h2><a class="header" href="#systemd-daemon-file" id="systemd-daemon-file">Systemd daemon file</a></h2>
-<p>Create a systemd service file and copy the config from https://github.com/Spotifyd/spotifyd/blob/master/contrib/spotifyd.service into it. Change <strong>ExecStart</strong> to where you unzipped the <code>spotifyd</code> binary.</p>
+<p>Create a systemd service file and copy the <a href="https://github.com/Spotifyd/spotifyd/blob/master/contrib/spotifyd.service">default configuration</a> into it. Change <strong>ExecStart</strong> to where you unzipped the <code>spotifyd</code> binary.</p>
 <pre><code class="language-bash">sudo nano /etc/systemd/user/spotifyd.service
 </code></pre>
 <p>if you want to run as user instead of root or have some <code>Failed to get D-Bus connection: Connection refused</code>, you define <code>spotifyd.service</code> in your home directory:</p>
@@ -176,26 +176,8 @@ You will now see a file called <code>spotifyd</code>. You can run it with <code>
 nano ~/.config/systemd/user/spotifyd.service
 systemctl --user daemon-reload
 </code></pre>
-<h2><a class="header" href="#config-file" id="config-file">Config file</a></h2>
-<p>Create your config:</p>
-<pre><code class="language-bash">mkdir ~/.config/spotifyd/
-nano ~/.config/spotifyd/spotifyd.conf
-</code></pre>
-<p>Input the following data. Change the <strong>username</strong>, <strong>password</strong>, <strong>device_name</strong>, and the <strong>bitrate</strong>.</p>
-<pre><code class="language-toml">[global]
-username = &quot;USER&quot;
-password = &quot;PASS&quot;
-backend = &quot;alsa&quot;
-device = alsa_audio_device # Given by `aplay -L`
-mixer = &quot;PCM&quot;
-volume-controller = &quot;alsa&quot; # or alsa_linear, or softvol
-#onevent = command_run_on_playback_event
-device_name = &quot;name_in_spotify_connect&quot;
-bitrate = 96|160|320
-cache_path = &quot;cache_directory&quot;
-volume-normalisation = true
-normalisation-pregain = -10
-</code></pre>
+<h2><a class="header" href="#configuring-spotifyd" id="configuring-spotifyd">Configuring spotifyd</a></h2>
+<p>Spotifyd comes pre-configured with defaults that should be working in most cases, but if you want to tweak it further to your needs, have a look at the <a href="../config/">configuration section</a> of this book.</p>
 <h2><a class="header" href="#start-the-service" id="start-the-service">Start the service</a></h2>
 <pre><code class="language-bash">systemctl --user start spotifyd.service
 </code></pre>

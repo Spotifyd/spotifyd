@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Configuration - Spotifyd</title>
+        <title>Running as systemd service - Spotifyd</title>
         
         
 
@@ -18,26 +18,26 @@
         <meta name="theme-color" content="#ffffff" />
 
         
-        <link rel="icon" href="../favicon.svg">
+        <link rel="icon" href="../../favicon.svg">
         
         
-        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="shortcut icon" href="../../favicon.png">
         
-        <link rel="stylesheet" href="../css/variables.css">
-        <link rel="stylesheet" href="../css/general.css">
-        <link rel="stylesheet" href="../css/chrome.css">
-        <link rel="stylesheet" href="../css/print.css" media="print">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
         
-        <link rel="stylesheet" href="../fonts/fonts.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
         
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="../highlight.css">
-        <link rel="stylesheet" href="../tomorrow-night.css">
-        <link rel="stylesheet" href="../ayu-highlight.css">
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
         
@@ -47,7 +47,7 @@
     <body>
         <!-- Provide site root to javascript -->
         <script type="text/javascript">
-            var path_to_root = "../";
+            var path_to_root = "../../";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
@@ -93,7 +93,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../Introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="../installation/index.html"><strong aria-hidden="true">1.</strong> Installation Instructions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../installation/Raspberry-Pi.html"><strong aria-hidden="true">1.1.</strong> Installing on a Raspberry Pi</a></li><li class="chapter-item expanded "><a href="../installation/Ubuntu.html"><strong aria-hidden="true">1.2.</strong> Installing on Ubuntu (from source)</a></li><li class="chapter-item expanded "><a href="../installation/Cross-Compiling-on-Ubuntu.html"><strong aria-hidden="true">1.3.</strong> Cross Compiling on Ubuntu</a></li><li class="chapter-item expanded "><a href="../installation/MacOS.html"><strong aria-hidden="true">1.4.</strong> Installing with Homebrew on macOS</a></li><li class="chapter-item expanded "><a href="../installation/FreeBSD.html"><strong aria-hidden="true">1.5.</strong> Installing on FreeBSD</a></li></ol></li><li class="chapter-item expanded "><a href="../config/index.html" class="active"><strong aria-hidden="true">2.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../config/Cli.html"><strong aria-hidden="true">2.1.</strong> CLI options</a></li><li class="chapter-item expanded "><a href="../config/File.html"><strong aria-hidden="true">2.2.</strong> Configuration file</a></li><li class="chapter-item expanded "><a href="../config/services/index.html"><strong aria-hidden="true">2.3.</strong> Running as a Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../config/services/Systemd.html"><strong aria-hidden="true">2.3.1.</strong> Running as systemd service</a></li><li class="chapter-item expanded "><a href="../config/services/MacOS.html"><strong aria-hidden="true">2.3.2.</strong> Running as launchd service (MacOS)</a></li></ol></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../../Introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="../../installation/index.html"><strong aria-hidden="true">1.</strong> Installation Instructions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../installation/Raspberry-Pi.html"><strong aria-hidden="true">1.1.</strong> Installing on a Raspberry Pi</a></li><li class="chapter-item expanded "><a href="../../installation/Ubuntu.html"><strong aria-hidden="true">1.2.</strong> Installing on Ubuntu (from source)</a></li><li class="chapter-item expanded "><a href="../../installation/Cross-Compiling-on-Ubuntu.html"><strong aria-hidden="true">1.3.</strong> Cross Compiling on Ubuntu</a></li><li class="chapter-item expanded "><a href="../../installation/MacOS.html"><strong aria-hidden="true">1.4.</strong> Installing with Homebrew on macOS</a></li><li class="chapter-item expanded "><a href="../../installation/FreeBSD.html"><strong aria-hidden="true">1.5.</strong> Installing on FreeBSD</a></li></ol></li><li class="chapter-item expanded "><a href="../../config/index.html"><strong aria-hidden="true">2.</strong> Configuration</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../config/Cli.html"><strong aria-hidden="true">2.1.</strong> CLI options</a></li><li class="chapter-item expanded "><a href="../../config/File.html"><strong aria-hidden="true">2.2.</strong> Configuration file</a></li><li class="chapter-item expanded "><a href="../../config/services/index.html"><strong aria-hidden="true">2.3.</strong> Running as a Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../config/services/Systemd.html" class="active"><strong aria-hidden="true">2.3.1.</strong> Running as systemd service</a></li><li class="chapter-item expanded "><a href="../../config/services/MacOS.html"><strong aria-hidden="true">2.3.2.</strong> Running as launchd service (MacOS)</a></li></ol></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -128,7 +128,7 @@
                     <h1 class="menu-title">Spotifyd</h1>
 
                     <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
                         
@@ -159,21 +159,29 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#configuration" id="configuration">Configuration</a></h1>
-<p><code>Spotifyd</code> is able to run without configuration at all and will assume default values for most of the fields. However, running without configuration will only allow you to connect to it via Spotify Connect if you're on the same network as the daemon</p>
+                        <h1><a class="header" href="#running-spotifyd-as-a-service-using-systemd" id="running-spotifyd-as-a-service-using-systemd">Running spotifyd as a service using systemd</a></h1>
+<p>A <code>systemd.service</code> unit file is provided to help run spotifyd as a service on systemd-based systems. The file <code>contrib/spotifyd.service</code> should be copied to either:</p>
+<pre><code class="language-bash">/etc/systemd/user/
+~/.config/systemd/user/
+</code></pre>
+<p>Packagers of systemd-based distributions are encouraged to include the file in the former location. End-user should prefer the latter. It should be noted that some targets are not available when running under the user directory, such as <code>network-online.target</code>.</p>
+<p>Control of the daemon is handed over to systemd. The following example commands will run the service once and enable the service to always run on login in the future respectively:</p>
+<pre><code class="language-bash">systemctl --user start spotifyd.service
+systemctl --user enable spotifyd.service
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="../installation/FreeBSD.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../config/services/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="../config/Cli.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../../config/services/MacOS.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -185,13 +193,13 @@
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a rel="prev" href="../installation/FreeBSD.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../config/services/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a rel="next" href="../config/Cli.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="../../config/services/MacOS.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
@@ -214,14 +222,14 @@
         
 
         
-        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../searcher.js" type="text/javascript" charset="utf-8"></script>
         
 
-        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
         
