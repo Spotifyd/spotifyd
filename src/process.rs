@@ -1,10 +1,10 @@
 use crate::error::Error;
 use librespot_playback::player::PlayerEvent;
 use log::info;
-use std::{
-    collections::HashMap,
-    io::{self, Read, Write},
-    process::{Command, ExitStatus, Stdio},
+use std::{collections::HashMap, process::Stdio};
+use tokio::{
+    io::{self, AsyncWriteExt},
+    process::{self, Command},
 };
 
 /// Blocks while provided command is run in a subprocess using the provided
@@ -12,7 +12,7 @@ use std::{
 /// `String`.
 pub(crate) fn run_program(shell: &str, cmd: &str) -> Result<String, Error> {
     info!("Running {:?} using {:?}", cmd, shell);
-    let output = Command::new(shell)
+    let output = std::process::Command::new(shell)
         .arg("-c")
         .arg(cmd)
         .output()
@@ -150,96 +150,53 @@ pub(crate) fn spawn_program_on_event(
     spawn_program(shell, cmd, env)
 }
 
-/// Same as a `std::process::Child` except when this `Child` exits:
+/// Wraps `tokio::process::Child` so that when this `Child` exits:
 /// * successfully: It writes the contents of it's stdout to the stdout of the
 ///   main process.
 /// * unsuccesfully: It returns an error that includes the contents it's stderr
 ///   as well as information on the command that was run and the shell that
 ///   invoked it.
-#[derive(Debug)]
 pub(crate) struct Child {
     cmd: String,
-    inner: std::process::Child,
+    child: process::Child,
     shell: String,
 }
 
 impl Child {
-    pub(crate) fn new(cmd: String, child: std::process::Child, shell: String) -> Self {
-        Self {
-            cmd,
-            inner: child,
-            shell,
-        }
+    pub(crate) fn new(cmd: String, child: process::Child, shell: String) -> Self {
+        Self { cmd, child, shell }
     }
 
-    #[allow(unused)]
-    pub(crate) fn wait(&mut self) -> Result<(), Error> {
-        match self.inner.wait() {
-            Ok(status) => {
-                self.write_output(status)?;
-                Ok(())
-            }
-            Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
-        }
-    }
+    pub(crate) async fn wait(self) -> Result<(), Error> {
+        let Child { cmd, shell, child } = self;
 
-    #[allow(unused)]
-    pub(crate) fn try_wait(&mut self) -> Result<Option<()>, Error> {
-        match self.inner.try_wait() {
-            Ok(Some(status)) => {
-                self.write_output(status)?;
-                Ok(Some(()))
-            }
-            Ok(None) => Ok(None),
-            Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
-        }
-    }
+        let output = child
+            .wait_with_output()
+            .await
+            .map_err(|e| Error::subprocess_with_err(&shell, &cmd, e))?;
 
-    fn write_output(&mut self, status: ExitStatus) -> Result<(), Error> {
-        if status.success() {
+        if output.status.success() {
             // If successful, write subprocess's stdout to main process's stdout...
-            let mut stdout_of_child = self.inner.stdout.as_mut().unwrap();
-            let reader = &mut stdout_of_child;
+            let mut stdout = io::stdout();
 
-            let stdout_of_main = io::stdout();
-            let mut guard = stdout_of_main.lock();
-            let writer = &mut guard;
+            stdout
+                .write_all(&output.stdout)
+                .await
+                .map_err(|e| Error::subprocess_with_err(&shell, &cmd, e))?;
 
-            io::copy(reader, writer)
-                .map_err(|e| Error::subprocess_with_err(&self.shell, &self.cmd, e))?;
-
-            writer
+            stdout
                 .flush()
-                .map_err(|e| Error::subprocess_with_err(&self.shell, &self.cmd, e))?;
+                .await
+                .map_err(|e| Error::subprocess_with_err(&shell, &cmd, e))?;
 
             Ok(())
         } else {
             // If unsuccessful, return an error that includes the contents of stderr...
-            let mut buf = String::new();
-            match self.inner.stderr.as_mut().unwrap().read_to_string(&mut buf) {
-                Ok(_nread) => Err(Error::subprocess_with_str(&self.shell, &self.cmd, &buf)),
-                Err(e) => Err(Error::subprocess_with_err(&self.shell, &self.cmd, e)),
-            }
+            let err = match String::from_utf8(output.stderr) {
+                Ok(stderr) => Error::subprocess_with_str(&shell, &cmd, &stderr),
+                Err(_) => Error::subprocess(&shell, &cmd),
+            };
+            Err(err)
         }
-    }
-}
-
-impl std::ops::Deref for Child {
-    type Target = std::process::Child;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl std::ops::DerefMut for Child {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
-}
-
-impl From<Child> for std::process::Child {
-    fn from(child: Child) -> Self {
-        child.inner
     }
 }

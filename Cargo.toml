@@ -28,7 +28,7 @@ serde = { version = "1.0.115", features = ["derive"] }
 sha-1 = "0.9"
 structopt = "0.3.17"
 syslog = "4"
-tokio = {version = "1.6.1", features = ["signal", "rt-multi-thread"] }
+tokio = {version = "1.6.1", features = ["signal", "rt-multi-thread", "process", "io-std"] }
 tokio-compat = { version = "0.1.6", features = ["rt-current-thread"] }
 tokio-compat-02 = "0.2.0"
 tokio-stream = "0.1.7"

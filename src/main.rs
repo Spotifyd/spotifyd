@@ -106,8 +106,8 @@ fn main() -> Result<(), Report> {
 
     let runtime = Runtime::new().unwrap();
     runtime.block_on(async {
-        let initial_state = setup::initial_state(internal_config);
-        initial_state.await;
+        let mut initial_state = setup::initial_state(internal_config);
+        initial_state.run().await;
     });
 
     Ok(())
