@@ -14,24 +14,11 @@ This guide will help you to install `spotifyd` on FreeBSD and have it always run
 sudo pkg install spotifyd
 ```
 
-## Config file
+## Configuring spotifyd
 
+If you installed spotifyd using the above method, you'll either need to supply `--backend portaudio` as a command-line argument or add `backend = "portaudio"` to `/usr/local/etc/spotifyd.conf`.
 
-Input the following data. Change the **username**, **password**, **device_name**, and the **bitrate**.
-
-```toml
-[global]
-username = "USER"
-password = "PASS"
-backend = "portaudio"
-device = "/dev/dsp"
-#onevent = command_run_on_playback_event
-device_name = "name_in_spotify_connect"
-bitrate = 96|160|320
-cache_path = "cache_directory"
-volume-normalisation = true
-normalisation-pregain = -10
-```
+Apart from that, spotifyd comes pre-configured with defaults that should be working in most cases, but if you want to tweak it further to your needs, have a look at the [configuration section](../config/) of this book.
 
 ## Start the service
 
