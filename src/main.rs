@@ -24,8 +24,18 @@ enum LogTarget {
     Syslog,
 }
 
-fn setup_logger(log_target: LogTarget, log_level: LevelFilter) {
-    let logger = fern::Dispatch::new().level(log_level);
+fn setup_logger(log_target: LogTarget, verbose: bool) {
+    let log_level = if verbose {
+        LevelFilter::Trace
+    } else {
+        LevelFilter::Info
+    };
+
+    let mut logger = fern::Dispatch::new().level(log_level);
+
+    if cfg!(feature = "dbus_mpris") && !verbose {
+        logger = logger.level_for("rspotify_http", LevelFilter::Warn);
+    }
 
     let logger = match log_target {
         LogTarget::Terminal => logger.chain(std::io::stdout()),
@@ -53,13 +63,8 @@ fn main() -> Result<(), Report> {
     } else {
         LogTarget::Terminal
     };
-    let log_level = if cli_config.verbose {
-        LevelFilter::Trace
-    } else {
-        LevelFilter::Info
-    };
 
-    setup_logger(log_target, log_level);
+    setup_logger(log_target, cli_config.verbose);
     color_eyre::install().expect("Coundn't initialize error reporting");
 
     cli_config
