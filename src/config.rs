@@ -30,7 +30,7 @@ static BACKEND_VALUES: &[&str] = &[
 ];
 
 /// The backend used by librespot
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
 #[serde(rename_all = "lowercase")]
 pub enum Backend {
     Alsa,
@@ -72,7 +72,7 @@ static VOLUME_CONTROLLER_VALUES: &[&str] = &[
     "alsa_linear",
 ];
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
 #[serde(rename_all = "snake_case")]
 pub enum VolumeController {
     Alsa,
@@ -106,7 +106,7 @@ static DEVICETYPE_VALUES: &[&str] = &[
 ];
 
 // Spotify's device type (copied from it's config.rs)
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
 #[serde(rename_all = "snake_case")]
 pub enum DeviceType {
     Unknown = 0,
@@ -176,7 +176,7 @@ impl ToString for DeviceType {
 static BITRATE_VALUES: &[&str] = &["96", "160", "320"];
 
 /// Spotify's audio bitrate
-#[derive(Clone, Copy, Debug, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, StructOpt)]
 pub enum Bitrate {
     Bitrate96,
     Bitrate160,
