@@ -29,7 +29,7 @@ use rspotify::{
     prelude::*,
     AuthCodeSpotify, Token as RspotifyToken,
 };
-use std::{collections::HashMap, env, pin::Pin, sync::Arc};
+use std::{collections::HashMap, convert::TryInto, env, pin::Pin, sync::Arc};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 pub struct DbusServer {
@@ -266,13 +266,33 @@ async fn create_dbus_server(
 
         let mv_device_name = device_name.clone();
         let sp_client = Arc::clone(&spotify_api_client);
-        b.method("Seek", ("pos",), (), move |_, _, (pos,): (u32,)| {
+        b.method("Seek", ("offset",), (), move |_, _, (pos,): (i64,)| {
             if let Ok(Some(playback)) = sp_client.current_playback(None, None::<Vec<_>>) {
                 if playback.device.name == mv_device_name {
-                    let _ = sp_client.seek_track(
-                        playback.progress.map(|d| d.as_millis()).unwrap_or(0) as u32 + pos,
-                        playback.device.id.as_deref(),
-                    );
+                    let new_pos = playback
+                        .progress
+                        .and_then(|d| d.as_millis().try_into().ok())
+                        .and_then(|d: i64| d.checked_add(pos / 1000));
+
+                    if let Some(new_pos) = new_pos {
+                        let duration: u32 = match playback.item {
+                            Some(PlayableItem::Track(t)) => t.duration.as_millis(),
+                            Some(PlayableItem::Episode(e)) => e.duration.as_millis(),
+                            None => return Ok(()),
+                        }
+                        .try_into()
+                        .unwrap_or(u32::MAX);
+
+                        // MPRIS spec: negative values should be treated as 0
+                        let new_pos = new_pos.max(0);
+                        if new_pos <= duration as i64 {
+                            let _ =
+                                sp_client.seek_track(new_pos as u32, playback.device.id.as_deref());
+                        } else {
+                            // MPRIS spec: values beyond track bounds should act like Next
+                            let _ = sp_client.next_track(playback.device.id.as_deref());
+                        }
+                    }
                 }
             }
             Ok(())
@@ -280,14 +300,41 @@ async fn create_dbus_server(
 
         let mv_device_name = device_name.clone();
         let sp_client = Arc::clone(&spotify_api_client);
-        b.method("SetPosition", ("pos",), (), move |_, _, (pos,): (u32,)| {
-            if let Ok(Some(playback)) = sp_client.current_playback(None, None::<Vec<_>>) {
-                if playback.device.name == mv_device_name {
-                    let _ = sp_client.seek_track(pos, playback.device.id.as_deref());
+        b.method(
+            "SetPosition",
+            ("track_id", "position"),
+            (),
+            move |_, _, (track_id, pos): (dbus::Path, i64)| {
+                if let Ok(Some(playback)) = sp_client.current_playback(None, None::<Vec<_>>) {
+                    let (track_matches, duration) = if let Some(item) = playback.item {
+                        let track_matches = item
+                            .id()
+                            .map(|id| uri_to_object_path(id.uri()) == track_id)
+                            .unwrap_or(false);
+                        let duration = match item {
+                            PlayableItem::Track(t) => t.duration.as_micros(),
+                            PlayableItem::Episode(e) => e.duration.as_micros(),
+                        }
+                        .try_into()
+                        .unwrap_or(i64::MAX);
+                        (track_matches, duration)
+                    } else {
+                        return Ok(());
+                    };
+
+                    // as per MPRIS spec: pos must be in track bounds and track id must match
+                    if playback.device.name == mv_device_name
+                        && track_matches
+                        && (0..=duration).contains(&pos)
+                    {
+                        // pos is in microseconds, seek_track takes milliseconds
+                        let _ = sp_client
+                            .seek_track((pos / 1000) as u32, playback.device.id.as_deref());
+                    }
                 }
-            }
-            Ok(())
-        });
+                Ok(())
+            },
+        );
 
         let mv_device_name = device_name.clone();
         let sp_client = Arc::clone(&spotify_api_client);
@@ -467,7 +514,7 @@ async fn create_dbus_server(
                     .current_playback(None, None::<Vec<_>>)
                     .ok()
                     .flatten()
-                    .and_then(|p| Some(p.progress?.as_nanos() as i64))
+                    .and_then(|p| Some(p.progress?.as_micros() as i64))
                     .unwrap_or(0);
 
                 Ok(pos)
@@ -642,6 +689,15 @@ async fn create_dbus_server(
     }
 }
 
+fn uri_to_object_path(uri: String) -> dbus::Path<'static> {
+    let mut path = String::with_capacity(uri.len() + 1);
+    for element in uri.split(':') {
+        path.push('/');
+        path.push_str(element);
+    }
+    dbus::Path::new(path).unwrap()
+}
+
 fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, item: PlayableItem) {
     use rspotify::model::{
         Image,
@@ -658,7 +714,7 @@ fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, item: Play
 
     // a common denominator struct for FullEpisode and FullTrack
     struct TrackOrEpisode {
-        id: Option<String>,
+        id: Option<dbus::Path<'static>>,
         duration: std::time::Duration,
         images: Vec<Image>,
         name: String,
@@ -670,7 +726,7 @@ fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, item: Play
 
     let item = match item {
         Track(t) => TrackOrEpisode {
-            id: t.id.map(|t| t.uri()),
+            id: t.id.map(|t| uri_to_object_path(t.uri())),
             duration: t.duration,
             images: t.album.images,
             name: t.name,
@@ -685,7 +741,7 @@ fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, item: Play
             }),
         },
         Episode(e) => TrackOrEpisode {
-            id: Some(e.id.uri()),
+            id: Some(uri_to_object_path(e.id.uri())),
             duration: e.duration,
             images: e.show.images,
             name: e.name,
