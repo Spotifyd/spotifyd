@@ -30,6 +30,6 @@ A `systemd.service` unit file is provided to help run spotifyd as a service on s
 Control of the daemon is handed over to systemd. The following example commands will start the service and keep it running across reboots.
 
 ```bash
-systemctl -daemon-reload
+systemctl daemon-reload
 systemctl --user enable spotifyd.service --now
 ```
