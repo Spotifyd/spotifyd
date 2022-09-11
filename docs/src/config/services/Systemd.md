@@ -31,5 +31,5 @@ Control of the daemon is handed over to systemd. The following example commands 
 
 ```bash
 systemctl daemon-reload
-systemctl --user enable spotifyd.service --now
+systemctl enable spotifyd.service --now
 ```
