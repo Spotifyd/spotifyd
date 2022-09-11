@@ -1,37 +1,31 @@
 #[cfg(feature = "alsa_backend")]
 use crate::alsa_mixer;
-use crate::{config, main_loop};
-use futures::{self, Future};
+use crate::{
+    config,
+    main_loop::{self, CredentialsProvider},
+};
 #[cfg(feature = "dbus_keyring")]
 use keyring::Keyring;
-use librespot::{
-    connect::discovery::discovery,
-    core::{
-        authentication::get_credentials,
-        cache::Cache,
-        config::{ConnectConfig, DeviceType, VolumeCtrl},
-        session::Session,
-    },
-    playback::{
-        audio_backend::{Sink, BACKENDS},
-        mixer::{self, Mixer},
-    },
+use librespot_connect::discovery::discovery;
+use librespot_core::{
+    authentication::Credentials,
+    cache::Cache,
+    config::{ConnectConfig, DeviceType, VolumeCtrl},
 };
-use log::{error, info};
+use librespot_playback::{
+    audio_backend::{Sink, BACKENDS},
+    config::AudioFormat,
+    mixer::{self, Mixer},
+};
+use log::info;
 use std::str::FromStr;
-use std::{io, process::exit};
-use tokio_core::reactor::Handle;
-use tokio_signal::ctrl_c;
 
-pub(crate) fn initial_state(
-    handle: Handle,
-    config: config::SpotifydConfig,
-) -> main_loop::MainLoopState {
+pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
     #[cfg(feature = "alsa_backend")]
     let mut mixer = {
-        let local_audio_device = config.audio_device.clone();
-        let local_control_device = config.control_device.clone();
-        let local_mixer = config.mixer.clone();
+        let audio_device = config.audio_device.clone();
+        let control_device = config.control_device.clone();
+        let mixer = config.mixer.clone();
         match config.volume_controller {
             config::VolumeController::SoftVolume => {
                 info!("Using software volume controller.");
@@ -46,11 +40,11 @@ pub(crate) fn initial_state(
                 );
                 Box::new(move || {
                     Box::new(alsa_mixer::AlsaMixer {
-                        device: local_control_device
+                        device: control_device
                             .clone()
-                            .or_else(|| local_audio_device.clone())
+                            .or_else(|| audio_device.clone())
                             .unwrap_or_else(|| "default".to_string()),
-                        mixer: local_mixer.clone().unwrap_or_else(|| "Master".to_string()),
+                        mixer: mixer.clone().unwrap_or_else(|| "Master".to_string()),
                         linear_scaling: linear,
                     }) as Box<dyn mixer::Mixer>
                 }) as Box<dyn FnMut() -> Box<dyn Mixer>>
@@ -89,21 +83,6 @@ pub(crate) fn initial_state(
 
     let device_type: DeviceType = DeviceType::from_str(&config.device_type).unwrap_or_default();
 
-    #[allow(clippy::or_fun_call)]
-    let discovery_stream = discovery(
-        &handle,
-        ConnectConfig {
-            autoplay,
-            name: config.device_name.clone(),
-            device_type,
-            volume: mixer().volume(),
-            volume_ctrl: volume_ctrl.clone(),
-        },
-        device_id,
-        zeroconf_port,
-    )
-    .unwrap();
-
     let username = config.username;
     #[allow(unused_mut)] // mut is needed behind the dbus_keyring flag.
     let mut password = config.password;
@@ -119,49 +98,43 @@ pub(crate) fn initial_state(
         }
     }
 
-    let connection = if let Some(credentials) = get_credentials(
-        username,
-        password,
-        cache.as_ref().and_then(Cache::credentials),
-        |_| {
-            error!("No password found.");
-            exit(1);
-        },
-    ) {
-        Session::connect(
-            session_config.clone(),
-            credentials,
-            cache.clone(),
-            handle.clone(),
-        )
-    } else {
-        Box::new(futures::future::empty())
-            as Box<dyn futures::Future<Item = Session, Error = io::Error>>
-    };
+    let credentials_provider =
+        if let Some(credentials) = get_credentials(&cache, &username, &password) {
+            CredentialsProvider::SpotifyCredentials(credentials)
+        } else {
+            info!("no usable credentials found, enabling discovery");
+            let discovery_stream = discovery(
+                ConnectConfig {
+                    autoplay,
+                    name: config.device_name.clone(),
+                    device_type,
+                    volume: mixer().volume(),
+                    volume_ctrl: volume_ctrl.clone(),
+                },
+                device_id,
+                zeroconf_port,
+            )
+            .unwrap();
+            discovery_stream.into()
+        };
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
-    main_loop::MainLoopState {
-        librespot_connection: main_loop::LibreSpotConnection::new(connection, discovery_stream),
+    main_loop::MainLoop {
+        credentials_provider,
         audio_setup: main_loop::AudioSetup {
             mixer,
             backend,
-            audio_device: config.audio_device.clone(),
+            audio_device: config.audio_device,
         },
         spotifyd_state: main_loop::SpotifydState {
-            ctrl_c_stream: Box::new(ctrl_c(&handle).flatten_stream()),
-            shutting_down: false,
             cache,
             device_name: config.device_name,
-            player_event_channel: None,
             player_event_program: config.onevent,
-            dbus_mpris_server: None,
         },
         player_config,
         session_config,
-        handle,
         initial_volume: config.initial_volume,
         volume_ctrl,
-        running_event_program: None,
         shell: config.shell,
         device_type,
         autoplay,
@@ -169,7 +142,19 @@ pub(crate) fn initial_state(
     }
 }
 
-fn find_backend(name: Option<&str>) -> fn(Option<String>) -> Box<dyn Sink> {
+fn get_credentials(
+    cache: &Option<Cache>,
+    username: &Option<String>,
+    password: &Option<String>,
+) -> Option<Credentials> {
+    if let (Some(username), Some(password)) = (username, password) {
+        return Some(Credentials::with_password(username, password));
+    }
+
+    cache.as_ref()?.credentials()
+}
+
+fn find_backend(name: Option<&str>) -> fn(Option<String>, AudioFormat) -> Box<dyn Sink> {
     match name {
         Some(name) => {
             BACKENDS

@@ -5,12 +5,12 @@ This guide will help you to install `spotifyd` on a Raspberry Pi and have it alw
 ## Download
 
 1. Download the latest ARMv6 from https://github.com/Spotifyd/spotifyd/releases (use `wget`)
-2. Unzip the file: `unzip spotifyd-*.zip`
+2. Unzip the file: `tar xzf spotifyd-linux-arm6*`
 You will now see a file called `spotifyd`. You can run it with `./spotifyd --no-daemon`
 
 ## Systemd daemon file
 
-Create a systemd service file and copy the config from https://github.com/Spotifyd/spotifyd/blob/master/contrib/spotifyd.service into it. Change **ExecStart** to where you unzipped the `spotifyd` binary.
+Create a systemd service file and copy the [default configuration](https://github.com/Spotifyd/spotifyd/blob/master/contrib/spotifyd.service) into it. Change **ExecStart** to where you unzipped the `spotifyd` binary.
 
 ```bash
 sudo nano /etc/systemd/user/spotifyd.service
@@ -24,32 +24,9 @@ nano ~/.config/systemd/user/spotifyd.service
 systemctl --user daemon-reload
 ```
 
-## Config file
+## Configuring spotifyd
 
-Create your config:
-
-```bash
-mkdir ~/.config/spotifyd/
-nano ~/.config/spotifyd/spotifyd.conf
-```
-
-Input the following data. Change the **username**, **password**, **device_name**, and the **bitrate**.
-
-```toml
-[global]
-username = "USER"
-password = "PASS"
-backend = "alsa"
-device = alsa_audio_device # Given by `aplay -L`
-mixer = "PCM"
-volume-controller = "alsa" # or alsa_linear, or softvol
-#onevent = command_run_on_playback_event
-device_name = "name_in_spotify_connect"
-bitrate = 96|160|320
-cache_path = "cache_directory"
-volume-normalisation = true
-normalisation-pregain = -10
-```
+Spotifyd comes pre-configured with defaults that should be working in most cases, but if you want to tweak it further to your needs, have a look at the [configuration section](../config/) of this book.
 
 ## Start the service
 

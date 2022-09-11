@@ -5,16 +5,16 @@ use crate::{
 };
 use color_eyre::Report;
 use gethostname::gethostname;
-use librespot::{
-    core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version},
-    playback::config::{Bitrate as LSBitrate, PlayerConfig},
+use librespot_core::{
+    cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version,
 };
+use librespot_playback::config::{Bitrate as LSBitrate, PlayerConfig};
 use log::{error, info, warn};
+use reqwest::Url;
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
 use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
-use url::Url;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
@@ -30,7 +30,7 @@ static BACKEND_VALUES: &[&str] = &[
 ];
 
 /// The backend used by librespot
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
 #[serde(rename_all = "lowercase")]
 pub enum Backend {
     Alsa,
@@ -72,7 +72,7 @@ static VOLUME_CONTROLLER_VALUES: &[&str] = &[
     "alsa_linear",
 ];
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
 #[serde(rename_all = "snake_case")]
 pub enum VolumeController {
     Alsa,
@@ -106,7 +106,7 @@ static DEVICETYPE_VALUES: &[&str] = &[
 ];
 
 // Spotify's device type (copied from it's config.rs)
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
 #[serde(rename_all = "snake_case")]
 pub enum DeviceType {
     Unknown = 0,
@@ -114,9 +114,12 @@ pub enum DeviceType {
     Tablet = 2,
     Smartphone = 3,
     Speaker = 4,
-    TV = 5,
-    AVR = 6,
-    STB = 7,
+    #[serde(rename = "t_v")]
+    Tv = 5,
+    #[serde(rename = "a_v_r")]
+    Avr = 6,
+    #[serde(rename = "s_t_b")]
+    Stb = 7,
     AudioDongle = 8,
 }
 
@@ -128,10 +131,12 @@ impl From<LSDeviceType> for DeviceType {
             LSDeviceType::Tablet => DeviceType::Tablet,
             LSDeviceType::Smartphone => DeviceType::Smartphone,
             LSDeviceType::Speaker => DeviceType::Speaker,
-            LSDeviceType::TV => DeviceType::TV,
-            LSDeviceType::AVR => DeviceType::AVR,
-            LSDeviceType::STB => DeviceType::STB,
+            LSDeviceType::Tv => DeviceType::Tv,
+            LSDeviceType::Avr => DeviceType::Avr,
+            LSDeviceType::Stb => DeviceType::Stb,
             LSDeviceType::AudioDongle => DeviceType::AudioDongle,
+            // TODO: Implement new LibreSpot device types in Spotifyd
+            _ => DeviceType::Unknown,
         }
     }
 }
@@ -144,9 +149,9 @@ impl From<&DeviceType> for LSDeviceType {
             DeviceType::Tablet => LSDeviceType::Tablet,
             DeviceType::Smartphone => LSDeviceType::Smartphone,
             DeviceType::Speaker => LSDeviceType::Speaker,
-            DeviceType::TV => LSDeviceType::TV,
-            DeviceType::AVR => LSDeviceType::AVR,
-            DeviceType::STB => LSDeviceType::STB,
+            DeviceType::Tv => LSDeviceType::Tv,
+            DeviceType::Avr => LSDeviceType::Avr,
+            DeviceType::Stb => LSDeviceType::Stb,
             DeviceType::AudioDongle => LSDeviceType::AudioDongle,
         }
     }
@@ -171,7 +176,7 @@ impl ToString for DeviceType {
 static BITRATE_VALUES: &[&str] = &["96", "160", "320"];
 
 /// Spotify's audio bitrate
-#[derive(Clone, Copy, Debug, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, StructOpt)]
 pub enum Bitrate {
     Bitrate96,
     Bitrate160,
@@ -206,9 +211,9 @@ impl FromStr for Bitrate {
     }
 }
 
-impl Into<LSBitrate> for Bitrate {
-    fn into(self) -> LSBitrate {
-        match self {
+impl From<Bitrate> for LSBitrate {
+    fn from(bitrate: Bitrate) -> Self {
+        match bitrate {
             Bitrate::Bitrate96 => LSBitrate::Bitrate96,
             Bitrate::Bitrate160 => LSBitrate::Bitrate160,
             Bitrate::Bitrate320 => LSBitrate::Bitrate320,
@@ -293,6 +298,11 @@ pub struct SharedConfigValues {
     )]
     password_cmd: Option<String>,
 
+    /// Whether the credentials should be debugged.
+    #[structopt(long)]
+    #[serde(skip)]
+    debug_credentials: bool,
+
     /// A script that gets evaluated in the user's shell when the song changes
     #[structopt(visible_alias = "onevent", long, value_name = "string")]
     #[serde(alias = "onevent")]
@@ -301,6 +311,10 @@ pub struct SharedConfigValues {
     /// The cache path used to store credentials and music file artifacts
     #[structopt(long, parse(from_os_str), short, value_name = "string")]
     cache_path: Option<PathBuf>,
+
+    /// The maximal cache size in bytes
+    #[structopt(long)]
+    max_cache_size: Option<u64>,
 
     /// Disable the use of audio cache
     #[structopt(long)]
@@ -361,7 +375,7 @@ pub struct SharedConfigValues {
     #[structopt(long, possible_values = &DEVICETYPE_VALUES, value_name = "string")]
     device_type: Option<DeviceType>,
 
-    /// Autoplay on connect
+    /// Start playing similar songs after your music has ended
     #[structopt(long)]
     #[serde(default)]
     autoplay: bool,
@@ -383,6 +397,7 @@ impl FileConfig {
         // section.
         if let Some(mut spotifyd_section) = spotifyd_config_section {
             // spotifyd section exists. Try to merge it with global section.
+            #[allow(clippy::branches_sharing_code)]
             if let Some(global_section) = global_config_section {
                 spotifyd_section.merge_with(global_section);
                 merged_config = Some(spotifyd_section);
@@ -404,30 +419,25 @@ impl fmt::Debug for SharedConfigValues {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let placeholder = "taken out for privacy";
 
-        // TODO: somehow replace with a appropiate macro.
-        let password_value = if self.password.is_some() {
-            Some(&placeholder)
-        } else {
-            None
-        };
+        macro_rules! extract_credential {
+            ( $e:expr ) => {
+                match $e {
+                    Some(s) => match self.debug_credentials {
+                        true => Some(s.as_str()),
+                        false => Some(placeholder),
+                    },
+                    None => None,
+                }
+            };
+        }
 
-        let password_cmd_value = if self.password_cmd.is_some() {
-            Some(&placeholder)
-        } else {
-            None
-        };
+        let password_value = extract_credential!(&self.password);
 
-        let username_value = if self.username.is_some() {
-            Some(&placeholder)
-        } else {
-            None
-        };
+        let password_cmd_value = extract_credential!(&self.password_cmd);
 
-        let username_cmd_value = if self.username_cmd.is_some() {
-            Some(&placeholder)
-        } else {
-            None
-        };
+        let username_value = extract_credential!(&self.username);
+
+        let username_cmd_value = extract_credential!(&self.username_cmd);
 
         f.debug_struct("SharedConfigValues")
             .field("username", &username_value)
@@ -452,6 +462,8 @@ impl fmt::Debug for SharedConfigValues {
             .field("zeroconf_port", &self.zeroconf_port)
             .field("proxy", &self.proxy)
             .field("device_type", &self.device_type)
+            .field("autoplay", &self.autoplay)
+            .field("max_cache_size", &self.max_cache_size)
             .finish()
     }
 }
@@ -514,13 +526,15 @@ impl SharedConfigValues {
             zeroconf_port,
             proxy,
             device_type,
-            use_mpris
+            use_mpris,
+            max_cache_size
         );
 
         // Handles boolean merging.
         self.use_keyring |= other.use_keyring;
         self.volume_normalisation |= other.volume_normalisation;
         self.no_audio_cache |= other.no_audio_cache;
+        self.autoplay |= other.autoplay;
     }
 }
 
@@ -572,11 +586,21 @@ pub(crate) struct SpotifydConfig {
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let audio_cache = !config.shared_config.no_audio_cache;
 
+    let size_limit = config.shared_config.max_cache_size;
     let cache = config
         .shared_config
         .cache_path
         .map(PathBuf::from)
-        .map(|path| Cache::new(path, audio_cache));
+        // TODO: plumb size limits, check audio_cache?
+        // TODO: rather than silently disabling cache if constructor fails, maybe we should handle the error?
+        .and_then(|path| {
+            Cache::new(
+                Some(path.clone()),
+                if audio_cache { Some(path) } else { None },
+                size_limit,
+            )
+            .ok()
+        });
 
     let bitrate: LSBitrate = config
         .shared_config
@@ -598,14 +622,13 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let initial_volume: Option<u16> = config
         .shared_config
         .initial_volume
-        .map(|input| match input.parse::<i16>() {
+        .and_then(|input| match input.parse::<i16>() {
             Ok(v) if (0..=100).contains(&v) => Some(v),
             _ => {
                 warn!("Could not parse initial_volume (must be in the range 0-100)");
                 None
             }
         })
-        .flatten()
         .map(|volume| (volume as i32 * 0xFFFF / 100) as u16);
 
     let device_name = config
@@ -676,6 +699,21 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         },
         None => info!("No proxy specified"),
     }
+
+    // TODO: when we were on librespot 0.1.5, all PlayerConfig values were available in the
+    //  Spotifyd config. The upgrade to librespot 0.2.0 introduces new config variables, and we
+    //  should consider adding them to Spotifyd's config system.
+    let pc = PlayerConfig {
+        bitrate,
+        normalisation: config.shared_config.volume_normalisation,
+        normalisation_pregain,
+        // Sensible default; the "default" supplied by PlayerConfig::default() sets this to -1.0,
+        // which turns the output to garbage.
+        normalisation_threshold: 1.0,
+        gapless: true,
+        ..Default::default()
+    };
+
     SpotifydConfig {
         username,
         password,
@@ -689,14 +727,9 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         volume_controller,
         initial_volume,
         device_name,
-        player_config: PlayerConfig {
-            bitrate,
-            normalisation: config.shared_config.volume_normalisation,
-            normalisation_pregain,
-            gapless: true,
-        },
+        player_config: pc,
         session_config: SessionConfig {
-            user_agent: version::version_string(),
+            user_agent: version::VERSION_STRING.to_string(),
             device_id,
             proxy: proxy_url,
             ap_port: Some(443),
@@ -727,7 +760,7 @@ mod tests {
         };
 
         // The test only makes sense if both sections differ.
-        assert!(spotifyd_section != global_section, true);
+        assert_ne!(spotifyd_section, global_section);
 
         let file_config = FileConfig {
             global: Some(global_section),

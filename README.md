@@ -1,7 +1,9 @@
 # Spotifyd <!-- omit in toc -->
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-83-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Cargo Downloads](https://img.shields.io/crates/d/spotifyd)](https://crates.io/crates/spotifyd)
-[![Dependabot Status][dependabot-badge]](https://dependabot.com)
 [![Github Actions - CD][cd-badge]][github-actions]
 [![Github Actions - CI][ci-badge]][github-actions]
 
@@ -35,5 +37,4 @@ This project would not have been possible without the amazing reverse engineerin
 [good-first-issues]: https://github.com/Spotifyd/spotifyd/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
 [cd-badge]: https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Deployment/badge.svg
 [ci-badge]: https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Integration/badge.svg
-[dependabot-badge]: https://api.dependabot.com/badges/status?host=github&repo=Spotifyd/spotifyd
 [wiki]: https://spotifyd.github.io/spotifyd/

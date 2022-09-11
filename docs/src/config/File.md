@@ -29,18 +29,16 @@ password_cmd = "command_that_writes_password_to_stdout"
 # can't be used simultaneously.
 use_keyring = true
 
-#
 # If set to true, `spotifyd` tries to bind to the session dbus
 # and expose MPRIS controls. When running headless, without a dbus session,
 # then set this to false to avoid binding errors
-#
 use_mpris = true
 
-# The audio backend used to play the your music. To get
+# The audio backend used to play music. To get
 # a list of possible backends, run `spotifyd --help`.
-backend = "alsa"
+backend = "alsa" # use portaudio for macOS [homebrew]
 
-# The alsa audio device to stream audio to. To get a
+# The alsa audio device to stream audio. To get a
 # list of valid devices, run `aplay -L`,
 device = "alsa_audio_device"  # omit for macOS
 
@@ -49,7 +47,7 @@ device = "alsa_audio_device"  # omit for macOS
 control = "alsa_audio_device"  # omit for macOS
 
 # The alsa mixer used by `spotifyd`.
-mixer = "PCM"
+mixer = "PCM"  # omit for macOS
 
 # The volume controller. Each one behaves different to
 # volume increases. For possible values, run
@@ -74,6 +72,10 @@ bitrate = 160
 # shell placeholders like $HOME or ~ don't work!
 cache_path = "cache_directory"
 
+# The maximal size of the cache directory in bytes
+# The example value corresponds to ~ 1GB
+max_cache_size = 1000000000
+
 # If set to true, audio data does NOT get cached.
 no_audio_cache = true
 
@@ -87,6 +89,9 @@ volume_normalisation = true
 # The normalisation pregain that is applied for each song.
 normalisation_pregain = -10
 
+# After the music playback has ended, start playing similar songs based on the previous tracks.
+autoplay = true
+
 # The port `spotifyd` uses to announce its service over the network.
 zeroconf_port = 1234
 
@@ -94,12 +99,22 @@ zeroconf_port = 1234
 proxy = "http://proxy.example.org:8080"
 
 # The displayed device type in Spotify clients.
-# Can be unknown, computer, tablet, smartphone, speaker, tv,
-# avr (Audio/Video Receiver), stb (Set-Top Box), and audiodongle.
+# Can be unknown, computer, tablet, smartphone, speaker, t_v,
+# a_v_r (Audio/Video Receiver), s_t_b (Set-Top Box), and audio_dongle.
 device_type = "speaker"
 ```
 
 ## Alternatives to storing your password in the config file <!-- omit in toc -->
+
+- use zeroconf authentication from Spotify Connect
+
+  Spotifyd is able to advertise itself on the network without credentials. To enable this, you must omit / comment any `username` / `username_cmd` or `password` / `password_cmd` in the configuration. Spotifyd will receive an authentication blob from Spotify when you choose it from the devices list.
+
+  > __Note:__ If you choose to go with this, it is also recommended to omit the `cache_path` and `cache_directory` options. Otherwise the first user to connect to the service will have its authentication blob cached by the service and nobody else will be able to connect to the service without clearing the cache.
+
+  This way, a Spotifyd instance can also be made available to multiple users.
+
+  For more information, have a look at the [librespot documentation][librespot-docs].
 
 - **`password_cmd`** config entry
 
@@ -114,7 +129,7 @@ device_type = "speaker"
 
 - **`use_keyring`** config entry / **`--use-keyring`** CLI flag <!-- omit in toc -->
 
-  This features leverages [Linux's DBus Secret Service API][secret-storage-specification] or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, complile with the `dbus_keyring` feature and set the `use-keyring` config entry to `true` or pass the `--use-keyring` CLI flag  during start to the daemon. Remove the `password` and/or `password_cmd` config entries.
+  This features leverages [Linux's DBus Secret Service API][secret-storage-specification] or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, compile with the `dbus_keyring` feature and set the `use-keyring` config entry to `true` or pass the `--use-keyring` CLI flag  during start to the daemon. Remove the `password` and/or `password_cmd` config entries.
 
   Your keyring entry needs to have the following attributes set:
 
@@ -144,3 +159,4 @@ If either of these options is given, the shell `spotifyd` will use to run its co
 [playerctl-homepage]: https://github.com/altdesktop/playerctl
 [secret-storage-specification]: https://www.freedesktop.org/wiki/Specifications/secret-storage-spec/
 [sp-homepage]: https://gist.github.com/wandernauta/6800547
+[librespot-docs]: https://github.com/librespot-org/librespot/blob/master/docs/authentication.md#zeroconf-based-authentication
