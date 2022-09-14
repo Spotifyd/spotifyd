@@ -578,7 +578,7 @@ async fn create_dbus_server(
             .recv()
             .await
             .expect("Changed track channel was unexpectedly closed");
-        let mut seeked_position = None;
+        let mut seeked_position_ms = None;
 
         // Update playback state from event
         let (track_id, playback_status, player_volume) = match event {
@@ -590,7 +590,7 @@ async fn create_dbus_server(
                 position_ms,
                 ..
             } => {
-                seeked_position = Some(position_ms);
+                seeked_position_ms = Some(position_ms);
                 (Some(track_id), Some(PlaybackStatus::Playing), last_volume)
             }
             PlayerEvent::Stopped { .. } => {
@@ -677,13 +677,14 @@ async fn create_dbus_server(
         }
 
         // if position in track has changed emit a Seeked signal
-        if let Some(position) = seeked_position {
+        if let Some(position_ms) = seeked_position_ms {
             let msg = dbus::message::Message::signal(
                 &dbus::Path::new("/org/mpris/MediaPlayer2").unwrap(),
                 &dbus::strings::Interface::new("org.mpris.MediaPlayer2.Player").unwrap(),
                 &dbus::strings::Member::new("Seeked").unwrap(),
             )
-            .append1(position as i64);
+            // position should be in microseconds
+            .append1(position_ms as i64 * 1000);
             conn.send(msg).unwrap();
         }
     }
