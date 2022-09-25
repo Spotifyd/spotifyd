@@ -148,11 +148,16 @@ fn get_credentials(
     username: &Option<String>,
     password: &Option<String>,
 ) -> Option<Credentials> {
-    if let (Some(username), Some(password)) = (username, password) {
-        return Some(Credentials::with_password(username, password));
+    if let Some(credentials) = cache.as_ref().and_then(Cache::credentials) {
+        if username.as_ref() == Some(&credentials.username) {
+            return Some(credentials);
+        }
     }
 
-    cache.as_ref()?.credentials()
+    Some(Credentials::with_password(
+        username.as_ref()?,
+        password.as_ref()?,
+    ))
 }
 
 fn find_backend(name: Option<&str>) -> fn(Option<String>, AudioFormat) -> Box<dyn Sink> {
