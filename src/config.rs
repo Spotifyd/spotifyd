@@ -590,16 +590,11 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let cache = config
         .shared_config
         .cache_path
-        .map(PathBuf::from)
-        // TODO: plumb size limits, check audio_cache?
-        // TODO: rather than silently disabling cache if constructor fails, maybe we should handle the error?
-        .and_then(|path| {
-            Cache::new(
-                Some(path.clone()),
-                if audio_cache { Some(path) } else { None },
-                size_limit,
-            )
-            .ok()
+        .map(|path| Cache::new(Some(&path), audio_cache.then_some(&path), size_limit))
+        .transpose()
+        .unwrap_or_else(|e| {
+            warn!("Cache couldn't be initialized: {e}");
+            None
         });
 
     let bitrate: LSBitrate = config
