@@ -10,11 +10,11 @@ use librespot_core::{
 };
 use librespot_playback::config::{Bitrate as LSBitrate, PlayerConfig};
 use log::{error, info, warn};
-use reqwest::Url;
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
 use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
+use url::Url;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
