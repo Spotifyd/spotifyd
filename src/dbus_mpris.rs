@@ -168,6 +168,7 @@ async fn create_dbus_server(
         "org.mpris.MediaPlayer2.spotifyd.instance{}",
         std::process::id()
     );
+    
     // TODO: The first `true` allows us to replace orphaned dbus servers from previous sessions
     // later. We should instead properly release the name when the session ends.
     conn.request_name(path, true, true, true)
