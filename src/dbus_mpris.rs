@@ -164,9 +164,14 @@ async fn create_dbus_server(
         panic!("Lost connection to D-Bus: {}", err);
     });
 
+    let path = format!(
+        "org.mpris.MediaPlayer2.spotifyd.instance{}",
+        std::process::id()
+    );
+
     // TODO: The first `true` allows us to replace orphaned dbus servers from previous sessions
     // later. We should instead properly release the name when the session ends.
-    conn.request_name("org.mpris.MediaPlayer2.spotifyd", true, true, true)
+    conn.request_name(path, true, true, true)
         .await
         .expect("Failed to register dbus player name");
 
