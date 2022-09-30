@@ -474,15 +474,23 @@ username: &lt;your-spotify-username&gt;
 <p>If either of these options is given, the shell <code>spotifyd</code> will use to run its commands is the shell indicated by the <code>SHELL</code> environment variable, if set. If the <code>SHELL</code> environment variable is not set, <code>spotifyd</code> will use the user's default shell, which, on Linux and BSD, is the shell listed in <code>/etc/passwd</code>. On macOS it is the shell listed in the output of <code>dscl . -read /Users/&lt;username&gt; UserShell</code>.</p>
 <h1><a class="header" href="#running-as-a-service" id="running-as-a-service">Running as a Service</a></h1>
 <p>You can run Spotifyd as a service that automatically starts in the background.</p>
-<h1><a class="header" href="#running-spotifyd-as-a-service-using-systemd" id="running-spotifyd-as-a-service-using-systemd">Running spotifyd as a service using systemd</a></h1>
+<h1><a class="header" href="#running-spotifyd-as-a-systemd-service" id="running-spotifyd-as-a-systemd-service">Running spotifyd as a systemd service</a></h1>
+<h2><a class="header" href="#as-as-a-user-service" id="as-as-a-user-service">As as a user service</a></h2>
 <p>A <code>systemd.service</code> unit file is provided to help run spotifyd as a service on systemd-based systems. The file <code>contrib/spotifyd.service</code> should be copied to either:</p>
 <pre><code class="language-bash">/etc/systemd/user/
 ~/.config/systemd/user/
 </code></pre>
 <p>Packagers of systemd-based distributions are encouraged to include the file in the former location. End-user should prefer the latter. It should be noted that some targets are not available when running under the user directory, such as <code>network-online.target</code>.</p>
-<p>Control of the daemon is handed over to systemd. The following example commands will run the service once and enable the service to always run on login in the future respectively:</p>
-<pre><code class="language-bash">systemctl --user start spotifyd.service
-systemctl --user enable spotifyd.service
+<p>Control of the daemon is handed over to systemd. The following command will start the service whenever the user logs in to the system. Logging out will stop the service.</p>
+<pre><code class="language-bash">systemctl --user enable spotifyd.service --now
+</code></pre>
+<h2><a class="header" href="#as-a-system-wide-service" id="as-a-system-wide-service">As a system wide service</a></h2>
+<p>A <code>systemd.service</code> unit file is provided to help run spotifyd as a service on systemd-based systems. The file <code>contrib/spotifyd.service</code> should be copied to:</p>
+<pre><code class="language-bash">/etc/systemd/system/
+</code></pre>
+<p>Control of the daemon is handed over to systemd. The following example commands will start the service and keep it running across reboots.</p>
+<pre><code class="language-bash">systemctl daemon-reload
+systemctl enable spotifyd.service --now
 </code></pre>
 <h1><a class="header" href="#running-spotifyd-as-a-service-on-macos" id="running-spotifyd-as-a-service-on-macos">Running spotifyd as a service on macOS</a></h1>
 <p>On macOS the system wide and per-user daemon/agent manager is known as <code>launchd</code>. Interfacing with <code>launchd</code> is performed through <code>launchctl</code>.</p>
