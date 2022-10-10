@@ -257,8 +257,14 @@ systemctl --user enable spotifyd.service
 <p>The first command is required to enable your user to run long-running services. Without it <code>systemd</code> would kill the <code>spotifyd</code> process as soon as you log out, and only run it when you log in.
 Now <code>spotifyd</code> is always running on the Pi, so you can use it as a listening device remotely!</p>
 <h1><a class="header" href="#ubuntu-install-guide" id="ubuntu-install-guide">Ubuntu install guide</a></h1>
+<h2><a class="header" href="#install-the-rust-toolchain" id="install-the-rust-toolchain">Install the rust toolchain</a></h2>
+<p>To install the latest rust toolchain, follow the installation instructions on <a href="https://rustup.rs/">rustup.rs</a>.</p>
+<blockquote>
+<p><strong>Note:</strong> If you installed rust before via apt, you need to remove it before installing rustup.
+We recommend to always use the latest version and don't guarantee compatibility with older ones.</p>
+</blockquote>
 <h2><a class="header" href="#install-the-requirements" id="install-the-requirements">Install the requirements</a></h2>
-<pre><code class="language-bash">sudo apt install rustc cargo libasound2-dev libssl-dev pkg-config
+<pre><code class="language-bash">sudo apt install libasound2-dev libssl-dev pkg-config
 </code></pre>
 <h2><a class="header" href="#clone-the-repository" id="clone-the-repository">Clone the repository</a></h2>
 <pre><code class="language-bash">git clone https://github.com/Spotifyd/spotifyd.git
