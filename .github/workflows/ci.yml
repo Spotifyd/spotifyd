@@ -56,7 +56,8 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest]
-        toolchain: "1.62"
+        toolchain:
+          - "1.62"
         include:
           - os: macos-latest
             features: portaudio_backend,rodio_backend,dbus_keyring
