@@ -6,6 +6,7 @@ description = "A Spotify daemon"
 repository = "https://github.com/Spotifyd/spotifyd"
 license = "GPL-3.0-only"
 version = "0.3.3"
+rust-version = "1.62"
 
 [dependencies]
 alsa = { version = "0.5", optional = true }
