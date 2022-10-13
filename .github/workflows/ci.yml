@@ -14,7 +14,9 @@ jobs:
       - name: Installing Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain:
+            - "1.62"
+            - stable
           override: true
       - name: Checking out sources
         uses: actions/checkout@v1
@@ -33,7 +35,9 @@ jobs:
       - name: Installing Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain:
+            - "1.62"
+            - stable
           override: true
       - name: Installing needed Ubuntu dependencies
         run: |
@@ -66,7 +70,9 @@ jobs:
       - name: Installing Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain:
+            - "1.62"
+            - stable
           override: true
       - name: Installing macOS dependencies
         if: matrix.os == 'macos-latest'
