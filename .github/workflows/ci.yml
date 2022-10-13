@@ -35,9 +35,7 @@ jobs:
       - name: Installing Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain:
-            - "1.62"
-            - stable
+          toolchain: stable
           override: true
       - name: Installing needed Ubuntu dependencies
         run: |
