@@ -57,7 +57,7 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest]
         toolchain:
-          - "1.61"
+          - "1.62"
           - stable
         include:
           - os: macos-latest
