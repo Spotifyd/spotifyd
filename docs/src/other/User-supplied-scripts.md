@@ -64,3 +64,28 @@ This script is a modification of the script supplied above, however instead of c
 * Download this [gist](https://gist.github.com/ohhskar/efe71e82337ed54b9aa704d3df28d2ae)
 * Make the script executable (```chmod +x notifications.sh```)
 * Add the line ```onevent = "/path/to/file/spotifyNotifications.sh"``` to your ```spotifyd.conf```
+
+## Python-based playback status
+
+This script can be used to fetch the current playback metadata, to use in
+scripts similar to the above. It accesses the D-Bus API directly, bypassing
+the slow `playerctl` command.
+
+* Dependencies: python3, pydbus
+
+### Script
+
+```python
+#!/usr/bin/env python3
+import pydbus
+
+bus = pydbus.SessionBus()
+spotifyd = bus.get('org.mpris.MediaPlayer2.spotifyd', '/org/mpris/MediaPlayer2')
+metadata = spotifyd.Metadata
+
+print('{artist} - {title}  ({album})'.format(
+    artist = ", ".join(metadata['xesam:artist']),
+    album = metadata['xesam:album'],
+    title = metadata['xesam:title'],
+))
+```
