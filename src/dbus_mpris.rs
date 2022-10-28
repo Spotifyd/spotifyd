@@ -776,7 +776,7 @@ fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, item: Play
         Variant(Box::new(
             item.images
                 .into_iter()
-                .next()
+                .max_by_key(|i| i.width.ok_or(0))
                 .map(|i| i.url)
                 .unwrap_or_default(),
         )),
