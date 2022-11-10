@@ -78,6 +78,8 @@ flags that are set by default in `Cargo.toml`.
 
 `Spotifyd` is split into a base package plus additional features that can be toggled on or off during compilation. Those can be split into two groups: The audio backend features that are responsible for playing back the music and additional functionality features, which enhance your experience using `spotifyd`.
 
+> __Note:__ Selected feature flags are not saved between `build` and `install` commands. To build and install with a particular set of feature flags, pass the same set of flags to both commands.
+
 To enable an additional audio backend, pass `<audio_backend_name>_backend` as a feature flag. We currently support `alsa`, `pulseaudio` and `portaudio`.
 
 `Spotifyd` provides the following additional functionality:
