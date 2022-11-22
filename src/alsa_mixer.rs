@@ -12,7 +12,7 @@ impl AlsaMixer {
     fn set_volume_with_err(&self, volume: u16) -> Result<(), Box<dyn Error>> {
         let mixer = alsa::mixer::Mixer::new(&self.device, false)?;
 
-        let selem_id = alsa::mixer::SelemId::new(&*self.mixer, 0);
+        let selem_id = alsa::mixer::SelemId::new(&self.mixer, 0);
         let elem = mixer.find_selem(&selem_id).ok_or_else(|| {
             format!(
                 "Couldn't find selem with name '{}'.",
@@ -48,7 +48,7 @@ impl Mixer for AlsaMixer {
     fn stop(&self) {}
 
     fn volume(&self) -> u16 {
-        let selem_id = alsa::mixer::SelemId::new(&*self.mixer, 0);
+        let selem_id = alsa::mixer::SelemId::new(&self.mixer, 0);
         match alsa::mixer::Mixer::new(&self.device, false)
             .ok()
             .as_ref()

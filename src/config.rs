@@ -595,7 +595,7 @@ pub(crate) fn get_config_file() -> Option<PathBuf> {
 }
 
 fn device_id(name: &str) -> String {
-    hex::encode(&Sha1::digest(name.as_bytes()))
+    hex::encode(Sha1::digest(name.as_bytes()))
 }
 
 pub(crate) struct SpotifydConfig {
