@@ -5,7 +5,7 @@ name = "spotifyd"
 description = "A Spotify daemon"
 repository = "https://github.com/Spotifyd/spotifyd"
 license = "GPL-3.0-only"
-version = "0.3.3"
+version = "0.3.4"
 rust-version = "1.62"
 
 [dependencies]
