@@ -4,10 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.4]
 ### Added 
 - Implement the `PropertiesChanged` and `Seeked` events for the MPRIS-interface ([#1025])
 - Add `cache_size` configuration option ([#1092])
+- Added formal documentation of the minimum required Rust version - which is currently 1.62 ([#1127])
 ### Changed
 - Improvements to the documentation ([#955], [#1030], [#1039], [#1054], [#1055], [#1067])
 - Fix cumulating delay in `on_song_change_hook` ([#1059])
