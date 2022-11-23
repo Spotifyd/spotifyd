@@ -55,6 +55,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        rust: [stable, 1.62.0]
         os: [macos-latest, ubuntu-latest]
         include:
           - os: macos-latest
@@ -66,7 +67,7 @@ jobs:
       - name: Installing Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
           override: true
       - name: Installing macOS dependencies
         if: matrix.os == 'macos-latest'
