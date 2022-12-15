@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added 
 - Implement the `PropertiesChanged` and `Seeked` events for the MPRIS-interface ([#1025])
 - Add `cache_size` configuration option ([#1092])
+- Add `dbus_type` configuration option ([#954])
 - Added formal documentation of the minimum required Rust version - which is currently 1.62 ([#1127])
 ### Changed
-- Improvements to the documentation ([#955], [#1030], [#1039], [#1054], [#1055], [#1067])
+- Improvements to the documentation ([#894], [#955], [#1030], [#1039], [#1054], [#1055], [#1067])
 - Fix cumulating delay in `on_song_change_hook` ([#1059])
 - Only enable one of zeroconf discovery and password-authentication at the same time ([#1059])
 - Convert mainloop to using `async` / `await` ([#1059])
@@ -19,9 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make `spotifyd` bus name unique ([#1100])  
   **Note:** If you were relying on the consistent bus name of `org.mpris.MediaPlayer2.spotifyd`,
   you can adapt your script e.g. by querying the name like `qdbus | grep "org.mpris.MediaPlayer2.spotifyd"`
+- Fix wrong handling of credential cache ([#1121])
 ### Removed
 - Replace redundant `reqwest` dependency ([#1120])
 
+[#894]: https://github.com/Spotifyd/spotifyd/pull/894
+[#954]: https://github.com/Spotifyd/spotifyd/pull/954
 [#955]: https://github.com/Spotifyd/spotifyd/pull/955
 [#1025]: https://github.com/Spotifyd/spotifyd/pull/1025
 [#1030]: https://github.com/Spotifyd/spotifyd/pull/1030
@@ -35,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#1100]: https://github.com/Spotifyd/spotifyd/pull/1100
 [#1108]: https://github.com/Spotifyd/spotifyd/pull/1108
 [#1120]: https://github.com/Spotifyd/spotifyd/pull/1120
+[#1121]: https://github.com/Spotifyd/spotifyd/pull/1120
 
 ## [0.3.3]
 ### Added 
@@ -77,7 +82,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.24]
 
-[Unreleased]: https://github.com/Spotifyd/spotifyd/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/Spotifyd/spotifyd/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.3.4
 [0.3.3]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.3.3
 [0.3.1]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.3.0
