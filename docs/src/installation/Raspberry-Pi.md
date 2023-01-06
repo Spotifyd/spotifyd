@@ -4,7 +4,7 @@ This guide will help you to install `spotifyd` on a Raspberry Pi and have it alw
 
 ## Download
 
-1. Download the latest ARMv6 from https://github.com/Spotifyd/spotifyd/releases (use `wget`)
+1. Download the latest ARMv6 from <https://github.com/Spotifyd/spotifyd/releases> (use `wget`)
 2. Unzip the file: `tar xzf spotifyd-linux-arm6*`
 You will now see a file called `spotifyd`. You can run it with `./spotifyd --no-daemon`
 
