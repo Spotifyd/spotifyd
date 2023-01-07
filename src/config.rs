@@ -39,6 +39,12 @@ pub enum Backend {
     Rodio,
 }
 
+const DEFAULT_BACKEND: Backend = if cfg!(target_os = "macos") {
+    Backend::PortAudio
+} else {
+    Backend::Alsa
+};
+
 impl FromStr for Backend {
     type Err = ParseError;
 
@@ -649,7 +655,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let backend = config
         .shared_config
         .backend
-        .unwrap_or(Backend::Alsa)
+        .unwrap_or(DEFAULT_BACKEND)
         .to_string();
 
     let volume_controller = config
@@ -811,5 +817,13 @@ mod tests {
         // Add the new field to spotifyd section.
         spotifyd_section.username = Some("testUserName".to_string());
         assert_eq!(merged_config, spotifyd_section);
+    }
+    #[test]
+    fn default_backend_by_os() {
+        let spotifyd_config = get_internal_config(CliConfig::default());
+        assert_eq!(
+            spotifyd_config.backend.unwrap(),
+            DEFAULT_BACKEND.to_string()
+        );
     }
 }
