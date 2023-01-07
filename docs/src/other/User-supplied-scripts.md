@@ -44,7 +44,7 @@ This script will show a dunst notification when you play/change/stop Spotify (an
             echo "Cannot get token."
         fi
     else
-        echo "Unkown event."
+        echo "Unknown event."
     fi
     ```
 
