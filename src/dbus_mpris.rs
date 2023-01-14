@@ -21,7 +21,7 @@ use librespot_core::{
     spotify_id::SpotifyAudioType,
 };
 use librespot_playback::player::PlayerEvent;
-use log::{error, info};
+use log::{error, info, warn};
 use rspotify::{
     model::{
         offset::Offset, AlbumId, ArtistId, EpisodeId, IdError, PlayableItem, PlaylistId,
@@ -413,15 +413,7 @@ async fn create_dbus_server(
 
             let uri = Uri::from_id(id_type, id).map_err(|_| MethodErr::invalid_arg(&uri))?;
 
-            let device_id = sp_client.device().ok().and_then(|devices| {
-                devices.into_iter().find_map(|d| {
-                    if d.is_active && d.name == mv_device_name {
-                        Some(d.id)
-                    } else {
-                        None
-                    }
-                })
-            });
+            let device_id = get_device_id(&sp_client, &mv_device_name, true);
 
             if let Some(device_id) = device_id {
                 match uri {
@@ -444,6 +436,24 @@ async fn create_dbus_server(
                 }
             }
             Ok(())
+        });
+
+        let mv_device_name = device_name.clone();
+        let sp_client = Arc::clone(&spotify_api_client);
+        b.method("TransferPlayback", (), ("status", ), move |_, _, (): ()| {
+            let device_id = get_device_id(&sp_client, &mv_device_name, false).flatten();
+            let status = if let Some(device_id) = device_id {
+                info!("Transferring playback to device {}", device_id);
+                match sp_client.transfer_playback(&device_id, Some(true)) {
+                    Ok(_) => "Playback transferred".to_string(),
+                    Err(err) => format!("Error {}", err)
+                }
+            } else {
+                let msg = format!("Could not find device with name {}", mv_device_name);
+                warn!("{}", msg);
+                msg
+            };
+            Ok((status, ))
         });
 
         let mv_device_name = device_name.clone();
@@ -696,6 +706,24 @@ async fn create_dbus_server(
             conn.send(msg).unwrap();
         }
     }
+}
+
+fn get_device_id(sp_client: &Arc<AuthCodeSpotify>, device_name: &String, only_active: bool) -> Option<Option<String>> {
+    let device_result = sp_client.device();
+    return match device_result {
+        Ok(devices) => devices.into_iter().find_map(|d| {
+            if d.name.eq(device_name) && (d.is_active || !only_active)  {
+                info!("Found device: {}, active: {}", d.name, d.is_active);
+                Some(d.id)
+            } else {
+                None
+            }
+        }),
+        Err(err) => {
+            error!("Get devices error: {}", err);
+            None
+        }
+    };
 }
 
 fn uri_to_object_path(uri: String) -> dbus::Path<'static> {
