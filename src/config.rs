@@ -653,7 +653,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let backend = config
         .shared_config
         .backend
-        .unwrap_or(default_backend())
+        .unwrap_or_else(default_backend)
         .to_string();
 
     let volume_controller = config
