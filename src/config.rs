@@ -18,6 +18,13 @@ use url::Url;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
+#[cfg(not(any(
+    feature = "pulseaudio_backend",
+    feature = "portaudio_backend",
+    feature = "alsa_backend",
+    feature = "rodio_backend"
+)))]
+compile_error!("At least one of the backend features is required!");
 static BACKEND_VALUES: &[&str] = &[
     #[cfg(feature = "alsa_backend")]
     "alsa",
@@ -40,7 +47,7 @@ pub enum Backend {
 }
 
 fn default_backend() -> Backend {
-    return Backend::from_str(BACKEND_VALUES.first().unwrap()).unwrap_or(Backend::Alsa);
+    return Backend::from_str(BACKEND_VALUES.first().unwrap()).unwrap();
 }
 
 impl FromStr for Backend {
