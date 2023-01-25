@@ -234,12 +234,12 @@ async fn create_dbus_server(
         b.method("VolumeUp", (), (), move |_, _, (): ()| {
             local_spirc.volume_up();
             Ok(())
-        });
+        }).deprecated();
         let local_spirc = spirc.clone();
         b.method("VolumeDown", (), (), move |_, _, (): ()| {
             local_spirc.volume_down();
             Ok(())
-        });
+        }).deprecated();
         let local_spirc = spirc.clone();
         b.method("Next", (), (), move |_, _, (): ()| {
             local_spirc.next();
