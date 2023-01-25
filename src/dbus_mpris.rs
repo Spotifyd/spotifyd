@@ -440,24 +440,6 @@ async fn create_dbus_server(
 
         let mv_device_name = device_name.clone();
         let sp_client = Arc::clone(&spotify_api_client);
-        b.method("TransferPlayback", (), ("status", ), move |_, _, (): ()| {
-            let device_id = get_device_id(&sp_client, &mv_device_name, false).flatten();
-            let status = if let Some(device_id) = device_id {
-                info!("Transferring playback to device {}", device_id);
-                match sp_client.transfer_playback(&device_id, Some(true)) {
-                    Ok(_) => "Playback transferred".to_string(),
-                    Err(err) => format!("Error {}", err)
-                }
-            } else {
-                let msg = format!("Could not find device with name {}", mv_device_name);
-                warn!("{}", msg);
-                msg
-            };
-            Ok((status, ))
-        });
-
-        let mv_device_name = device_name.clone();
-        let sp_client = Arc::clone(&spotify_api_client);
         b.property("PlaybackStatus")
             .emits_changed_false()
             .get(move |_, _| {
@@ -572,9 +554,46 @@ async fn create_dbus_server(
         }
     });
 
+    let spotifyd_ctrls_interface: IfaceToken<()> = cr.register("io.github.spotifyd.Controls", |b| {
+        let local_spirc = spirc.clone();
+        b.method("VolumeUp", (), (), move |_, _, (): ()| {
+            local_spirc.volume_up();
+            Ok(())
+        });
+        let local_spirc = spirc.clone();
+        b.method("VolumeDown", (), (), move |_, _, (): ()| {
+            local_spirc.volume_down();
+            Ok(())
+        });
+
+        let mv_device_name = device_name.clone();
+        let sp_client = Arc::clone(&spotify_api_client);
+        b.method("TransferPlayback", (), ("status", ), move |_, _, (): ()| {
+            let device_id = get_device_id(&sp_client, &mv_device_name, false).flatten();
+            let status = if let Some(device_id) = device_id {
+                info!("Transferring playback to device {}", device_id);
+                match sp_client.transfer_playback(&device_id, Some(true)) {
+                    Ok(_) => "Playback transferred".to_string(),
+                    Err(err) => format!("Error {}", err)
+                }
+            } else {
+                let msg = format!("Could not find device with name {}", mv_device_name);
+                warn!("{}", msg);
+                msg
+            };
+            Ok((status, ))
+        });
+    });
+
     cr.insert(
         "/org/mpris/MediaPlayer2",
         &[media_player2_interface, player_interface],
+        (),
+    );
+
+    cr.insert(
+        "/io/github/spotifyd/Controls",
+        &[spotifyd_ctrls_interface],
         (),
     );
 
