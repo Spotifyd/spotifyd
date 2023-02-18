@@ -420,7 +420,7 @@ async fn create_dbus_server(
                     Uri::Playable(id) => {
                         let _ = sp_client.start_uris_playback(
                             Some(id.as_ref()),
-                            device_id.as_deref(),
+                            Some(&device_id),
                             Some(Offset::for_position(0)),
                             None,
                         );
@@ -428,7 +428,7 @@ async fn create_dbus_server(
                     Uri::Context(id) => {
                         let _ = sp_client.start_context_playback(
                             &id,
-                            device_id.as_deref(),
+                            Some(&device_id),
                             Some(Offset::for_position(0)),
                             None,
                         );
@@ -569,7 +569,7 @@ async fn create_dbus_server(
         let mv_device_name = device_name.clone();
         let sp_client = Arc::clone(&spotify_api_client);
         b.method("TransferPlayback", (), (), move |_, _, (): ()| {
-            let device_id = get_device_id(&sp_client, &mv_device_name, false).flatten();
+            let device_id = get_device_id(&sp_client, &mv_device_name, false);
             if let Some(device_id) = device_id {
                 info!("Transferring playback to device {}", device_id);
                 match sp_client.transfer_playback(&device_id, Some(true)) {
@@ -730,9 +730,9 @@ async fn create_dbus_server(
     }
 }
 
-fn get_device_id(sp_client: &Arc<AuthCodeSpotify>, device_name: &String, only_active: bool) -> Option<Option<String>> {
+fn get_device_id(sp_client: &Arc<AuthCodeSpotify>, device_name: &String, only_active: bool) -> Option<String> {
     let device_result = sp_client.device();
-    return match device_result {
+    match device_result {
         Ok(devices) => devices.into_iter().find_map(|d| {
             if d.name.eq(device_name) && (d.is_active || !only_active)  {
                 info!("Found device: {}, active: {}", d.name, d.is_active);
@@ -740,12 +740,18 @@ fn get_device_id(sp_client: &Arc<AuthCodeSpotify>, device_name: &String, only_ac
             } else {
                 None
             }
-        }),
+        }).flatten(),
         Err(err) => {
+            let expires_at = sp_client.get_token()
+                .lock()
+                .ok()
+                .unwrap().as_ref().unwrap().expires_at.unwrap();
+            info!("Token expires at: {}", expires_at);
+
             error!("Get devices error: {}", err);
             None
         }
-    };
+    }
 }
 
 fn uri_to_object_path(uri: String) -> dbus::Path<'static> {
