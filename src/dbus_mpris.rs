@@ -568,20 +568,23 @@ async fn create_dbus_server(
 
         let mv_device_name = device_name.clone();
         let sp_client = Arc::clone(&spotify_api_client);
-        b.method("TransferPlayback", (), ("status", ), move |_, _, (): ()| {
+        b.method("TransferPlayback", (), (), move |_, _, (): ()| {
             let device_id = get_device_id(&sp_client, &mv_device_name, false).flatten();
-            let status = if let Some(device_id) = device_id {
+            if let Some(device_id) = device_id {
                 info!("Transferring playback to device {}", device_id);
                 match sp_client.transfer_playback(&device_id, Some(true)) {
-                    Ok(_) => "Playback transferred".to_string(),
-                    Err(err) => format!("Error {}", err)
+                    Ok(_) =>Ok(()),
+                    Err(err) => {
+                        let e = format!("RSpotify error: {}", err);
+                        error!("{}", e);
+                        Err(MethodErr::failed(&e))
+                    },
                 }
             } else {
                 let msg = format!("Could not find device with name {}", mv_device_name);
                 warn!("{}", msg);
-                msg
-            };
-            Ok((status, ))
+                Err(MethodErr::failed(&msg))
+            }
         });
     });
 
