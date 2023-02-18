@@ -742,12 +742,6 @@ fn get_device_id(sp_client: &Arc<AuthCodeSpotify>, device_name: &String, only_ac
             }
         }).flatten(),
         Err(err) => {
-            let expires_at = sp_client.get_token()
-                .lock()
-                .ok()
-                .unwrap().as_ref().unwrap().expires_at.unwrap();
-            info!("Token expires at: {}", expires_at);
-
             error!("Get devices error: {}", err);
             None
         }
