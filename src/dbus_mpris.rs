@@ -575,14 +575,14 @@ async fn create_dbus_server(
                 match sp_client.transfer_playback(&device_id, Some(true)) {
                     Ok(_) =>Ok(()),
                     Err(err) => {
-                        let e = format!("RSpotify error: {}", err);
+                        let e = format!("TransferPlayback failed: {}", err);
                         error!("{}", e);
                         Err(MethodErr::failed(&e))
                     },
                 }
             } else {
                 let msg = format!("Could not find device with name {}", mv_device_name);
-                warn!("{}", msg);
+                warn!("TransferPlayback: {}", msg);
                 Err(MethodErr::failed(&msg))
             }
         });
@@ -736,11 +736,11 @@ fn get_device_id(sp_client: &Arc<AuthCodeSpotify>, device_name: &String, only_ac
         Ok(devices) => devices.into_iter().find_map(|d| {
             if d.name.eq(device_name) && (d.is_active || !only_active)  {
                 info!("Found device: {}, active: {}", d.name, d.is_active);
-                Some(d.id)
+                d.id
             } else {
                 None
             }
-        }).flatten(),
+        }),
         Err(err) => {
             error!("Get devices error: {}", err);
             None
