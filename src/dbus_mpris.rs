@@ -234,12 +234,14 @@ async fn create_dbus_server(
         b.method("VolumeUp", (), (), move |_, _, (): ()| {
             local_spirc.volume_up();
             Ok(())
-        }).deprecated();
+        })
+        .deprecated();
         let local_spirc = spirc.clone();
         b.method("VolumeDown", (), (), move |_, _, (): ()| {
             local_spirc.volume_down();
             Ok(())
-        }).deprecated();
+        })
+        .deprecated();
         let local_spirc = spirc.clone();
         b.method("Next", (), (), move |_, _, (): ()| {
             local_spirc.next();
@@ -554,39 +556,40 @@ async fn create_dbus_server(
         }
     });
 
-    let spotifyd_ctrls_interface: IfaceToken<()> = cr.register("io.github.spotifyd.Controls", |b| {
-        let local_spirc = spirc.clone();
-        b.method("VolumeUp", (), (), move |_, _, (): ()| {
-            local_spirc.volume_up();
-            Ok(())
-        });
-        let local_spirc = spirc.clone();
-        b.method("VolumeDown", (), (), move |_, _, (): ()| {
-            local_spirc.volume_down();
-            Ok(())
-        });
+    let spotifyd_ctrls_interface: IfaceToken<()> =
+        cr.register("io.github.spotifyd.Controls", |b| {
+            let local_spirc = spirc.clone();
+            b.method("VolumeUp", (), (), move |_, _, (): ()| {
+                local_spirc.volume_up();
+                Ok(())
+            });
+            let local_spirc = spirc.clone();
+            b.method("VolumeDown", (), (), move |_, _, (): ()| {
+                local_spirc.volume_down();
+                Ok(())
+            });
 
-        let mv_device_name = device_name.clone();
-        let sp_client = Arc::clone(&spotify_api_client);
-        b.method("TransferPlayback", (), (), move |_, _, (): ()| {
-            let device_id = get_device_id(&sp_client, &mv_device_name, false);
-            if let Some(device_id) = device_id {
-                info!("Transferring playback to device {}", device_id);
-                match sp_client.transfer_playback(&device_id, Some(true)) {
-                    Ok(_) =>Ok(()),
-                    Err(err) => {
-                        let e = format!("TransferPlayback failed: {}", err);
-                        error!("{}", e);
-                        Err(MethodErr::failed(&e))
-                    },
+            let mv_device_name = device_name.clone();
+            let sp_client = Arc::clone(&spotify_api_client);
+            b.method("TransferPlayback", (), (), move |_, _, (): ()| {
+                let device_id = get_device_id(&sp_client, &mv_device_name, false);
+                if let Some(device_id) = device_id {
+                    info!("Transferring playback to device {}", device_id);
+                    match sp_client.transfer_playback(&device_id, Some(true)) {
+                        Ok(_) => Ok(()),
+                        Err(err) => {
+                            let e = format!("TransferPlayback failed: {}", err);
+                            error!("{}", e);
+                            Err(MethodErr::failed(&e))
+                        }
+                    }
+                } else {
+                    let msg = format!("Could not find device with name {}", mv_device_name);
+                    warn!("TransferPlayback: {}", msg);
+                    Err(MethodErr::failed(&msg))
                 }
-            } else {
-                let msg = format!("Could not find device with name {}", mv_device_name);
-                warn!("TransferPlayback: {}", msg);
-                Err(MethodErr::failed(&msg))
-            }
+            });
         });
-    });
 
     cr.insert(
         "/org/mpris/MediaPlayer2",
@@ -730,11 +733,15 @@ async fn create_dbus_server(
     }
 }
 
-fn get_device_id(sp_client: &Arc<AuthCodeSpotify>, device_name: &String, only_active: bool) -> Option<String> {
+fn get_device_id(
+    sp_client: &Arc<AuthCodeSpotify>,
+    device_name: &String,
+    only_active: bool,
+) -> Option<String> {
     let device_result = sp_client.device();
     match device_result {
         Ok(devices) => devices.into_iter().find_map(|d| {
-            if d.name.eq(device_name) && (d.is_active || !only_active)  {
+            if d.name.eq(device_name) && (d.is_active || !only_active) {
                 info!("Found device: {}, active: {}", d.name, d.is_active);
                 d.id
             } else {
