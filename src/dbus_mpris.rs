@@ -457,7 +457,9 @@ async fn create_dbus_server(
                 Ok("Stopped".to_string())
             });
 
+        let mv_device_name = device_name.clone();
         let sp_client = Arc::clone(&spotify_api_client);
+        let sp_client2 = Arc::clone(&spotify_api_client);
         b.property("Shuffle")
             .emits_changed_false()
             .get(move |_, _| {
@@ -467,6 +469,23 @@ async fn create_dbus_server(
                     .flatten()
                     .map_or(false, |p| p.shuffle_state);
                 Ok(shuffle_status)
+            })
+            .set(move |_, _, value| {
+                let device_id = get_device_id(&sp_client2, &mv_device_name, true);
+                if let Some(device_id) = device_id {
+                    match sp_client2.shuffle(value, Some(&device_id)) {
+                        Ok(_) => Ok(None),
+                        Err(err) => {
+                            let e = format!("SetShuffle failed: {}", err);
+                            error!("{}", e);
+                            Err(MethodErr::failed(&e))
+                        }
+                    }
+                } else {
+                    let msg = format!("Could not find device with name {}", mv_device_name);
+                    warn!("SetShuffle: {}", msg);
+                    Err(MethodErr::failed(&msg))
+                }
             });
 
         b.property("Rate").emits_changed_const().get(|_, _| Ok(1.0));
@@ -735,7 +754,7 @@ async fn create_dbus_server(
 
 fn get_device_id(
     sp_client: &Arc<AuthCodeSpotify>,
-    device_name: &String,
+    device_name: &str,
     only_active: bool,
 ) -> Option<String> {
     let device_result = sp_client.device();
@@ -749,6 +768,17 @@ fn get_device_id(
             }
         }),
         Err(err) => {
+            let expires_at = sp_client
+                .get_token()
+                .lock()
+                .ok()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .expires_at
+                .unwrap();
+            info!("Token expires at: {}", expires_at);
+
             error!("Get devices error: {}", err);
             None
         }
