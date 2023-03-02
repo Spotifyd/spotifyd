@@ -9,6 +9,8 @@
 
 > An open source Spotify client running as a UNIX daemon.
 
+https://spotifyd.rs
+
 Spotifyd streams music just like the official client, but is more lightweight and supports more platforms. Spotifyd also supports the Spotify Connect protocol, which makes it show up as a device that can be controlled from the official clients.
 
 > __Note:__ Spotifyd requires a Spotify Premium account.
