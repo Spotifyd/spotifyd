@@ -734,14 +734,14 @@ async fn create_dbus_server(
 }
 
 fn get_device_id(
-    sp_client: &Arc<AuthCodeSpotify>,
+    sp_client: &AuthCodeSpotify,
     device_name: &str,
     only_active: bool,
 ) -> Option<String> {
     let device_result = sp_client.device();
     match device_result {
         Ok(devices) => devices.into_iter().find_map(|d| {
-            if d.name.eq(device_name) && (d.is_active || !only_active) {
+            if d.name == device_name && (d.is_active || !only_active) {
                 info!("Found device: {}, active: {}", d.name, d.is_active);
                 d.id
             } else {
