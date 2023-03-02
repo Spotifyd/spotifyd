@@ -25,8 +25,7 @@ password_cmd = "command_that_writes_password_to_stdout"
 # If set to true, `spotifyd` tries to look up your
 # password in the system's password storage.
 #
-# This is an alternative to the `password` field. Both
-# can't be used simultaneously.
+# Note, that the `password` field will take precedence, if set.
 use_keyring = true
 
 # If set to true, `spotifyd` tries to bind to dbus (default is the session bus)
