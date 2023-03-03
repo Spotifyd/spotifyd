@@ -33,3 +33,4 @@ tags
 *.rustfmt
 
 .idea
+.vscode
