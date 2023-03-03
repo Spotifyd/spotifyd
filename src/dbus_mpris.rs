@@ -21,7 +21,7 @@ use librespot_core::{
     spotify_id::SpotifyAudioType,
 };
 use librespot_playback::player::PlayerEvent;
-use log::{error, info};
+use log::{error, info, warn};
 use rspotify::{
     model::{
         offset::Offset, AlbumId, ArtistId, EpisodeId, IdError, PlayableItem, PlaylistId,
@@ -234,12 +234,14 @@ async fn create_dbus_server(
         b.method("VolumeUp", (), (), move |_, _, (): ()| {
             local_spirc.volume_up();
             Ok(())
-        });
+        })
+        .deprecated();
         let local_spirc = spirc.clone();
         b.method("VolumeDown", (), (), move |_, _, (): ()| {
             local_spirc.volume_down();
             Ok(())
-        });
+        })
+        .deprecated();
         let local_spirc = spirc.clone();
         b.method("Next", (), (), move |_, _, (): ()| {
             local_spirc.next();
@@ -413,22 +415,14 @@ async fn create_dbus_server(
 
             let uri = Uri::from_id(id_type, id).map_err(|_| MethodErr::invalid_arg(&uri))?;
 
-            let device_id = sp_client.device().ok().and_then(|devices| {
-                devices.into_iter().find_map(|d| {
-                    if d.is_active && d.name == mv_device_name {
-                        Some(d.id)
-                    } else {
-                        None
-                    }
-                })
-            });
+            let device_id = get_device_id(&sp_client, &mv_device_name, true);
 
             if let Some(device_id) = device_id {
                 match uri {
                     Uri::Playable(id) => {
                         let _ = sp_client.start_uris_playback(
                             Some(id.as_ref()),
-                            device_id.as_deref(),
+                            Some(&device_id),
                             Some(Offset::for_position(0)),
                             None,
                         );
@@ -436,7 +430,7 @@ async fn create_dbus_server(
                     Uri::Context(id) => {
                         let _ = sp_client.start_context_playback(
                             &id,
-                            device_id.as_deref(),
+                            Some(&device_id),
                             Some(Offset::for_position(0)),
                             None,
                         );
@@ -562,9 +556,50 @@ async fn create_dbus_server(
         }
     });
 
+    let spotifyd_ctrls_interface: IfaceToken<()> =
+        cr.register("io.github.spotifyd.Controls", |b| {
+            let local_spirc = spirc.clone();
+            b.method("VolumeUp", (), (), move |_, _, (): ()| {
+                local_spirc.volume_up();
+                Ok(())
+            });
+            let local_spirc = spirc.clone();
+            b.method("VolumeDown", (), (), move |_, _, (): ()| {
+                local_spirc.volume_down();
+                Ok(())
+            });
+
+            let mv_device_name = device_name.clone();
+            let sp_client = Arc::clone(&spotify_api_client);
+            b.method("TransferPlayback", (), (), move |_, _, (): ()| {
+                let device_id = get_device_id(&sp_client, &mv_device_name, false);
+                if let Some(device_id) = device_id {
+                    info!("Transferring playback to device {}", device_id);
+                    match sp_client.transfer_playback(&device_id, Some(true)) {
+                        Ok(_) => Ok(()),
+                        Err(err) => {
+                            let e = format!("TransferPlayback failed: {}", err);
+                            error!("{}", e);
+                            Err(MethodErr::failed(&e))
+                        }
+                    }
+                } else {
+                    let msg = format!("Could not find device with name {}", mv_device_name);
+                    warn!("TransferPlayback: {}", msg);
+                    Err(MethodErr::failed(&msg))
+                }
+            });
+        });
+
     cr.insert(
         "/org/mpris/MediaPlayer2",
         &[media_player2_interface, player_interface],
+        (),
+    );
+
+    cr.insert(
+        "/io/github/spotifyd/Controls",
+        &[spotifyd_ctrls_interface],
         (),
     );
 
@@ -694,6 +729,28 @@ async fn create_dbus_server(
             // position should be in microseconds
             .append1(position_ms as i64 * 1000);
             conn.send(msg).unwrap();
+        }
+    }
+}
+
+fn get_device_id(
+    sp_client: &AuthCodeSpotify,
+    device_name: &str,
+    only_active: bool,
+) -> Option<String> {
+    let device_result = sp_client.device();
+    match device_result {
+        Ok(devices) => devices.into_iter().find_map(|d| {
+            if d.name == device_name && (d.is_active || !only_active) {
+                info!("Found device: {}, active: {}", d.name, d.is_active);
+                d.id
+            } else {
+                None
+            }
+        }),
+        Err(err) => {
+            error!("Get devices error: {}", err);
+            None
         }
     }
 }
