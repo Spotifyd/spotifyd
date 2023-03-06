@@ -21,23 +21,18 @@ use log::info;
 use std::str::FromStr;
 
 pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
-    #[cfg(feature = "alsa_backend")]
     let mut mixer = {
-        let audio_device = config.audio_device.clone();
-        let control_device = config.control_device.clone();
-        let mixer = config.mixer.clone();
         match config.volume_controller {
-            config::VolumeController::SoftVolume => {
-                info!("Using software volume controller.");
-                Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
-                    as Box<dyn FnMut() -> Box<dyn Mixer>>
-            }
             config::VolumeController::None => {
                 info!("Using no volume controller.");
                 Box::new(|| Box::new(crate::no_mixer::NoMixer::open(None)) as Box<dyn Mixer>)
                     as Box<dyn FnMut() -> Box<dyn Mixer>>
             }
-            _ => {
+            #[cfg(feature = "alsa_backend")]
+            config::VolumeController::Alsa | config::VolumeController::AlsaLinear => {
+                let audio_device = config.audio_device.clone();
+                let control_device = config.control_device.clone();
+                let mixer = config.mixer.clone();
                 info!("Using alsa volume controller.");
                 let linear = matches!(
                     config.volume_controller,
@@ -54,20 +49,11 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
                     }) as Box<dyn mixer::Mixer>
                 }) as Box<dyn FnMut() -> Box<dyn Mixer>>
             }
-        }
-    };
-
-    #[cfg(not(feature = "alsa_backend"))]
-    let mut mixer = match config.volume_controller {
-        config::VolumeController::None => {
-            info!("Using no volume controller.");
-            Box::new(|| Box::new(crate::no_mixer::NoMixer::open(None)) as Box<dyn Mixer>)
-                as Box<dyn FnMut() -> Box<dyn Mixer>>
-        }
-        _ => {
-            info!("Using software volume controller.");
-            Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
-                as Box<dyn FnMut() -> Box<dyn Mixer>>
+            _ => {
+                info!("Using software volume controller.");
+                Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+                    as Box<dyn FnMut() -> Box<dyn Mixer>>
+            }
         }
     };
 
@@ -78,18 +64,12 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
     let autoplay = config.autoplay;
     let device_id = session_config.device_id.clone();
 
-    #[cfg(feature = "alsa_backend")]
-    let volume_ctrl = if matches!(
-        config.volume_controller,
-        config::VolumeController::AlsaLinear
-    ) {
-        VolumeCtrl::Linear
-    } else {
-        VolumeCtrl::default()
+    let volume_ctrl = match config.volume_controller {
+        #[cfg(feature = "alsa_backend")]
+        config::VolumeController::AlsaLinear => VolumeCtrl::Linear,
+        config::VolumeController::None => VolumeCtrl::Fixed,
+        _ => VolumeCtrl::Log,
     };
-
-    #[cfg(not(feature = "alsa_backend"))]
-    let volume_ctrl = VolumeCtrl::default();
 
     let zeroconf_port = config.zeroconf_port.unwrap_or(0);
 
