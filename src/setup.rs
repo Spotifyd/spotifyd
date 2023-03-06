@@ -32,6 +32,11 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
                 Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
                     as Box<dyn FnMut() -> Box<dyn Mixer>>
             }
+            config::VolumeController::None => {
+                info!("Using no volume controller.");
+                Box::new(|| Box::new(crate::no_mixer::NoMixer::open(None)) as Box<dyn Mixer>)
+                    as Box<dyn FnMut() -> Box<dyn Mixer>>
+            }
             _ => {
                 info!("Using alsa volume controller.");
                 let linear = matches!(
@@ -53,10 +58,17 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
     };
 
     #[cfg(not(feature = "alsa_backend"))]
-    let mut mixer = {
-        info!("Using software volume controller.");
-        Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
-            as Box<dyn FnMut() -> Box<dyn Mixer>>
+    let mut mixer = match config.volume_controller {
+        config::VolumeController::None => {
+            info!("Using no volume controller.");
+            Box::new(|| Box::new(crate::no_mixer::NoMixer::open(None)) as Box<dyn Mixer>)
+                as Box<dyn FnMut() -> Box<dyn Mixer>>
+        }
+        _ => {
+            info!("Using software volume controller.");
+            Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+                as Box<dyn FnMut() -> Box<dyn Mixer>>
+        }
     };
 
     let cache = config.cache;

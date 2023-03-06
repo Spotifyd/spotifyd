@@ -81,6 +81,7 @@ static VOLUME_CONTROLLER_VALUES: &[&str] = &[
     "alsa",
     #[cfg(feature = "alsa_backend")]
     "alsa_linear",
+    "none",
 ];
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
@@ -90,6 +91,7 @@ pub enum VolumeController {
     AlsaLinear,
     #[serde(rename = "softvol")]
     SoftVolume,
+    None,
 }
 
 impl FromStr for VolumeController {
@@ -100,6 +102,7 @@ impl FromStr for VolumeController {
             "alsa" => Ok(VolumeController::Alsa),
             "alsa_linear" => Ok(VolumeController::AlsaLinear),
             "softvol" => Ok(VolumeController::SoftVolume),
+            "none" => Ok(VolumeController::None),
             _ => unreachable!(),
         }
     }
