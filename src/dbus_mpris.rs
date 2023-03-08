@@ -614,12 +614,12 @@ async fn create_dbus_server(
                 if let Some(track_id) = track_id {
                     let item = match track_id.audio_type {
                         SpotifyAudioType::Track => {
-                            let track_id = TrackId::from_id(track_id.to_base62()).unwrap();
+                            let track_id = TrackId::from_id(track_id.to_base62().unwrap()).unwrap();
                             let track = spotify_api_client.track(track_id).map(PlayableItem::Track);
                             Some(track)
                         }
                         SpotifyAudioType::Podcast => {
-                            let id = EpisodeId::from_id(track_id.to_base62()).unwrap();
+                            let id = EpisodeId::from_id(track_id.to_base62().unwrap()).unwrap();
                             let episode = spotify_api_client
                                 .get_an_episode(id, None)
                                 .map(PlayableItem::Episode);

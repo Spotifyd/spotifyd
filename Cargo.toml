@@ -31,10 +31,11 @@ tokio = {version = "1.6.1", features = ["signal", "rt-multi-thread", "process", 
 tokio-stream = "0.1.7"
 url = "2.2.2"
 xdg = "2.2"
-librespot-audio = { version = "0.2.0", default-features=false, features = ["with-tremor"] }
-librespot-playback = { version = "0.2.0", default-features=false }
-librespot-core = { version = "0.2.0"}
-librespot-connect = { version = "0.2.0"}
+librespot-audio = { version = "0.4", default-features = false }
+librespot-playback = { version = "0.4", default-features = false }
+librespot-core = { version = "0.4" }
+librespot-discovery = { version = "0.4" }
+librespot-connect = { version = "0.4" }
 toml = "0.7"
 color-eyre = "0.6"
 

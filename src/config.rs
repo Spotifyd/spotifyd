@@ -415,7 +415,7 @@ pub struct SharedConfigValues {
 
     /// A custom pregain applied before sending the audio to the output device
     #[structopt(long, value_name = "number")]
-    normalisation_pregain: Option<f32>,
+    normalisation_pregain: Option<f64>,
 
     /// The port used for the Spotify Connect discovery
     #[structopt(long, value_name = "number")]
@@ -647,7 +647,14 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let cache = config
         .shared_config
         .cache_path
-        .map(|path| Cache::new(Some(&path), audio_cache.then_some(&path), size_limit))
+        .map(|path| {
+            Cache::new(
+                Some(&path),
+                Some(&path),
+                audio_cache.then_some(&path),
+                size_limit,
+            )
+        })
         .transpose()
         .unwrap_or_else(|e| {
             warn!("Cache couldn't be initialized: {e}");
@@ -692,7 +699,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
 
     let device_id = device_id(&device_name);
 
-    let normalisation_pregain = config.shared_config.normalisation_pregain.unwrap_or(0.0f32);
+    let normalisation_pregain = config.shared_config.normalisation_pregain.unwrap_or(0.0);
 
     let dbus_type = config.shared_config.dbus_type.unwrap_or(DBusType::Session);
     let autoplay = config.shared_config.autoplay;
@@ -759,10 +766,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let pc = PlayerConfig {
         bitrate,
         normalisation: config.shared_config.volume_normalisation,
-        normalisation_pregain,
-        // Sensible default; the "default" supplied by PlayerConfig::default() sets this to -1.0,
-        // which turns the output to garbage.
-        normalisation_threshold: 1.0,
+        normalisation_pregain_db: normalisation_pregain,
         gapless: true,
         ..Default::default()
     };
