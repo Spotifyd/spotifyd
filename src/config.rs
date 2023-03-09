@@ -18,6 +18,13 @@ use url::Url;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
+#[cfg(not(any(
+    feature = "pulseaudio_backend",
+    feature = "portaudio_backend",
+    feature = "alsa_backend",
+    feature = "rodio_backend"
+)))]
+compile_error!("At least one of the backend features is required!");
 static BACKEND_VALUES: &[&str] = &[
     #[cfg(feature = "alsa_backend")]
     "alsa",
@@ -37,6 +44,10 @@ pub enum Backend {
     PortAudio,
     PulseAudio,
     Rodio,
+}
+
+fn default_backend() -> Backend {
+    return Backend::from_str(BACKEND_VALUES.first().unwrap()).unwrap();
 }
 
 impl FromStr for Backend {
@@ -649,7 +660,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let backend = config
         .shared_config
         .backend
-        .unwrap_or(Backend::Alsa)
+        .unwrap_or_else(default_backend)
         .to_string();
 
     let volume_controller = config
@@ -811,5 +822,13 @@ mod tests {
         // Add the new field to spotifyd section.
         spotifyd_section.username = Some("testUserName".to_string());
         assert_eq!(merged_config, spotifyd_section);
+    }
+    #[test]
+    fn test_default_backend() {
+        let spotifyd_config = get_internal_config(CliConfig::default());
+        assert_eq!(
+            spotifyd_config.backend.unwrap(),
+            default_backend().to_string()
+        );
     }
 }

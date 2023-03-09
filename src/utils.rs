@@ -48,7 +48,7 @@ fn get_shell_ffi() -> Option<String> {
 
     let username = whoami::username();
     let output = Command::new("dscl")
-        .args(&[".", "-read", &format!("/Users/{}", username), "UserShell"])
+        .args([".", "-read", &format!("/Users/{}", username), "UserShell"])
         .output()
         .ok()?;
 
