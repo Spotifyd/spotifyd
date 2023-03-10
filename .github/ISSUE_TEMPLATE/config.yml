@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: General questions and support
+    url: https://matrix.to/#/#spotifyd:matrix.org
+    about: You can also reach us via matrix and ask your questions regarding spotifyd there.
+  - name: Other
+    url: https://github.com/Spotifyd/spotifyd/discussions/new/choose
+    about: For other requests, consider creating a discussion.
