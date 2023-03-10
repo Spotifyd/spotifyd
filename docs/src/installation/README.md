@@ -13,8 +13,6 @@ There are packages for the following systems:
 - [Arch Linux (via the Community repository)](https://archlinux.org/packages/community/x86_64/spotifyd/)
 - [MacOS (via homebrew)](./MacOS.md)
 
-It is also available as a [snap package](https://snapcraft.io/spotifyd).
-
 ## Building from source
 
 You can also compile `Spotifyd` yourself, allowing you to make use of feature flags. `Spotifyd` is written in Rust. You can download the toolchain (compiler and package manager) over at [rustup.rs](https://rustup.rs). Follow their instructions to get started.
