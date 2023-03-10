@@ -5,7 +5,7 @@ use crate::{
     main_loop::{self, CredentialsProvider},
 };
 #[cfg(feature = "dbus_keyring")]
-use keyring::Keyring;
+use keyring::Entry;
 use librespot_connect::discovery::discovery;
 use librespot_core::{
     authentication::Credentials,
@@ -17,7 +17,7 @@ use librespot_playback::{
     config::AudioFormat,
     mixer::{self, Mixer},
 };
-use log::info;
+use log::{error, info, warn};
 use std::str::FromStr;
 
 pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
@@ -78,15 +78,22 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
     let username = config.username;
     #[allow(unused_mut)] // mut is needed behind the dbus_keyring flag.
     let mut password = config.password;
+
     #[cfg(feature = "dbus_keyring")]
-    {
-        // We only need to check if an actual user has been specified as
-        // spotifyd can run without being signed in too.
-        if username.is_some() && config.use_keyring {
-            info!("Checking keyring for password");
-            let keyring = Keyring::new("spotifyd", username.as_ref().unwrap());
-            let retrieved_password = keyring.get_password();
-            password = password.or_else(|| retrieved_password.ok());
+    if config.use_keyring {
+        match (&username, &password) {
+            (None, _) => warn!("Can't query the keyring without a username"),
+            (Some(_), Some(_)) => {
+                info!("Keyring is ignored, since you already configured a password")
+            }
+            (Some(username), None) => {
+                info!("Checking keyring for password");
+                let entry = Entry::new("spotifyd", username);
+                match entry.and_then(|e| e.get_password()) {
+                    Ok(retrieved_password) => password = Some(retrieved_password),
+                    Err(e) => error!("Keyring did not return any results: {e}"),
+                }
+            }
         }
     }
 
