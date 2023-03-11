@@ -1,10 +1,7 @@
 # Spotifyd <!-- omit in toc -->
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-83-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-[![Cargo Downloads](https://img.shields.io/crates/d/spotifyd)](https://crates.io/crates/spotifyd)
-[![Github Actions - CD][cd-badge]][github-actions]
+[![Matrix][matrix-badge]](https://matrix.to/#/#spotifyd:matrix.org)
+[![GitHub Workflow Status][cd-badge]][github-actions]
 [![Github Actions - CI][ci-badge]][github-actions]
 
 > An open source Spotify client running as a UNIX daemon.
@@ -16,10 +13,6 @@ Spotifyd streams music just like the official client, but is more lightweight an
 > __Note:__ Spotifyd requires a Spotify Premium account.
 
 __To read about how to install and configure Spotifyd, take a look at our [wiki][wiki]!__
-
-- [Common issues](#common-issues)
-- [Contributing](#contributing)
-- [Credits](#credits)
 
 ## Common issues
 
@@ -37,6 +30,7 @@ This project would not have been possible without the amazing reverse engineerin
 <!-- This section contains all links used within the document. This prevents cluttering and makes reading the raw markdown a lot easier -->
 [github-actions]: https://github.com/Spotifyd/spotifyd/actions
 [good-first-issues]: https://github.com/Spotifyd/spotifyd/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
-[cd-badge]: https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Deployment/badge.svg
-[ci-badge]: https://github.com/Spotifyd/spotifyd/workflows/Continuous%20Integration/badge.svg
+[matrix-badge]: https://img.shields.io/matrix/spotifyd:matrix.org?logo=matrix&server_fqdn=matrix.org
+[cd-badge]: https://img.shields.io/github/actions/workflow/status/Spotifyd/spotifyd/cd.yml?label=continuous%20deployment&logo=github
+[ci-badge]: https://img.shields.io/github/actions/workflow/status/Spotifyd/spotifyd/ci.yml?label=continuous%20integration&logo=github
 [wiki]: https://spotifyd.github.io/spotifyd/

@@ -5,7 +5,7 @@ use crate::{
     main_loop::{self, CredentialsProvider},
 };
 #[cfg(feature = "dbus_keyring")]
-use keyring::Keyring;
+use keyring::Entry;
 use librespot_connect::discovery::discovery;
 use librespot_core::{
     authentication::Credentials,
@@ -17,22 +17,22 @@ use librespot_playback::{
     config::AudioFormat,
     mixer::{self, Mixer},
 };
-use log::info;
+use log::{error, info, warn};
 use std::str::FromStr;
 
 pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
-    #[cfg(feature = "alsa_backend")]
     let mut mixer = {
-        let audio_device = config.audio_device.clone();
-        let control_device = config.control_device.clone();
-        let mixer = config.mixer.clone();
         match config.volume_controller {
-            config::VolumeController::SoftVolume => {
-                info!("Using software volume controller.");
-                Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+            config::VolumeController::None => {
+                info!("Using no volume controller.");
+                Box::new(|| Box::new(crate::no_mixer::NoMixer::open(None)) as Box<dyn Mixer>)
                     as Box<dyn FnMut() -> Box<dyn Mixer>>
             }
-            _ => {
+            #[cfg(feature = "alsa_backend")]
+            config::VolumeController::Alsa | config::VolumeController::AlsaLinear => {
+                let audio_device = config.audio_device.clone();
+                let control_device = config.control_device.clone();
+                let mixer = config.mixer.clone();
                 info!("Using alsa volume controller.");
                 let linear = matches!(
                     config.volume_controller,
@@ -49,14 +49,12 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
                     }) as Box<dyn mixer::Mixer>
                 }) as Box<dyn FnMut() -> Box<dyn Mixer>>
             }
+            _ => {
+                info!("Using software volume controller.");
+                Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
+                    as Box<dyn FnMut() -> Box<dyn Mixer>>
+            }
         }
-    };
-
-    #[cfg(not(feature = "alsa_backend"))]
-    let mut mixer = {
-        info!("Using software volume controller.");
-        Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
-            as Box<dyn FnMut() -> Box<dyn Mixer>>
     };
 
     let cache = config.cache;
@@ -66,18 +64,12 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
     let autoplay = config.autoplay;
     let device_id = session_config.device_id.clone();
 
-    #[cfg(feature = "alsa_backend")]
-    let volume_ctrl = if matches!(
-        config.volume_controller,
-        config::VolumeController::AlsaLinear
-    ) {
-        VolumeCtrl::Linear
-    } else {
-        VolumeCtrl::default()
+    let volume_ctrl = match config.volume_controller {
+        #[cfg(feature = "alsa_backend")]
+        config::VolumeController::AlsaLinear => VolumeCtrl::Linear,
+        config::VolumeController::None => VolumeCtrl::Fixed,
+        _ => VolumeCtrl::Log,
     };
-
-    #[cfg(not(feature = "alsa_backend"))]
-    let volume_ctrl = VolumeCtrl::default();
 
     let zeroconf_port = config.zeroconf_port.unwrap_or(0);
 
@@ -86,15 +78,22 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
     let username = config.username;
     #[allow(unused_mut)] // mut is needed behind the dbus_keyring flag.
     let mut password = config.password;
+
     #[cfg(feature = "dbus_keyring")]
-    {
-        // We only need to check if an actual user has been specified as
-        // spotifyd can run without being signed in too.
-        if username.is_some() && config.use_keyring {
-            info!("Checking keyring for password");
-            let keyring = Keyring::new("spotifyd", username.as_ref().unwrap());
-            let retrieved_password = keyring.get_password();
-            password = password.or_else(|| retrieved_password.ok());
+    if config.use_keyring {
+        match (&username, &password) {
+            (None, _) => warn!("Can't query the keyring without a username"),
+            (Some(_), Some(_)) => {
+                info!("Keyring is ignored, since you already configured a password")
+            }
+            (Some(username), None) => {
+                info!("Checking keyring for password");
+                let entry = Entry::new("spotifyd", username);
+                match entry.and_then(|e| e.get_password()) {
+                    Ok(retrieved_password) => password = Some(retrieved_password),
+                    Err(e) => error!("Keyring did not return any results: {e}"),
+                }
+            }
         }
     }
 
