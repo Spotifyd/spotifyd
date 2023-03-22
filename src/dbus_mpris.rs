@@ -24,7 +24,7 @@ use librespot_playback::player::PlayerEvent;
 use log::{error, info, warn};
 use rspotify::{
     model::{
-        offset::Offset, AlbumId, ArtistId, EpisodeId, IdError, PlayableItem, PlaylistId,
+        offset::Offset, parse_uri, AlbumId, ArtistId, EpisodeId, IdError, PlayableItem, PlaylistId,
         RepeatState, ShowId, TrackId, Type,
     },
     prelude::*,
@@ -349,89 +349,43 @@ async fn create_dbus_server(
         let mv_device_name = device_name.clone();
         let sp_client = Arc::clone(&spotify_api_client);
         b.method("OpenUri", ("uri",), (), move |_, _, (uri,): (String,)| {
-            struct AnyContextId(Box<dyn PlayContextId>);
-
-            impl Id for AnyContextId {
-                fn id(&self) -> &str {
-                    self.0.id()
-                }
-
-                fn _type(&self) -> Type {
-                    self.0._type()
-                }
-
-                fn _type_static() -> Type
-                where
-                    Self: Sized,
-                {
-                    unreachable!("never called");
-                }
-
-                unsafe fn from_id_unchecked(_id: &str) -> Self
-                where
-                    Self: Sized,
-                {
-                    unreachable!("never called");
-                }
-            }
-            impl PlayContextId for AnyContextId {}
-
-            enum Uri {
-                Playable(Box<dyn PlayableId>),
-                Context(AnyContextId),
+            enum AnyId<'a> {
+                Playable(PlayableId<'a>),
+                Context(PlayContextId<'a>),
             }
 
-            impl Uri {
-                fn from_id(id_type: Type, id: &str) -> Result<Uri, IdError> {
-                    use Uri::*;
-                    let uri = match id_type {
-                        Type::Track => Playable(Box::new(TrackId::from_id(id)?)),
-                        Type::Episode => Playable(Box::new(EpisodeId::from_id(id)?)),
-                        Type::Artist => Context(AnyContextId(Box::new(ArtistId::from_id(id)?))),
-                        Type::Album => Context(AnyContextId(Box::new(AlbumId::from_id(id)?))),
-                        Type::Playlist => Context(AnyContextId(Box::new(PlaylistId::from_id(id)?))),
-                        Type::Show => Context(AnyContextId(Box::new(ShowId::from_id(id)?))),
-                        Type::User | Type::Collection => return Err(IdError::InvalidType),
-                    };
-                    Ok(uri)
-                }
+            fn uri_to_id(uri: &str) -> Result<AnyId<'_>, IdError> {
+                use AnyId::*;
+                Ok(match parse_uri(uri)? {
+                    (Type::Track, id) => Playable(TrackId::from_id(id)?.into()),
+                    (Type::Episode, id) => Playable(EpisodeId::from_id(id)?.into()),
+                    (Type::Artist, id) => Context(ArtistId::from_id(id)?.into()),
+                    (Type::Album, id) => Context(AlbumId::from_id(id)?.into()),
+                    (Type::Playlist, id) => Context(PlaylistId::from_id(id)?.into()),
+                    (Type::Show, id) => Context(ShowId::from_id(id)?.into()),
+                    (Type::User | Type::Collection, _) => Err(IdError::InvalidType)?,
+                })
             }
 
-            let mut chars = uri
-                .strip_prefix("spotify")
-                .ok_or_else(|| MethodErr::invalid_arg(&uri))?
-                .chars();
-
-            let sep = match chars.next() {
-                Some(ch) if ch == '/' || ch == ':' => ch,
-                _ => return Err(MethodErr::invalid_arg(&uri)),
-            };
-            let rest = chars.as_str();
-
-            let (id_type, id) = rest
-                .rsplit_once(sep)
-                .and_then(|(id_type, id)| Some((id_type.parse::<Type>().ok()?, id)))
-                .ok_or_else(|| MethodErr::invalid_arg(&uri))?;
-
-            let uri = Uri::from_id(id_type, id).map_err(|_| MethodErr::invalid_arg(&uri))?;
+            let id = uri_to_id(&uri).map_err(|e| MethodErr::invalid_arg(&e))?;
 
             let device_id = get_device_id(&sp_client, &mv_device_name, true);
 
             if let Some(device_id) = device_id {
-                match uri {
-                    Uri::Playable(id) => {
+                match id {
+                    AnyId::Playable(id) => {
                         let _ = sp_client.start_uris_playback(
-                            Some(id.as_ref()),
+                            Some(id),
                             Some(&device_id),
-                            Some(Offset::for_position(0)),
+                            Some(Offset::Position(0)),
                             None,
                         );
                     }
-                    Uri::Context(id) => {
+                    AnyId::Context(id) => {
                         let _ = sp_client.start_context_playback(
-                            &id,
+                            id,
                             Some(&device_id),
-                            Some(Offset::for_position(0)),
+                            Some(Offset::Position(0)),
                             None,
                         );
                     }
@@ -665,15 +619,14 @@ async fn create_dbus_server(
                 if let Some(track_id) = track_id {
                     let item = match track_id.audio_type {
                         SpotifyAudioType::Track => {
-                            let track_id = TrackId::from_id(&track_id.to_base62()).unwrap();
-                            let track =
-                                spotify_api_client.track(&track_id).map(PlayableItem::Track);
+                            let track_id = TrackId::from_id(track_id.to_base62()).unwrap();
+                            let track = spotify_api_client.track(track_id).map(PlayableItem::Track);
                             Some(track)
                         }
                         SpotifyAudioType::Podcast => {
-                            let id = EpisodeId::from_id(&track_id.to_base62()).unwrap();
+                            let id = EpisodeId::from_id(track_id.to_base62()).unwrap();
                             let episode = spotify_api_client
-                                .get_an_episode(&id, None)
+                                .get_an_episode(id, None)
                                 .map(PlayableItem::Episode);
                             Some(episode)
                         }

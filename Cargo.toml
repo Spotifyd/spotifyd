@@ -6,7 +6,7 @@ description = "A Spotify daemon"
 repository = "https://github.com/Spotifyd/spotifyd"
 license = "GPL-3.0-only"
 version = "0.3.4"
-rust-version = "1.62"
+rust-version = "1.64"
 
 [dependencies]
 alsa = { version = "0.5", optional = true }
@@ -22,7 +22,7 @@ hex = "0.4"
 keyring = { version = "2.0", optional = true }
 libc = "0.2.82"
 log = "0.4.6"
-rspotify = { version = "0.11.5", features = ["client-ureq", "ureq-rustls-tls"], default-features = false, optional = true }
+rspotify = { version = "0.11.6", features = ["client-ureq", "ureq-rustls-tls"], default-features = false, optional = true }
 serde = { version = "1.0.115", features = ["derive"] }
 sha-1 = "0.9"
 structopt = "0.3.17"
