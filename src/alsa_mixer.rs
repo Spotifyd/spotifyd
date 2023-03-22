@@ -1,7 +1,8 @@
-use librespot_playback::mixer::{AudioFilter, Mixer, MixerConfig};
+use librespot_playback::mixer::{Mixer, MixerConfig};
 use log::error;
 use std::error::Error;
 
+#[derive(Clone)]
 pub struct AlsaMixer {
     pub device: String,
     pub mixer: String,
@@ -35,17 +36,13 @@ impl AlsaMixer {
 }
 
 impl Mixer for AlsaMixer {
-    fn open(_: Option<MixerConfig>) -> AlsaMixer {
+    fn open(_: MixerConfig) -> AlsaMixer {
         AlsaMixer {
             device: "default".to_string(),
             mixer: "Master".to_string(),
             linear_scaling: false,
         }
     }
-
-    fn start(&self) {}
-
-    fn stop(&self) {}
 
     fn volume(&self) -> u16 {
         let selem_id = alsa::mixer::SelemId::new(&self.mixer, 0);
@@ -78,9 +75,5 @@ impl Mixer for AlsaMixer {
             Ok(_) => (),
             Err(e) => error!("Couldn't set volume: {:?}", e),
         }
-    }
-
-    fn get_audio_filter(&self) -> Option<Box<dyn AudioFilter + Send>> {
-        None
     }
 }
