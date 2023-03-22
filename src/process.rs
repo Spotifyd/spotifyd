@@ -58,9 +58,9 @@ pub(crate) fn spawn_program_on_event(
             old_track_id,
             new_track_id,
         } => {
-            env.insert("OLD_TRACK_ID", old_track_id.to_base62());
+            env.insert("OLD_TRACK_ID", old_track_id.to_base62().unwrap());
             env.insert("PLAYER_EVENT", "change".to_string());
-            env.insert("TRACK_ID", new_track_id.to_base62());
+            env.insert("TRACK_ID", new_track_id.to_base62().unwrap());
         }
         PlayerEvent::Started {
             track_id,
@@ -68,7 +68,7 @@ pub(crate) fn spawn_program_on_event(
             position_ms,
         } => {
             env.insert("PLAYER_EVENT", "start".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
             env.insert("POSITION_MS", position_ms.to_string());
         }
@@ -77,7 +77,7 @@ pub(crate) fn spawn_program_on_event(
             play_request_id,
         } => {
             env.insert("PLAYER_EVENT", "stop".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
         }
         PlayerEvent::Loading {
@@ -86,7 +86,7 @@ pub(crate) fn spawn_program_on_event(
             position_ms,
         } => {
             env.insert("PLAYER_EVENT", "load".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
             env.insert("POSITION_MS", position_ms.to_string());
         }
@@ -97,7 +97,7 @@ pub(crate) fn spawn_program_on_event(
             duration_ms,
         } => {
             env.insert("PLAYER_EVENT", "play".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
             env.insert("POSITION_MS", position_ms.to_string());
             env.insert("DURATION_MS", duration_ms.to_string());
@@ -109,7 +109,7 @@ pub(crate) fn spawn_program_on_event(
             duration_ms,
         } => {
             env.insert("PLAYER_EVENT", "pause".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
             env.insert("POSITION_MS", position_ms.to_string());
             env.insert("DURATION_MS", duration_ms.to_string());
@@ -119,7 +119,7 @@ pub(crate) fn spawn_program_on_event(
             play_request_id,
         } => {
             env.insert("PLAYER_EVENT", "preload".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
         }
         PlayerEvent::EndOfTrack {
@@ -127,7 +127,7 @@ pub(crate) fn spawn_program_on_event(
             play_request_id,
         } => {
             env.insert("PLAYER_EVENT", "endoftrack".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
         }
         PlayerEvent::VolumeSet { volume } => {
@@ -139,12 +139,12 @@ pub(crate) fn spawn_program_on_event(
             track_id,
         } => {
             env.insert("PLAYER_EVENT", "unavailable".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
         }
         PlayerEvent::Preloading { track_id } => {
             env.insert("PLAYER_EVENT", "preloading".to_string());
-            env.insert("TRACK_ID", track_id.to_base62());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
         }
     }
     spawn_program(shell, cmd, env)

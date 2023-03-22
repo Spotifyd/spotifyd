@@ -8,13 +8,14 @@ use futures::{
     stream::Peekable,
     Future, FutureExt, StreamExt,
 };
-use librespot_connect::{discovery::DiscoveryStream, spirc::Spirc};
+use librespot_connect::spirc::Spirc;
 use librespot_core::{
     authentication::Credentials,
     cache::Cache,
-    config::{ConnectConfig, DeviceType, SessionConfig, VolumeCtrl},
+    config::{ConnectConfig, DeviceType, SessionConfig},
     session::{Session, SessionError},
 };
+use librespot_discovery::Discovery;
 use librespot_playback::{
     audio_backend::Sink,
     config::{AudioFormat, PlayerConfig},
@@ -39,20 +40,20 @@ pub struct SpotifydState {
 }
 
 pub(crate) enum CredentialsProvider {
-    DiscoveryStream(Peekable<DiscoveryStream>),
+    Discovery(Peekable<Discovery>),
     SpotifyCredentials(Credentials),
 }
 
-impl From<DiscoveryStream> for CredentialsProvider {
-    fn from(stream: DiscoveryStream) -> Self {
-        CredentialsProvider::DiscoveryStream(stream.peekable())
+impl From<Discovery> for CredentialsProvider {
+    fn from(stream: Discovery) -> Self {
+        CredentialsProvider::Discovery(stream.peekable())
     }
 }
 
 impl CredentialsProvider {
     async fn get_credentials(&mut self) -> Credentials {
         match self {
-            CredentialsProvider::DiscoveryStream(stream) => stream.next().await.unwrap(),
+            CredentialsProvider::Discovery(stream) => stream.next().await.unwrap(),
             CredentialsProvider::SpotifyCredentials(creds) => creds.clone(),
         }
     }
@@ -60,7 +61,7 @@ impl CredentialsProvider {
     // wait for an incoming connection if the underlying provider is a discovery stream
     async fn incoming_connection(&mut self) {
         match self {
-            CredentialsProvider::DiscoveryStream(stream) => {
+            CredentialsProvider::Discovery(stream) => {
                 let peeked = Pin::new(stream).peek().await;
                 if peeked.is_none() {
                     future::pending().await
@@ -77,7 +78,7 @@ pub(crate) struct MainLoop {
     pub(crate) player_config: PlayerConfig,
     pub(crate) session_config: SessionConfig,
     pub(crate) autoplay: bool,
-    pub(crate) volume_ctrl: VolumeCtrl,
+    pub(crate) has_volume_ctrl: bool,
     pub(crate) initial_volume: Option<u16>,
     pub(crate) shell: String,
     pub(crate) device_type: DeviceType,
@@ -95,7 +96,9 @@ impl MainLoop {
         let session_config = self.session_config.clone();
         let cache = self.spotifyd_state.cache.clone();
 
-        Session::connect(session_config, creds, cache).await
+        Session::connect(session_config, creds, cache, false)
+            .await
+            .map(|(session, _creds)| session)
     }
 
     pub(crate) async fn run(&mut self) {
@@ -120,14 +123,13 @@ impl MainLoop {
             );
 
             let mixer = (self.audio_setup.mixer)();
-            let audio_filter = mixer.get_audio_filter();
             let backend = self.audio_setup.backend;
             let audio_device = self.audio_setup.audio_device.clone();
             let audio_format = self.audio_setup.audio_format;
             let (player, mut event_channel) = Player::new(
                 self.player_config.clone(),
                 session.clone(),
-                audio_filter,
+                mixer.get_soft_volume(),
                 move || (backend)(audio_device, audio_format),
             );
 
@@ -136,8 +138,8 @@ impl MainLoop {
                     autoplay: self.autoplay,
                     name: self.spotifyd_state.device_name.clone(),
                     device_type: self.device_type,
-                    volume: self.initial_volume.unwrap_or_else(|| mixer.volume()),
-                    volume_ctrl: self.volume_ctrl.clone(),
+                    initial_volume: self.initial_volume,
+                    has_volume_ctrl: self.has_volume_ctrl,
                 },
                 session.clone(),
                 player,

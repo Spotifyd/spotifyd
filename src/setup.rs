@@ -6,26 +6,23 @@ use crate::{
 };
 #[cfg(feature = "dbus_keyring")]
 use keyring::Entry;
-use librespot_connect::discovery::discovery;
-use librespot_core::{
-    authentication::Credentials,
-    cache::Cache,
-    config::{ConnectConfig, DeviceType, VolumeCtrl},
-};
+use librespot_core::{authentication::Credentials, cache::Cache, config::DeviceType};
+use librespot_playback::mixer::MixerConfig;
 use librespot_playback::{
     audio_backend::{Sink, BACKENDS},
     config::AudioFormat,
     mixer::{self, Mixer},
 };
+#[allow(unused_imports)] // cfg
 use log::{error, info, warn};
 use std::str::FromStr;
 
 pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
-    let mut mixer = {
+    let mixer = {
         match config.volume_controller {
             config::VolumeController::None => {
                 info!("Using no volume controller.");
-                Box::new(|| Box::new(crate::no_mixer::NoMixer::open(None)) as Box<dyn Mixer>)
+                Box::new(|| Box::new(crate::no_mixer::NoMixer) as Box<dyn Mixer>)
                     as Box<dyn FnMut() -> Box<dyn Mixer>>
             }
             #[cfg(feature = "alsa_backend")]
@@ -51,8 +48,10 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
             }
             _ => {
                 info!("Using software volume controller.");
-                Box::new(|| Box::new(mixer::softmixer::SoftMixer::open(None)) as Box<dyn Mixer>)
-                    as Box<dyn FnMut() -> Box<dyn Mixer>>
+                Box::new(move || {
+                    Box::new(mixer::softmixer::SoftMixer::open(MixerConfig::default()))
+                        as Box<dyn Mixer>
+                }) as Box<dyn FnMut() -> Box<dyn Mixer>>
             }
         }
     };
@@ -62,14 +61,8 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
     let session_config = config.session_config;
     let backend = config.backend.clone();
     let autoplay = config.autoplay;
-    let device_id = session_config.device_id.clone();
 
-    let volume_ctrl = match config.volume_controller {
-        #[cfg(feature = "alsa_backend")]
-        config::VolumeController::AlsaLinear => VolumeCtrl::Linear,
-        config::VolumeController::None => VolumeCtrl::Fixed,
-        _ => VolumeCtrl::Log,
-    };
+    let has_volume_ctrl = !matches!(config.volume_controller, config::VolumeController::None);
 
     let zeroconf_port = config.zeroconf_port.unwrap_or(0);
 
@@ -97,25 +90,19 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
         }
     }
 
-    let credentials_provider =
-        if let Some(credentials) = get_credentials(&cache, &username, &password) {
-            CredentialsProvider::SpotifyCredentials(credentials)
-        } else {
-            info!("no usable credentials found, enabling discovery");
-            let discovery_stream = discovery(
-                ConnectConfig {
-                    autoplay,
-                    name: config.device_name.clone(),
-                    device_type,
-                    volume: mixer().volume(),
-                    volume_ctrl: volume_ctrl.clone(),
-                },
-                device_id,
-                zeroconf_port,
-            )
+    let credentials_provider = if let Some(credentials) =
+        get_credentials(&cache, &username, &password)
+    {
+        CredentialsProvider::SpotifyCredentials(credentials)
+    } else {
+        info!("no usable credentials found, enabling discovery");
+        let discovery_stream = librespot_discovery::Discovery::builder(config.device_name.clone())
+            .device_type(device_type)
+            .port(zeroconf_port)
+            .launch()
             .unwrap();
-            discovery_stream.into()
-        };
+        discovery_stream.into()
+    };
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
     main_loop::MainLoop {
@@ -134,7 +121,7 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
         player_config,
         session_config,
         initial_volume: config.initial_volume,
-        volume_ctrl,
+        has_volume_ctrl,
         shell: config.shell,
         device_type,
         autoplay,
