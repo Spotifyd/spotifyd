@@ -411,7 +411,9 @@ async fn create_dbus_server(
                 Ok("Stopped".to_string())
             });
 
+        let mv_device_name = device_name.clone();
         let sp_client = Arc::clone(&spotify_api_client);
+        let sp_client2 = Arc::clone(&spotify_api_client);
         b.property("Shuffle")
             .emits_changed_false()
             .get(move |_, _| {
@@ -421,6 +423,23 @@ async fn create_dbus_server(
                     .flatten()
                     .map_or(false, |p| p.shuffle_state);
                 Ok(shuffle_status)
+            })
+            .set(move |_, _, value| {
+                let device_id = get_device_id(&sp_client2, &mv_device_name, true);
+                if let Some(device_id) = device_id {
+                    match sp_client2.shuffle(value, Some(&device_id)) {
+                        Ok(_) => Ok(None),
+                        Err(err) => {
+                            let e = format!("SetShuffle failed: {}", err);
+                            error!("{}", e);
+                            Err(MethodErr::failed(&e))
+                        }
+                    }
+                } else {
+                    let msg = format!("Could not find device with name {}", mv_device_name);
+                    warn!("SetShuffle: {}", msg);
+                    Err(MethodErr::failed(&msg))
+                }
             });
 
         b.property("Rate").emits_changed_const().get(|_, _| Ok(1.0));
