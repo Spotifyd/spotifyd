@@ -30,6 +30,7 @@ pub struct AudioSetup {
     pub mixer: Box<dyn FnMut() -> Box<dyn Mixer>>,
     pub backend: fn(Option<String>, AudioFormat) -> Box<dyn Sink>,
     pub audio_device: Option<String>,
+    pub audio_format: AudioFormat,
 }
 
 pub struct SpotifydState {
@@ -124,13 +125,12 @@ impl MainLoop {
             let mixer = (self.audio_setup.mixer)();
             let backend = self.audio_setup.backend;
             let audio_device = self.audio_setup.audio_device.clone();
+            let audio_format = self.audio_setup.audio_format;
             let (player, mut event_channel) = Player::new(
                 self.player_config.clone(),
                 session.clone(),
                 mixer.get_soft_volume(),
-                // TODO: dunno how to work with AudioFormat yet, maybe dig further if this
-                // doesn't work for all configurations
-                move || (backend)(audio_device, AudioFormat::default()),
+                move || (backend)(audio_device, audio_format),
             );
 
             let (spirc, spirc_task) = Spirc::new(

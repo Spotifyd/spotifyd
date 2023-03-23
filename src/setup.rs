@@ -111,6 +111,7 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
             mixer,
             backend,
             audio_device: config.audio_device,
+            audio_format: config.audio_format,
         },
         spotifyd_state: main_loop::SpotifydState {
             cache,

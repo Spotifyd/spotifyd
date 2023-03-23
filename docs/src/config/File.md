@@ -50,6 +50,12 @@ backend = "alsa" # use portaudio for macOS [homebrew]
 # list of valid devices, run `aplay -L`,
 device = "alsa_audio_device"  # omit for macOS
 
+# The PCM sample format to use. Possible values 
+# are F32, S32, S24, S24_3, S16. 
+# Change this value if you encounter errors like
+# "Alsa error PCM open ALSA function 'snd_pcm_hw_params_set_format' failed with error 'EINVAL: Invalid argument'"
+audio_format = "S16"
+
 # The alsa control device. By default this is the same
 # name as the `device` field.
 control = "alsa_audio_device"  # omit for macOS
