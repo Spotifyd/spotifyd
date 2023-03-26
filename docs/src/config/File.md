@@ -72,7 +72,6 @@ volume_controller = "alsa"  # use softvol for macOS
 on_song_change_hook = "command_to_run_on_playback_events"
 
 # The name that gets displayed under the connect tab on
-# official clients. Spaces are not allowed!
 device_name = "device_name_in_spotify_connect"
 
 # The audio bitrate. 96, 160 or 320 kbit/s

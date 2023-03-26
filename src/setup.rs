@@ -90,20 +90,21 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
         }
     }
 
-    let credentials_provider = if let Some(credentials) =
-        get_credentials(&cache, &username, &password)
-    {
-        CredentialsProvider::SpotifyCredentials(credentials)
-    } else {
-        info!("no usable credentials found, enabling discovery");
-        let discovery_stream = librespot_discovery::Discovery::builder(session_config.device_id.clone())
-            .name(config.device_name.clone())
-            .device_type(device_type)
-            .port(zeroconf_port)
-            .launch()
-            .unwrap();
-        discovery_stream.into()
-    };
+    let credentials_provider =
+        if let Some(credentials) = get_credentials(&cache, &username, &password) {
+            CredentialsProvider::SpotifyCredentials(credentials)
+        } else {
+            info!("no usable credentials found, enabling discovery");
+            info!("device_id {}", session_config.device_id.clone());
+            let discovery_stream =
+                librespot_discovery::Discovery::builder(session_config.device_id.clone())
+                    .name(config.device_name.clone())
+                    .device_type(device_type)
+                    .port(zeroconf_port)
+                    .launch()
+                    .unwrap();
+            discovery_stream.into()
+        };
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
     main_loop::MainLoop {
