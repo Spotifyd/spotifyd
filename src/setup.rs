@@ -96,7 +96,7 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
         CredentialsProvider::SpotifyCredentials(credentials)
     } else {
         info!("no usable credentials found, enabling discovery");
-        let discovery_stream = librespot_discovery::Discovery::builder(config.device_name.clone())
+        let discovery_stream = librespot_discovery::Discovery::builder(session_config.device_id.clone())
             .name(config.device_name.clone())
             .device_type(device_type)
             .port(zeroconf_port)
