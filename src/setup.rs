@@ -14,7 +14,7 @@ use librespot_playback::{
     mixer::{self, Mixer},
 };
 #[allow(unused_imports)] // cfg
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use std::str::FromStr;
 
 pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
@@ -95,7 +95,7 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
             CredentialsProvider::SpotifyCredentials(credentials)
         } else {
             info!("no usable credentials found, enabling discovery");
-            info!("device_id {}", session_config.device_id.clone());
+            debug!("Using device id '{}'", session_config.device_id);
             let discovery_stream =
                 librespot_discovery::Discovery::builder(session_config.device_id.clone())
                     .name(config.device_name.clone())
