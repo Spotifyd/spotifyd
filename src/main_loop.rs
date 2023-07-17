@@ -96,7 +96,7 @@ impl MainLoop {
         let session_config = self.session_config.clone();
         let cache = self.spotifyd_state.cache.clone();
 
-        Session::connect(session_config, creds, cache, false)
+        Session::connect(session_config, creds, cache, true)
             .await
             .map(|(session, _creds)| session)
     }
