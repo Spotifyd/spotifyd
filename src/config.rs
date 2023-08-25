@@ -673,7 +673,7 @@ pub(crate) fn get_config_file() -> Option<PathBuf> {
         }
     }
 }
-#[cfg(all(unix))]
+#[cfg(unix)]
 pub(crate) fn get_config_file() -> Option<PathBuf> {
     let etc_conf = format!("/etc/{}", CONFIG_FILE_NAME);
     let xdg_dirs = xdg::BaseDirectories::with_prefix("spotifyd").ok()?;
