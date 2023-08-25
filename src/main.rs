@@ -1,5 +1,3 @@
-#![cfg(unix)]
-
 use crate::config::CliConfig;
 use color_eyre::{
     eyre::{self, eyre, Context},
