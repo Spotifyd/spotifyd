@@ -35,7 +35,7 @@ librespot-discovery = { version = "0.4" }
 librespot-connect = { version = "0.4" }
 toml = "0.7"
 color-eyre = "0.6"
-directories = "2.0.2"
+directories = "5.0.1"
 
 [target."cfg(unix)".dependencies]
 daemonize = "0.5"
