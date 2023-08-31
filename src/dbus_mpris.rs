@@ -281,13 +281,13 @@ async fn create_dbus_server(
                 if playback.device.name == mv_device_name {
                     let new_pos = playback
                         .progress
-                        .and_then(|d| d.as_millis().try_into().ok())
+                        .and_then(|d| d.num_milliseconds().try_into().ok())
                         .and_then(|d: i64| d.checked_add(pos / 1000));
 
                     if let Some(new_pos) = new_pos {
                         let duration: u32 = match playback.item {
-                            Some(PlayableItem::Track(t)) => t.duration.as_millis(),
-                            Some(PlayableItem::Episode(e)) => e.duration.as_millis(),
+                            Some(PlayableItem::Track(t)) => t.duration.num_milliseconds(),
+                            Some(PlayableItem::Episode(e)) => e.duration.num_milliseconds(),
                             None => return Ok(()),
                         }
                         .try_into()
@@ -296,8 +296,10 @@ async fn create_dbus_server(
                         // MPRIS spec: negative values should be treated as 0
                         let new_pos = new_pos.max(0);
                         if new_pos <= duration as i64 {
-                            let _ =
-                                sp_client.seek_track(new_pos as u32, playback.device.id.as_deref());
+                            let _ = sp_client.seek_track(
+                                Duration::milliseconds(new_pos),
+                                playback.device.id.as_deref(),
+                            );
                         } else {
                             // MPRIS spec: values beyond track bounds should act like Next
                             let _ = sp_client.next_track(playback.device.id.as_deref());
@@ -322,10 +324,9 @@ async fn create_dbus_server(
                             .map(|id| uri_to_object_path(id.uri()) == track_id)
                             .unwrap_or(false);
                         let duration = match item {
-                            PlayableItem::Track(t) => t.duration.as_micros(),
-                            PlayableItem::Episode(e) => e.duration.as_micros(),
+                            PlayableItem::Track(t) => t.duration.num_microseconds(),
+                            PlayableItem::Episode(e) => e.duration.num_microseconds(),
                         }
-                        .try_into()
                         .unwrap_or(i64::MAX);
                         (track_matches, duration)
                     } else {
@@ -338,8 +339,10 @@ async fn create_dbus_server(
                         && (0..=duration).contains(&pos)
                     {
                         // pos is in microseconds, seek_track takes milliseconds
-                        let _ = sp_client
-                            .seek_track((pos / 1000) as u32, playback.device.id.as_deref());
+                        let _ = sp_client.seek_track(
+                            Duration::milliseconds(pos / 1000),
+                            playback.device.id.as_deref(),
+                        );
                     }
                 }
                 Ok(())
@@ -363,7 +366,9 @@ async fn create_dbus_server(
                     (Type::Album, id) => Context(AlbumId::from_id(id)?.into()),
                     (Type::Playlist, id) => Context(PlaylistId::from_id(id)?.into()),
                     (Type::Show, id) => Context(ShowId::from_id(id)?.into()),
-                    (Type::User | Type::Collection, _) => Err(IdError::InvalidType)?,
+                    (Type::User | Type::Collection | Type::Collectionyourepisodes, _) => {
+                        Err(IdError::InvalidType)?
+                    }
                 })
             }
 
@@ -377,7 +382,7 @@ async fn create_dbus_server(
                         let _ = sp_client.start_uris_playback(
                             Some(id),
                             Some(&device_id),
-                            Some(Offset::Position(0)),
+                            Some(Offset::Position(Duration::zero())),
                             None,
                         );
                     }
@@ -385,7 +390,7 @@ async fn create_dbus_server(
                         let _ = sp_client.start_context_playback(
                             id,
                             Some(&device_id),
-                            Some(Offset::Position(0)),
+                            Some(Offset::Position(Duration::zero())),
                             None,
                         );
                     }
@@ -489,7 +494,7 @@ async fn create_dbus_server(
                     .current_playback(None, None::<Vec<_>>)
                     .ok()
                     .flatten()
-                    .and_then(|p| Some(p.progress?.as_micros() as i64))
+                    .and_then(|p| p.progress?.num_microseconds())
                     .unwrap_or(0);
 
                 Ok(pos)
@@ -634,7 +639,9 @@ async fn create_dbus_server(
                     let item = match track_id.audio_type {
                         SpotifyAudioType::Track => {
                             let track_id = TrackId::from_id(track_id.to_base62().unwrap()).unwrap();
-                            let track = spotify_api_client.track(track_id).map(PlayableItem::Track);
+                            let track = spotify_api_client
+                                .track(track_id, None)
+                                .map(PlayableItem::Track);
                             Some(track)
                         }
                         SpotifyAudioType::Podcast => {
@@ -748,7 +755,7 @@ fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, item: Play
     // a common denominator struct for FullEpisode and FullTrack
     struct TrackOrEpisode {
         id: Option<dbus::Path<'static>>,
-        duration: std::time::Duration,
+        duration: chrono::Duration,
         images: Vec<Image>,
         name: String,
         album_name: String,
@@ -792,7 +799,9 @@ fn insert_metadata(m: &mut HashMap<String, Variant<Box<dyn RefArg>>>, item: Play
 
     m.insert(
         "mpris:length".to_string(),
-        Variant(Box::new(item.duration.as_micros() as i64)),
+        Variant(Box::new(
+            item.duration.num_microseconds().unwrap_or_default(),
+        )),
     );
 
     m.insert(
