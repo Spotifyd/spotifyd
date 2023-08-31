@@ -1,11 +1,15 @@
 use crate::config::CliConfig;
+#[cfg(unix)]
+use color_eyre::eyre::eyre;
 use color_eyre::{
-    eyre::{self, eyre, Context},
+    eyre::{self, Context},
     Help, SectionExt,
 };
 #[cfg(unix)]
 use daemonize::Daemonize;
-use log::{error, info, trace, LevelFilter};
+#[cfg(unix)]
+use log::error;
+use log::{info, trace, LevelFilter};
 use structopt::StructOpt;
 use tokio::runtime::Runtime;
 
