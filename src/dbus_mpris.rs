@@ -30,7 +30,7 @@ use rspotify::{
     prelude::*,
     AuthCodeSpotify, Token as RspotifyToken,
 };
-use std::{collections::HashMap, convert::TryInto, env, pin::Pin, sync::Arc};
+use std::{collections::HashMap, env, pin::Pin, sync::Arc};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 pub struct DbusServer {
@@ -281,25 +281,19 @@ async fn create_dbus_server(
                 if playback.device.name == mv_device_name {
                     let new_pos = playback
                         .progress
-                        .and_then(|d| d.num_milliseconds().try_into().ok())
-                        .and_then(|d: i64| d.checked_add(pos / 1000));
+                        .and_then(|d| d.checked_add(&Duration::milliseconds(pos / 1000)));
 
                     if let Some(new_pos) = new_pos {
-                        let duration: u32 = match playback.item {
-                            Some(PlayableItem::Track(t)) => t.duration.num_milliseconds(),
-                            Some(PlayableItem::Episode(e)) => e.duration.num_milliseconds(),
+                        let duration: Duration = match playback.item {
+                            Some(PlayableItem::Track(t)) => t.duration,
+                            Some(PlayableItem::Episode(e)) => e.duration,
                             None => return Ok(()),
-                        }
-                        .try_into()
-                        .unwrap_or(u32::MAX);
+                        };
 
                         // MPRIS spec: negative values should be treated as 0
-                        let new_pos = new_pos.max(0);
-                        if new_pos <= duration as i64 {
-                            let _ = sp_client.seek_track(
-                                Duration::milliseconds(new_pos),
-                                playback.device.id.as_deref(),
-                            );
+                        let new_pos = new_pos.max(Duration::zero());
+                        if new_pos <= duration {
+                            let _ = sp_client.seek_track(new_pos, playback.device.id.as_deref());
                         } else {
                             // MPRIS spec: values beyond track bounds should act like Next
                             let _ = sp_client.next_track(playback.device.id.as_deref());
