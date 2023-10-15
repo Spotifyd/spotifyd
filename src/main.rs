@@ -10,6 +10,8 @@ use daemonize::Daemonize;
 #[cfg(unix)]
 use log::error;
 use log::{info, trace, LevelFilter};
+#[cfg(windows)]
+use std::fs;
 use structopt::StructOpt;
 use tokio::runtime::Runtime;
 
@@ -61,12 +63,15 @@ fn setup_logger(log_target: LogTarget, verbose: bool) -> eyre::Result<()> {
         #[cfg(target_os = "windows")]
         LogTarget::Syslog => {
             let dirs = directories::BaseDirs::new().unwrap();
-            let mut log_file = dirs.config_dir().to_path_buf();
+            let mut log_file = dirs.data_local_dir().to_path_buf();
             log_file.push("spotifyd");
             log_file.push(".spotifyd.log");
 
+            if let Some(p) = log_file.parent() {
+                fs::create_dir_all(p)?
+            };
             logger.chain(
-                std::fs::OpenOptions::new()
+                fs::OpenOptions::new()
                     .write(true)
                     .create(true)
                     .truncate(true)
