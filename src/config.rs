@@ -14,7 +14,7 @@ use librespot_playback::config::{
 use log::{error, info, warn};
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
-use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
+use std::{fmt, fs, path::Path, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
 
@@ -662,14 +662,11 @@ pub(crate) fn get_config_file() -> Option<PathBuf> {
 
     if path.exists() {
         Some(path)
-    } else {
+    } else if Path::new(&etc_conf).exists() {
         let path: PathBuf = etc_conf.into();
-
-        if path.exists() {
-            Some(path)
-        } else {
-            None
-        }
+        Some(path)
+    } else {
+        None
     }
 }
 
