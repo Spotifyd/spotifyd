@@ -65,6 +65,11 @@ fn get_shell_ffi() -> Option<String> {
     None
 }
 
+#[cfg(target_os = "windows")]
+fn get_shell_ffi() -> Option<String> {
+    Some(String::from("cmd"))
+}
+
 pub(crate) fn get_shell() -> Option<String> {
     let shell = env::var("SHELL").ok().or_else(get_shell_ffi);
     trace!("Found user shell: {:?}", &shell);

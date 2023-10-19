@@ -34,3 +34,5 @@ tags
 
 .idea
 .vscode
+# Windows logs
+*.log
