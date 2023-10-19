@@ -200,7 +200,7 @@ dependencies = [
  "log",
  "parking",
  "polling",
- "rustix 0.37.23",
+ "rustix 0.37.26",
  "slab",
  "socket2 0.4.9",
  "waker-fn",
@@ -228,7 +228,7 @@ dependencies = [
  "cfg-if",
  "event-listener",
  "futures-lite",
- "rustix 0.37.23",
+ "rustix 0.37.26",
  "signal-hook",
  "windows-sys",
 ]
@@ -2620,9 +2620,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.37.23"
+version = "0.37.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d69718bf81c6127a49dc64e44a742e8bb9213c0ff8869a22c308f84c1d4ab06"
+checksum = "84f3f8f960ed3b5a59055428714943298bf3fa2d4a1d53135084e0544829d995"
 dependencies = [
  "bitflags 1.3.2",
  "errno",
