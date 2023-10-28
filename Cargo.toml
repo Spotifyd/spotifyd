@@ -33,7 +33,7 @@ librespot-playback = { version = "0.4", default-features = false }
 librespot-core = { version = "0.4" }
 librespot-discovery = { version = "0.4" }
 librespot-connect = { version = "0.4" }
-toml = "0.7"
+toml = "0.8"
 color-eyre = "0.6"
 directories = "5.0.1"
 
