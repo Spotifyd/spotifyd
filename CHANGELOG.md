@@ -4,6 +4,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Credential caching has been re-enabled. ([#1214])
+
+[#1214]: https://github.com/Spotifyd/spotifyd/pull/1214
+
+## [0.3.5]
+
+We now have a [project website](https://spotifyd.rs) (thanks @slondr!) and a [matrix room](https://matrix.to/#/#spotifyd:matrix.org).
+Feel free to join and ask your questions!
+
+### Added
+- `TransferPlayback` D-Bus method to transfer the playback to `spotifyd` ([#1162])
+  To host this, a `rs.spotifyd.Controls` interface has been added.
+- A `audio_format` option was added to circumvent certain errors ([#1082])
+- A setter was added to the `Shuffle` property ([#1188])
+- `volume_control = "none"` variant to disable changing the volume in clients ([#750])
+### Changed
+- Improve backend selection logic, especially for macOS ([#1158])
+- Update `keyring` dependency to newest version ([#1174])
+- `VolumeUp`, `VolumeDown` D-Bus methods have been copied to spotifyd's controls interface ([#1162])
+  Their versions in `org.mpris.MediaPlayer2.Player` have been deprecated and will be removed in a breaking release.
+- The `librespot` dependency has been upgraded to the most recent release 🎉 ([#1182], [#1197])
+- Many other dependency updates ([#1183], [#1145], [#1199])
+- Documentation improvements ([#1156])
+- Our minimum supported rust version (MSRV) has been bumped to 1.64 ([#1145])
+
+[#750]: https://github.com/Spotifyd/spotifyd/pull/750
+[#1082]: https://github.com/Spotifyd/spotifyd/pull/1082
+[#1145]: https://github.com/Spotifyd/spotifyd/pull/1145
+[#1156]: https://github.com/Spotifyd/spotifyd/pull/1156
+[#1158]: https://github.com/Spotifyd/spotifyd/pull/1158
+[#1162]: https://github.com/Spotifyd/spotifyd/pull/1162
+[#1174]: https://github.com/Spotifyd/spotifyd/pull/1174
+[#1182]: https://github.com/Spotifyd/spotifyd/pull/1182
+[#1183]: https://github.com/Spotifyd/spotifyd/pull/1183
+[#1188]: https://github.com/Spotifyd/spotifyd/pull/1188
+[#1197]: https://github.com/Spotifyd/spotifyd/pull/1197
+[#1199]: https://github.com/Spotifyd/spotifyd/pull/1199
+
 ## [0.3.4]
 ### Added 
 - Implement the `PropertiesChanged` and `Seeked` events for the MPRIS-interface ([#1025])
@@ -82,7 +123,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.24]
 
-[Unreleased]: https://github.com/Spotifyd/spotifyd/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/Spotifyd/spotifyd/compare/v0.3.5...HEAD
+[0.3.5]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.3.5
 [0.3.4]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.3.4
 [0.3.3]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.3.3
 [0.3.1]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.3.1
