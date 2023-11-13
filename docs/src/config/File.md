@@ -106,7 +106,10 @@ normalisation_pregain = -10
 # After the music playback has ended, start playing similar songs based on the previous tracks.
 autoplay = true
 
-# The port `spotifyd` uses to announce its service over the network.
+# The port at which `spotifyd` is going to offer its service over the network (TCP).
+# If not set, a random port > 1024 is used. For the service to be discoverable on the
+# local network via mDNS, both the mDNS port (5353 UDP) and the random or fixed
+# zeroconf port need to be allowed through any active firewall.
 zeroconf_port = 1234
 
 # The proxy `spotifyd` will use to connect to spotify.
