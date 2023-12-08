@@ -1,16 +1,16 @@
 # 64 bit Raspery OS build guide
 
-To run spotifyd on a 64 bit Raspberry Pi OS, you have to possiblities. Compile the 64 bit binary by yourself or add the 32 bit architecture as 
+To run spotifyd on a 64 bit Raspberry Pi OS, you have two possiblities. Compile the 64 bit binary by yourself or add the 32 bit architecture as 
 an additional architecture to your 64 bit Raspberry Pi OS.
 
-Let's start with compiling the 64 bit version, as it offers you mor possibilities like adding the DBus feature for controlling the service with
+Let's start with compiling the 64 bit version, as it offers you more possibilities like adding the DBus feature for controlling the service with
 DBus commands.
 
 ## Option 1: Compiling the 64 bit version
 
 ### Uninstall the preinstalled rust compiler
 
-spotifyd may require a newer rust toolchain than the one which is delivered with Raspberry OS.
+spotifyd may require a newer rust toolchain than the one which is delivered with Raspberry Pi OS.
 
 ```bash
 sudo apt remove rustc
@@ -34,7 +34,7 @@ source "$HOME/.cargo/env"
 
 ### Clone the repository
 
-E.g. in your Downloads Directory. If it does not exist, create it or do it somewhere else, but remember to adapt the pathes of this guide accordingly.
+E.g. in your Downloads Directory. If it does not exist, create it or do it somewhere else.
 
 ```bash
 cd /home/user/Downloads
@@ -50,7 +50,7 @@ cd spotifyd
 cargo build --release
 ```
 
-This will build a basic version, but you can add additional feature like the mentioned DBus or other sound backends by adding additional flags.
+This will build a basic version, but you can add additional features like the mentioned DBus or other sound backends by adding additional flags.
 
 E.g. with DBus support
 

@@ -7,9 +7,9 @@ This guide will help you to install `spotifyd` on a Raspberry Pi and have it alw
 1. Download the latest ARMv6 from <https://github.com/Spotifyd/spotifyd/releases> (use `wget`)
 2. Unzip the file: `tar xzf spotifyd-linux-arm6*`
 You will now see a file called `spotifyd`. You can run it with `./spotifyd --no-daemon`
-The binaries on the download site are all 32 bit binaries, you cannot easily run them on a current 64-bit Raspberry OS.
+The binaries on the download site are all 32 bit binaries, you cannot easily run them on a current 64-bit Raspberry Pi OS.
 Trying to run them will result in 'cannot execute: required file not found'
-To run on a 64 bit Raspberry OS, see `Raspberry-Pi-64.md`.
+To run on a 64 bit Raspberry Pi OS, see `Raspberry-Pi-64.md`.
 
 It is recommended to copy the file to usr/bin, so that everyone can run it or use it for a daemon:
 
@@ -88,7 +88,7 @@ use_mpris = true
 dbus_type = "system"
 ```
 
-In the standard config, no one is allowed to register services on the system dbus, so you need to configure it. Create a configuration file under /usr/share/dbus-1/system.d/, eg. spotifyd-dbus.conf (must end with .conf)
+In the standard DBus config, no one is allowed to register services on the system dbus, so you need to configure it. Create a configuration file under /usr/share/dbus-1/system.d/, eg. spotifyd-dbus.conf (must end with .conf)
 
 ```bash
 sudo nano /usr/share/dbus-1/system.d/spotifyd-dbus.conf
@@ -114,9 +114,9 @@ Add the following content:
 If you try to run as user, replace root with the user account name.
 
 ## Known issues / Logging
-Logging in files is currently not possible, the daemon crashes without the --no-daemon argument, which redirects the output to stdout. Without the parameter it tries to
-output at syslog, but even with syslog installed it crashed.
-To get ist least the latest output run
+Logging in files is currently not possible for the daemon setup, the daemon crashes without the --no-daemon argument (redirects the output to stdout).
+Without the parameter it tries to output at syslog, but even with syslog installed it crashed.
+To get at least the latest output run
 
 ```bash
 sudo systemctl status spotifyd.service
