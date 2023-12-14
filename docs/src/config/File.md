@@ -146,6 +146,8 @@ device_type = "speaker"
 
 - **`use_keyring`** config entry / **`--use-keyring`** CLI flag <!-- omit in toc -->
 
+  > __Note:__ If choosing the user's keyring to store login credentials, running spotifyd as a systemd _system service_ is no longer possible. A system wide service cannot access a specific user's keyring. In this case, make sure to run spotifyd as a systemd _user service_. See [systemd configuration][services/Systemd.md].
+
   This features leverages [Linux's DBus Secret Service API][secret-storage-specification] or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, compile with the `dbus_keyring` feature and set the `use-keyring` config entry to `true` or pass the `--use-keyring` CLI flag  during start to the daemon. Remove the `password` and/or `password_cmd` config entries.
 
   Your keyring entry needs to have the following attributes set:
