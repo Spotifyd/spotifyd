@@ -41,7 +41,7 @@ sudo nano /etc/systemd/user/spotifyd.service
 
 ## Configuring spotifyd
 
-Spotifyd comes pre-configured with defaults that should be working in most cases, but if you want to tweak it further to your needs, have a look at File.md at the [configuration section](../config/) of this book.
+Spotifyd comes pre-configured with defaults that should be working in most cases, but if you want to tweak it further to your needs, have a look at the [configuration section](../config/File.md) of this book.
 
 ## Start the service
 
