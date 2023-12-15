@@ -74,7 +74,7 @@ sudo apt update
 sudo apt install libasound2-plugins:armhf
 ```
 
-Now you can go on with the instructions in `Raspberry-Pi-32.md`, but download the `armhf-slim.tar.gz` file instead of the armv6 file.
+Now you can go on with the [32-bit instructions](Raspberry-Pi-32.md), but download the `armhf-slim.tar.gz` file instead of the armv6 file.
 The other instructions are the same once you have the binary running.
 Downloading other variants like full or default may require further armhf packages to be installed with the command like above:
 
