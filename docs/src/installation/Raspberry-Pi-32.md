@@ -7,7 +7,7 @@ This guide will help you to install `spotifyd` on a Raspberry Pi and have it alw
 1. Download the latest ARMv6 from <https://github.com/Spotifyd/spotifyd/releases> (use `wget`)
 2. Unzip the file: `tar xzf spotifyd-linux-arm6*`
 You will now see a file called `spotifyd`. You can run it with `./spotifyd --no-daemon`
-The binaries on the download site are all 32 bit binaries, you cannot easily run them on a current 64-bit Raspberry Pi OS.
+The ARM binaries on the download site are all 32 bit binaries, you cannot easily run them on a current 64-bit Raspberry Pi OS.
 Trying to run them will result in 'cannot execute: required file not found'
 To run on a 64 bit Raspberry Pi OS, see `Raspberry-Pi-64.md`.
 
