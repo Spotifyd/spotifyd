@@ -88,7 +88,7 @@ use_mpris = true
 dbus_type = "system"
 ```
 
-In the standard DBus config, no one is allowed to register services on the system dbus, so you need to configure it. Create a configuration file under /usr/share/dbus-1/system.d/, eg. spotifyd-dbus.conf (must end with .conf)
+In the standard DBus config, no one is allowed to register services on the system dbus, so you need to configure it. Create a configuration file under `/usr/share/dbus-1/system.d/`, eg. `spotifyd-dbus.conf` (must end with `.conf`).
 
 ```bash
 sudo nano /usr/share/dbus-1/system.d/spotifyd-dbus.conf
