@@ -9,7 +9,7 @@ This guide will help you to install `spotifyd` on a Raspberry Pi and have it alw
 You will now see a file called `spotifyd`. You can run it with `./spotifyd --no-daemon`
 The ARM binaries on the download site are all 32 bit binaries, you cannot easily run them on a current 64-bit Raspberry Pi OS.
 Trying to run them will result in `cannot execute: required file not found`.
-To run on a 64 bit Raspberry Pi OS, see `Raspberry-Pi-64.md`.
+To run on a 64 bit Raspberry Pi OS, have a look at [this guide](Raspberry-Pi-64.md).
 
 It is recommended to copy the file to usr/bin, so that everyone can run it or use it for a daemon:
 
