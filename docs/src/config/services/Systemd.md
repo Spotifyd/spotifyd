@@ -17,6 +17,15 @@ Control of the daemon is handed over to systemd. The following command will star
 systemctl --user enable spotifyd.service --now
 ```
 
+To run the service on boot:
+
+```bash
+sudo loginctl enable-linger <username>
+```
+
+Where <username> is the user name which starts the service, the user wich runned thw systemctl command.
+The command is required to enable your user to run long-running services. Without it `systemd` would kill the `spotifyd` process as soon as you log out, and only run it when you log in.
+
 ## As a system wide service
 
 A `systemd.service` unit file is provided to help run spotifyd as a service on systemd-based systems. The file `contrib/spotifyd.service` should be copied to:
