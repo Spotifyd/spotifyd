@@ -1,5 +1,7 @@
 # Linux build guide
 
+This guide covers Debian based systems with APT packet manager.
+
 ## Install required packages
 
 Depending on the distribution and environments, required packages have to be installed.
@@ -7,19 +9,22 @@ Depending on the distribution and environments, required packages have to be ins
 Ubuntu Desktop (22.04 LTS):
 
 ```bash
-sudo apt install curl git libasound2-dev libssl-dev libdbus-1-dev build-essential pkg-config
+sudo apt install curl git build-essential pkg-config libasound2-dev portaudio19-dev libdbus-1-dev
 ```
 
 Raspberry Pi OS (Bookworm):
 
 ```bash
-sudo apt install libasound2-dev libdbus-1-dev
+sudo apt install libasound2-dev portaudio19-dev libdbus-1-dev
 ```
+> **Note:** Depending on your feature flags, you can also leave packages out, e.g.  
+> libasound2-dev: no ALSA backend (--no-default-features)  
+> portaudio19-dev:  No PortAudio backend
 
 ## Uninstall the preinstalled rust compiler
 
-> **Note:** spotifyd may require a newer rust toolchain than the one which is delivered with your Linux system, 
-> we recommend to uninstall the current version if you are not sure which version you have and if it is sufficient.
+> **Note:** spotifyd may require a newer rust toolchain than the one which is delivered with your Linux system,  
+> we recommend to uninstall the current version if you are not sure which version you have and if it is sufficient.  
 > We recommend to always use the latest version and don't guarantee compatibility with older ones.
 
 If it was installed from apt packet manager:
@@ -66,8 +71,8 @@ cd spotifyd
 
 ## Building spotifyd
 
-If you want to build the latest release and not the latest commit, look up the (heading) of the latest release on https://github.com/Spotifyd/spotifyd/releases
-or https://github.com/Spotifyd/spotifyd/tags. Then:
+If you want to build the latest release and not the latest commit, look up the (heading) of the latest release  
+on https://github.com/Spotifyd/spotifyd/releases or https://github.com/Spotifyd/spotifyd/tags. Then:
 
 ```bash
 git checkout tags/v0.3.5
