@@ -44,7 +44,7 @@ dbus_type = "session"
 
 # The audio backend used to play music. To get
 # a list of possible backends, run `spotifyd --help`.
-backend = "alsa" # use portaudio for macOS [homebrew]
+backend = "alsa" # use portaudio for BSD and macOS [homebrew]
 
 # The alsa audio device to stream audio. To get a
 # list of valid devices, run `aplay -L`,
@@ -66,7 +66,7 @@ mixer = "PCM"  # omit for macOS
 # The volume controller. Each one behaves different to
 # volume increases. For possible values, run
 # `spotifyd --help`.
-volume_controller = "alsa"  # use softvol for macOS
+volume_controller = "alsa"  # use softvol for BSD and macOS
 
 # A command that gets executed in your shell after each song changes.
 on_song_change_hook = "command_to_run_on_playback_events"
