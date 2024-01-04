@@ -83,6 +83,6 @@ To enable an additional audio backend, pass `<audio_backend_name>_backend` as a 
 | Feature Flag | Description                                                                         |
 |--------------|-------------------------------------------------------------------------------------|
 | dbus_keyring | Provides password authentication over the system's keyring (supports all platforms) |
-| dbus_mpris   | Provides multimedia key support (Linux only)                                      |
+| dbus_mpris   | Provides multimedia key support (Linux and BSD only)                                |
 
 > __Note:__ Compiling Spotifyd with all features and the pulseaudio backend on Ubuntu would result in the following command: `cargo build --release --no-default-features --features pulseaudio_backend,dbus_keyring,dbus_mpris`
