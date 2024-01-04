@@ -2292,6 +2292,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26072860ba924cbfa98ea39c8c19b4dd6a4a25423dbdf219c1eca91aa0cf6964"
 
 [[package]]
+name = "pledge"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "252599417b7d9a43b7fdc63dd790b0848666a8910b2ebe1a25118309c3c981e5"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "polling"
 version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2963,6 +2972,7 @@ dependencies = [
  "librespot-discovery",
  "librespot-playback",
  "log",
+ "pledge",
  "rspotify",
  "serde",
  "sha-1 0.10.1",
