@@ -11,7 +11,6 @@ rust-version = "1.67"
 [dependencies]
 alsa = { version = "0.7", optional = true }
 chrono = "0.4"
-daemonize = "0.5"
 dbus = { version = "0.9", optional = true }
 dbus-tokio = { version = "0.7.3", optional = true }
 dbus-crossroads = { version = "0.5.0", optional = true }
@@ -26,11 +25,9 @@ rspotify = { version = "0.12.0", features = ["client-ureq", "ureq-rustls-tls"], 
 serde = { version = "1.0.115", features = ["derive"] }
 sha-1 = "0.10"
 structopt = "0.3.17"
-syslog = "6"
 tokio = {version = "1.26.0", features = ["signal", "rt-multi-thread", "process", "io-std"] }
 tokio-stream = "0.1.7"
 url = "2.2.2"
-xdg = "2.2"
 librespot-audio = { version = "0.4", default-features = false }
 librespot-playback = { version = "0.4", default-features = false }
 librespot-core = { version = "0.4" }
@@ -38,6 +35,11 @@ librespot-discovery = { version = "0.4" }
 librespot-connect = { version = "0.4" }
 toml = "0.7"
 color-eyre = "0.6"
+directories = "5.0.1"
+
+[target."cfg(unix)".dependencies]
+daemonize = "0.5"
+syslog = "6"
 
 [target."cfg(target_os = \"macos\")".dependencies]
 whoami = "1"
@@ -56,11 +58,7 @@ rodio_backend = ["librespot-playback/rodio-backend"]
 
 [package.metadata.deb]
 depends = "$auto, systemd, pulseaudio"
-features = [
-    "pulseaudio_backend",
-    "dbus_keyring",
-    "dbus_mpris",
-]
+features = ["pulseaudio_backend", "dbus_keyring", "dbus_mpris"]
 assets = [
     ["target/release/spotifyd", "usr/bin/", "755"],
     ["README.md", "usr/share/doc/spotifyd/README", "644"],

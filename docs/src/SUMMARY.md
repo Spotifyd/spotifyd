@@ -8,6 +8,7 @@
   - [Cross Compiling on Ubuntu](./installation/Cross-Compiling-on-Ubuntu.md)
   - [Installing with Homebrew on macOS](./installation/MacOS.md)
   - [Installing on FreeBSD](./installation/FreeBSD.md)
+  - [Installing on OpenBSD](./installation/OpenBSD.md)
 - [Configuration](./config/README.md)
   - [CLI options](./config/Cli.md)
   - [Configuration file](./config/File.md)

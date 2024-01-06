@@ -19,6 +19,14 @@ systemctl --user enable spotifyd.service --now
 
 ## As a system wide service
 
+<div class="warning">
+
+When running spotifyd as a system wide service, it is not possible to access a user's keyring to obtain login credentials. Do not set `use_keyring = true` and do not specify `--use-keyring`, when running as a system wide service. To be able to access login credentials stored in the user's keyring, run spotifyd as a user service, as decribed above.
+
+Additionally, `use_mpris = true` or `--use-mpris` should not be used, since their intended usage is within user sessions (and not system-wide daemons). If you have very specific requirements and still want to control a system-wide `spotifyd` instance, there is some help available [here](https://github.com/Spotifyd/spotifyd/issues/244).
+
+</div>
+
 A `systemd.service` unit file is provided to help run spotifyd as a service on systemd-based systems. The file `contrib/spotifyd.service` should be copied to:
 
 ```bash

@@ -14,7 +14,7 @@ use librespot_playback::config::{
 use log::{error, info, warn};
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
-use std::{fmt, fs, path::PathBuf, str::FromStr, string::ToString};
+use std::{fmt, fs, path::Path, path::PathBuf, str::FromStr, string::ToString};
 use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
 
@@ -655,16 +655,19 @@ impl SharedConfigValues {
 
 pub(crate) fn get_config_file() -> Option<PathBuf> {
     let etc_conf = format!("/etc/{}", CONFIG_FILE_NAME);
-    let xdg_dirs = xdg::BaseDirectories::with_prefix("spotifyd").ok()?;
-    xdg_dirs.find_config_file(CONFIG_FILE_NAME).or_else(|| {
-        fs::metadata(&*etc_conf).ok().and_then(|meta| {
-            if meta.is_file() {
-                Some(etc_conf.into())
-            } else {
-                None
-            }
-        })
-    })
+    let dirs = directories::BaseDirs::new()?;
+    let mut path = dirs.config_dir().to_path_buf();
+    path.push("spotifyd");
+    path.push(CONFIG_FILE_NAME);
+
+    if path.exists() {
+        Some(path)
+    } else if Path::new(&etc_conf).exists() {
+        let path: PathBuf = etc_conf.into();
+        Some(path)
+    } else {
+        None
+    }
 }
 
 fn device_id(name: &str) -> String {
@@ -693,6 +696,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) player_config: PlayerConfig,
     pub(crate) session_config: SessionConfig,
     pub(crate) onevent: Option<String>,
+    #[allow(unused)]
     pub(crate) pid: Option<String>,
     pub(crate) shell: String,
     pub(crate) zeroconf_port: Option<u16>,

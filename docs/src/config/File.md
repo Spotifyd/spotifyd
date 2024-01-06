@@ -44,7 +44,7 @@ dbus_type = "session"
 
 # The audio backend used to play music. To get
 # a list of possible backends, run `spotifyd --help`.
-backend = "alsa" # use portaudio for macOS [homebrew]
+backend = "alsa" # use portaudio for BSD and macOS [homebrew]
 
 # The alsa audio device to stream audio. To get a
 # list of valid devices, run `aplay -L`,
@@ -66,7 +66,7 @@ mixer = "PCM"  # omit for macOS
 # The volume controller. Each one behaves different to
 # volume increases. For possible values, run
 # `spotifyd --help`.
-volume_controller = "alsa"  # use softvol for macOS
+volume_controller = "alsa"  # use softvol for BSD and macOS
 
 # A command that gets executed in your shell after each song changes.
 on_song_change_hook = "command_to_run_on_playback_events"
@@ -106,7 +106,10 @@ normalisation_pregain = -10
 # After the music playback has ended, start playing similar songs based on the previous tracks.
 autoplay = true
 
-# The port `spotifyd` uses to announce its service over the network.
+# The port at which `spotifyd` is going to offer its service over the network (TCP).
+# If not set, a random port > 1024 is used. For the service to be discoverable on the
+# local network via mDNS, both the mDNS port (5353 UDP) and the random or fixed
+# zeroconf port need to be allowed through any active firewall.
 zeroconf_port = 1234
 
 # The proxy `spotifyd` will use to connect to spotify.
@@ -142,6 +145,8 @@ device_type = "speaker"
   ```
 
 - **`use_keyring`** config entry / **`--use-keyring`** CLI flag <!-- omit in toc -->
+
+  > __Note:__ If choosing the user's keyring to store login credentials, running spotifyd as a systemd _system service_ is no longer possible. A system wide service cannot access a specific user's keyring. In this case, make sure to run spotifyd as a systemd _user service_. See [systemd configuration](services/Systemd.md).
 
   This features leverages [Linux's DBus Secret Service API][secret-storage-specification] or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, compile with the `dbus_keyring` feature and set the `use-keyring` config entry to `true` or pass the `--use-keyring` CLI flag  during start to the daemon. Remove the `password` and/or `password_cmd` config entries.
 
