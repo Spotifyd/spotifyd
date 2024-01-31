@@ -19,7 +19,7 @@ futures = "0.3.29"
 gethostname = "0.4.0"
 hex = "0.4"
 keyring = { version = "2.0", optional = true }
-libc = "0.2.149"
+libc = "0.2.153"
 log = "0.4.6"
 rspotify = { version = "0.12.0", features = ["client-ureq", "ureq-rustls-tls"], default-features = false, optional = true }
 serde = { version = "1.0.190", features = ["derive"] }
