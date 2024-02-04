@@ -92,7 +92,7 @@ fn main() -> eyre::Result<()> {
     #[cfg(target_os = "openbsd")]
     pledge(
         "stdio rpath wpath cpath inet mcast flock chown unix dns proc exec audio",
-        None
+        None,
     )
     .unwrap();
 
@@ -199,7 +199,7 @@ fn main() -> eyre::Result<()> {
         if internal_config.onevent.is_some() {
             pledge(
                 "stdio rpath wpath cpath inet mcast unix dns proc exec audio",
-                None
+                None,
             )
             .unwrap();
         } else {
