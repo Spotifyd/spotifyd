@@ -10,12 +10,12 @@ use daemonize::Daemonize;
 #[cfg(unix)]
 use log::error;
 use log::{info, trace, LevelFilter};
+#[cfg(target_os = "openbsd")]
+use pledge::pledge;
 #[cfg(windows)]
 use std::fs;
 use structopt::StructOpt;
 use tokio::runtime::Runtime;
-#[cfg(target_os = "openbsd")]
-use pledge::pledge;
 
 #[cfg(feature = "alsa_backend")]
 mod alsa_mixer;
@@ -90,7 +90,11 @@ fn main() -> eyre::Result<()> {
     // Start with superset of all potentially required promises.
     // Drop later after CLI arguments and configuration files were parsed.
     #[cfg(target_os = "openbsd")]
-    pledge("stdio rpath wpath cpath inet mcast flock chown unix dns proc exec audio", None).unwrap();
+    pledge(
+        "stdio rpath wpath cpath inet mcast flock chown unix dns proc exec audio",
+        None
+    )
+    .unwrap();
 
     color_eyre::install().wrap_err("Couldn't initialize error reporting")?;
 
@@ -193,7 +197,11 @@ fn main() -> eyre::Result<()> {
 
         // --on-song-change-hook aka. "onevent", run via --shell aka. "shell"
         if internal_config.onevent.is_some() {
-            pledge("stdio rpath wpath cpath inet mcast unix dns proc exec audio", None).unwrap();
+            pledge(
+                "stdio rpath wpath cpath inet mcast unix dns proc exec audio",
+                None
+            )
+            .unwrap();
         } else {
             pledge("stdio rpath wpath cpath inet mcast unix dns audio", None).unwrap();
         }
