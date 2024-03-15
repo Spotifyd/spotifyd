@@ -46,8 +46,8 @@ impl Mixer for AlsaMixer {
 
     fn volume(&self) -> u16 {
         let selem_id = alsa::mixer::SelemId::new(&self.mixer, 0);
-        match alsa::mixer::Mixer::new(&self.device, false)
-            .ok()
+        let mixer = alsa::mixer::Mixer::new(&self.device, false).ok();
+        let vol = mixer
             .as_ref()
             .and_then(|mixer| mixer.find_selem(&selem_id))
             .and_then(|elem| {
@@ -58,9 +58,10 @@ impl Mixer for AlsaMixer {
                         let volume_steps = max - min + 1;
                         ((volume - min) * (0xFFFF / volume_steps)) as u16
                     })
-            }) {
+            });
+        match vol {
             Some(vol) => vol,
-            _ => {
+            None => {
                 error!(
                     "Couldn't read volume from alsa device with name \"{}\".",
                     self.device
