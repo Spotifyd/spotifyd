@@ -1,66 +1,146 @@
 # User supplied Scripts
 
-## Dunst Notifications (Using Spotify API)
+The config value `on_song_change_hook` or `onevent` can be used to hook into player events. The command is executed with different environment variables depending on the `$PLAYER_EVENT`.
 
-This script will show a dunst notification when you play/change/stop Spotify (and when the music change). It is using spotify APIs to get music details.
+## $PLAYER_EVENT values
+
+### change
+Send when the track changes.
+* `$OLD_TRACK_ID`
+* `$TRACK_ID`
+
+### start
+Sent when a (client connects / session is started).
+* `$TRACK_ID`
+* `$PLAY_REQUEST_ID`
+* `$POSITION_MS`
+
+### stop
+Sent when a (client disconnects / session is stopped).
+* `$TRACK_ID`
+* `$PLAY_REQUEST_ID`
+
+### load
+Sent when a track is loaded.
+* `$TRACK_ID`
+* `$PLAY_REQUEST_ID`
+* `$POSITION_MS`
+
+### play
+Sent when a track starts to play.
+* `$TRACK_ID`
+* `$PLAY_REQUEST_ID`
+* `$POSITION_MS`
+* `$DURATION_MS`
+
+### pause 
+Sent when a track is paused.
+* `$TRACK_ID`
+* `$PLAY_REQUEST_ID`
+* `$POSITION_MS`
+* `$DURATION_MS`
+
+### preload
+Sent a few seconds before the end of the track.
+* `$TRACK_ID`
+* `$PLAY_REQUEST_ID`
+
+### endoftrack
+Sent at the end of the track.
+* `$TRACK_ID`
+* `$PLAY_REQUEST_ID`
+
+### volumeset
+Sent when volume is set.
+* `$VOLUME`
+
+### unavailable
+Sent when a track is unavailable.
+* `$TRACK_ID`
+* `$PLAY_REQUEST_ID`
+
+### preloading
+Sent after `$PLAYER_EVENT=preload`.
+* `$TRACK_ID`
+
+## How to use
+* Create a script ```/path/to/file/spotifyNotifications.sh```
+* Make the script executable (```chmod +x /path/to/file/spotifyNotifications.sh```)
+* Add the line ```onevent = "/path/to/file/spotifyNotifications.sh"``` to your ```spotifyd.conf```
+
+
+## Notifications with album cover (using Spotify API)
+
+This script will show a notification when a track is played. It is using spotify [Web API](https://developer.spotify.com/documentation/web-api) to get music details.
+
 
 ### Dependencies
 
-* curl (Request to APIs)
-* xargs (Argument passing)
-* cut
-* jq (https://stedolan.github.io/jq) (for JSON parsing)
+* curl 
+* wget
+* jq 
+* notify-send
 
-### How to use
 
-* Create a file containing the script below:
+### Script
 
-    ```bash
-    user_id=YOUR_USER_ID # generated on https://developer.spotify.com/dashboard/applications
-    secret_id=YOUR_SECRET_ID
+```bash
+#!/bin/bash
+# spotify api credentials; generated on https://developer.spotify.com/dashboard/applications
+user_id=YOUR_USER_ID
+secret_id=YOUR_SECRET_ID
 
-    myToken=$(curl -s -X 'POST' -u $user_id:$secret_id -d grant_type=client_credentials https://accounts.spotify.com/api/token | jq '.access_token' | cut -d\" -f2)
-    RESULT=$?
+# get access token
+token=$(curl -s -X 'POST' -u "$user_id:$secret_id" -d grant_type=client_credentials https://accounts.spotify.com/api/token | jq -r '.access_token')
 
-    if [ "$PLAYER_EVENT" = "start" ];
-    then
-        if [ $RESULT -eq 0 ]; then
-            curl -s -X 'GET' https://api.spotify.com/v1/tracks/$TRACK_ID -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization:\"Bearer $myToken\"" | jq '.name, .artists[].name, .album.name, .album.release_date, .track_number, .album.total_tracks' | xargs printf "\"Playing '%s' from '%s' (album: '%s' in %s (%s/%s))\"" | xargs notify-send --urgency=low --expire-time=3000 --icon=/usr/share/icons/gnome/32x32/actions/player_play.png --app-name=spotifyd spotifyd
-        else
-            echo "Cannot get token."
-        fi
-    elif [ "$PLAYER_EVENT" = "change" ];
-    then
-        if [ $RESULT -eq 0 ]; then
-            curl -s -X 'GET' https://api.spotify.com/v1/tracks/$TRACK_ID -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization:\"Bearer $myToken\"" | jq '.name, .artists[].name, .album.name, .album.release_date, .track_number, .album.total_tracks' | xargs printf "\"Music changed to '%s' from '%s' (album: '%s' in %s (%s/%s))\"" | xargs notify-send --urgency=low --expire-time=3000 --icon=/usr/share/icons/gnome/32x32/actions/player_fwd.png --app-name=spotifyd spotifyd
-        else
-            echo "Cannot get token."
-        fi
-    elif [ "$PLAYER_EVENT" = "stop" ];
-    then
-        if [ $RESULT -eq 0 ]; then
-            curl -s -X 'GET' https://api.spotify.com/v1/tracks/$TRACK_ID -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization:\"Bearer $myToken\"" | jq '.name, .artists[].name, .album.name, .album.release_date, .track_number, .album.total_tracks' | xargs printf "Stoping music (Last song: '%s' from '%s' (album: '%s' in %s (%s/%s)))\"" | xargs notify-send --urgency=low --expire-time=3000 --icon=/usr/share/icons/gnome/32x32/actions/player_stop.png --app-name=spotifyd spotifyd
-        else
-            echo "Cannot get token."
-        fi
-    else
-        echo "Unknown event."
-    fi
-    ```
+if [ "$token" = "" ]
+then
+    notify-send --urgency=critical "$(basename "$0"): error fetching spotify api token"
+    exit 1
+fi
 
-* Make this script executable (```chmod +x ntification_script.sh```)
-* Add the line ```onevent = "bash /home/YOU_USER/bin/spotifyNotifications.sh"``` to your ```spotifyd.conf```
+cover_file=/tmp/spotifyd-cover.jpg
+track_json=/tmp/spotifyd-track.json
 
-## Dunst Notifications (Using Playerctl metadata)
+if [ "$PLAYER_EVENT" = "change" ] || [ "$PLAYER_EVENT" = "start" ];
+then
+    # load json of current track
+    curl -s -X 'GET' https://api.spotify.com/v1/tracks/"$TRACK_ID" -H 'Accept: application/json' -H 'Content-Type: application/json' -H "Authorization:\"Bearer $token\"" > "$track_json"
+    # load image of cover
+    cover_url=$(jq -r '.album.images[0].url' "$track_json")
+    wget -O "$cover_file" "$cover_url"
+elif [ "$PLAYER_EVENT" = "play" ];
+then
+    # parse track info
+    title=$(jq -r '.name' "$track_json")
+    artists=$(jq -r '.artists | map(.name) | join(", ")' "$track_json")
+    album=$(jq -r '.album.name' "$track_json")
+    # send notification
+    notify-send --urgency=low --expire-time=5000 --icon="$cover_file" --app-name=spotifyd "$title" "$artist\n$album"
+fi
+```
 
-This script is a modification of the script supplied above, however instead of calling the Spotify API for track information, the metadata of the current track is used instead, leading to a more performant script.
+
+## Notifications (using playerctl metadata)
+
+This script is an updated version of this [gist](https://gist.github.com/ohhskar/efe71e82337ed54b9aa704d3df28d2ae). It uses playerctl metadata instead of the Spotify API.
+
 
 ### Dependencies
 
 * [Playerctl](https://github.com/altdesktop/playerctl)
+* notify-send
 
-### How to Use:
+### Script
 
-* Download this [gist](https://gist.github.com/ohhskar/efe71e82337ed54b9aa704d3df28d2ae)
-* Make the script executable (```chmod +x notifications.sh```)
-* Add the line ```onevent = "/path/to/file/spotifyNotifications.sh"``` to your ```spotifyd.conf```
+```bash
+#!/bin/bash
+
+if [ "$PLAYER_EVENT" = "play" ] || [ "$PLAYER_EVENT" = "change" ];
+then
+	trackName=$(playerctl -p spotifyd,%any metadata title)
+	artistAndAlbumName=$(playerctl -p spotifyd,%any metadata --format "{{ artist }} ({{ album }})")
+
+	notify-send -u low "$trackName" "$artistAndAlbumName "
+fi
+```
