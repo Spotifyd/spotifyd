@@ -116,7 +116,7 @@ then
     artists=$(jq -r '.artists | map(.name) | join(", ")' "$track_json")
     album=$(jq -r '.album.name' "$track_json")
     # send notification
-    notify-send --urgency=low --expire-time=5000 --icon="$cover_file" --app-name=spotifyd "$title" "$artist\n$album"
+    notify-send --urgency=low --expire-time=5000 --icon="$cover_file" --app-name=spotifyd "$title" "$artists\n$album"
 fi
 ```
 
