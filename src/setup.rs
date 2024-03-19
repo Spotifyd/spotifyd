@@ -15,7 +15,7 @@ use librespot_playback::{
 };
 #[allow(unused_imports)] // cfg
 use log::{debug, error, info, warn};
-use std::str::FromStr;
+use std::{str::FromStr, thread, time::Duration};
 
 pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
     let mixer = {
@@ -96,13 +96,30 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
         } else {
             info!("no usable credentials found, enabling discovery");
             debug!("Using device id '{}'", session_config.device_id);
-            let discovery_stream =
-                librespot_discovery::Discovery::builder(session_config.device_id.clone())
+            const RETRY_MAX: u8 = 4;
+            let mut retry_counter = 0;
+            let mut backoff = Duration::from_secs(5);
+            let discovery_stream = loop {
+                match librespot_discovery::Discovery::builder(session_config.device_id.clone())
                     .name(config.device_name.clone())
                     .device_type(device_type)
                     .port(zeroconf_port)
                     .launch()
-                    .unwrap();
+                {
+                    Ok(discovery_stream) => break discovery_stream,
+                    Err(err) => {
+                        error!("failed to enable discovery: {err}");
+                        if retry_counter >= RETRY_MAX {
+                            panic!("failed to enable discovery (and no credentials provided)");
+                        }
+                        info!("retrying discovery in {} seconds", backoff.as_secs());
+                        thread::sleep(backoff);
+                        retry_counter += 1;
+                        backoff *= 2;
+                        info!("trying to enable discovery (retry {retry_counter}/{RETRY_MAX})");
+                    }
+                }
+            };
             discovery_stream.into()
         };
 
