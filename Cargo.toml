@@ -25,7 +25,7 @@ rspotify = { version = "0.12.0", features = ["client-ureq", "ureq-rustls-tls"], 
 serde = { version = "1.0.190", features = ["derive"] }
 sha-1 = "0.10"
 structopt = "0.3.17"
-tokio = {version = "1.33.0", features = ["signal", "rt-multi-thread", "process", "io-std"] }
+tokio = {version = "1.36.0", features = ["signal", "rt-multi-thread", "process", "io-std"] }
 tokio-stream = "0.1.7"
 url = "2.2.2"
 librespot-audio = { version = "0.4", default-features = false }
