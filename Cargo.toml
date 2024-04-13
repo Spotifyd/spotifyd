@@ -45,7 +45,7 @@ syslog = "6"
 whoami = "1"
 
 [dev-dependencies]
-env_logger = "0.10"
+env_logger = "0.11"
 
 [features]
 alsa_backend = ["librespot-playback/alsa-backend", "alsa"]
