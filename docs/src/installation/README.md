@@ -31,6 +31,8 @@ You can also compile `Spotifyd` yourself, allowing you to make use of feature fl
 
 > __Note:__ The package names for Linux are the ones used on Debian based distributions (like Ubuntu). You will need to adapt the packages for your distribution respectively.
 
+You can find more details about building on Linux [here](Build-on-Linux.md).
+
 To compile the binary, run
 
 ```bash
