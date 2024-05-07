@@ -14,7 +14,7 @@ use librespot_playback::config::{
 use log::{error, info, warn};
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
-use std::{fmt, fs, path::Path, path::PathBuf, str::FromStr, string::ToString};
+use std::{fmt, fs, path::Path, path::PathBuf, str::FromStr};
 use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
 
@@ -66,13 +66,13 @@ impl FromStr for Backend {
     }
 }
 
-impl ToString for Backend {
-    fn to_string(&self) -> String {
+impl fmt::Display for Backend {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Backend::Alsa => "alsa".to_string(),
-            Backend::PortAudio => "portaudio".to_string(),
-            Backend::PulseAudio => "pulseaudio".to_string(),
-            Backend::Rodio => "rodio".to_string(),
+            Backend::Alsa => write!(f, "alsa"),
+            Backend::PortAudio => write!(f, "portaudio"),
+            Backend::PulseAudio => write!(f, "pulseaudio"),
+            Backend::Rodio => write!(f, "rodio"),
         }
     }
 }
@@ -182,10 +182,10 @@ impl FromStr for DeviceType {
     }
 }
 
-impl ToString for DeviceType {
-    fn to_string(&self) -> String {
+impl fmt::Display for DeviceType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let dt: LSDeviceType = self.into();
-        format!("{}", dt)
+        write!(f, "{dt}")
     }
 }
 
@@ -259,11 +259,11 @@ impl FromStr for DBusType {
     }
 }
 
-impl ToString for DBusType {
-    fn to_string(&self) -> String {
+impl fmt::Display for DBusType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            DBusType::Session => "session".to_string(),
-            DBusType::System => "system".to_string(),
+            DBusType::Session => write!(f, "session"),
+            DBusType::System => write!(f, "system"),
         }
     }
 }
@@ -295,14 +295,14 @@ impl FromStr for AudioFormat {
     }
 }
 
-impl ToString for AudioFormat {
-    fn to_string(&self) -> String {
+impl fmt::Display for AudioFormat {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            AudioFormat::F32 => "F32".to_string(),
-            AudioFormat::S32 => "S32".to_string(),
-            AudioFormat::S24 => "S24".to_string(),
-            AudioFormat::S24_3 => "S24_3".to_string(),
-            AudioFormat::S16 => "S16".to_string(),
+            AudioFormat::F32 => write!(f, "F32"),
+            AudioFormat::S32 => write!(f, "S32"),
+            AudioFormat::S24 => write!(f, "S24"),
+            AudioFormat::S24_3 => write!(f, "S24_3"),
+            AudioFormat::S16 => write!(f, "S16"),
         }
     }
 }
