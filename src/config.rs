@@ -8,8 +8,9 @@ use gethostname::gethostname;
 use librespot_core::{
     cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version,
 };
-use librespot_playback::config::{
-    AudioFormat as LSAudioFormat, Bitrate as LSBitrate, PlayerConfig,
+use librespot_playback::{
+    config::{AudioFormat as LSAudioFormat, Bitrate as LSBitrate, PlayerConfig},
+    dither::{mk_ditherer, DithererBuilder, TriangularDitherer},
 };
 use log::{error, info, warn};
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
@@ -829,6 +830,14 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         None => info!("No proxy specified"),
     }
 
+    // choose default ditherer the same way librespot does
+    let ditherer: Option<DithererBuilder> = match audio_format {
+        LSAudioFormat::S16 | LSAudioFormat::S24 | LSAudioFormat::S24_3 => {
+            Some(mk_ditherer::<TriangularDitherer>)
+        }
+        _ => None,
+    };
+
     // TODO: when we were on librespot 0.1.5, all PlayerConfig values were available in the
     //  Spotifyd config. The upgrade to librespot 0.2.0 introduces new config variables, and we
     //  should consider adding them to Spotifyd's config system.
@@ -837,6 +846,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         normalisation: config.shared_config.volume_normalisation,
         normalisation_pregain_db: normalisation_pregain,
         gapless: true,
+        ditherer,
         ..Default::default()
     };
 
