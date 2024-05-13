@@ -25,6 +25,7 @@ const CONFIG_FILE_NAME: &str = "spotifyd.conf";
     feature = "pulseaudio_backend",
     feature = "portaudio_backend",
     feature = "alsa_backend",
+    feature = "pipe_backend",
     feature = "rodio_backend"
 )))]
 compile_error!("At least one of the backend features is required!");
@@ -37,6 +38,8 @@ static BACKEND_VALUES: &[&str] = &[
     "portaudio",
     #[cfg(feature = "rodio_backend")]
     "rodio",
+    #[cfg(feature = "pipe_backend")]
+    "pipe",
 ];
 
 /// The backend used by librespot
@@ -47,6 +50,7 @@ pub enum Backend {
     PortAudio,
     PulseAudio,
     Rodio,
+    Pipe,
 }
 
 fn default_backend() -> Backend {
@@ -62,6 +66,7 @@ impl FromStr for Backend {
             "portaudio" => Ok(Backend::PortAudio),
             "pulseaudio" => Ok(Backend::PulseAudio),
             "rodio" => Ok(Backend::Rodio),
+            "pipe" => Ok(Backend::Pipe),
             _ => unreachable!(),
         }
     }
@@ -74,6 +79,7 @@ impl fmt::Display for Backend {
             Backend::PortAudio => write!(f, "portaudio"),
             Backend::PulseAudio => write!(f, "pulseaudio"),
             Backend::Rodio => write!(f, "rodio"),
+            Backend::Pipe => write!(f, "pipe"),
         }
     }
 }
@@ -438,7 +444,7 @@ pub struct SharedConfigValues {
     #[serde(alias = "volume-control")]
     volume_controller: Option<VolumeController>,
 
-    /// The audio device
+    /// The audio device (or file handle if using pipe backend)
     #[structopt(long, value_name = "string")]
     device: Option<String>,
 
