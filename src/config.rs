@@ -27,7 +27,6 @@ const CONFIG_FILE_NAME: &str = "spotifyd.conf";
     feature = "alsa_backend",
     feature = "rodio_backend",
     feature = "rodiojack_backend",
-    feature = "jackaudio_backend",
 )))]
 compile_error!("At least one of the backend features is required!");
 static BACKEND_VALUES: &[&str] = &[
@@ -41,8 +40,6 @@ static BACKEND_VALUES: &[&str] = &[
     "rodio",
     #[cfg(feature = "rodiojack_backend")]
     "rodiojack",
-    #[cfg(feature = "jackaudio_backend")]
-    "jackaudio",
 ];
 
 /// The backend used by librespot
