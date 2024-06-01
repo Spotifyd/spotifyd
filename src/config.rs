@@ -25,7 +25,9 @@ const CONFIG_FILE_NAME: &str = "spotifyd.conf";
     feature = "pulseaudio_backend",
     feature = "portaudio_backend",
     feature = "alsa_backend",
-    feature = "rodio_backend"
+    feature = "rodio_backend",
+    feature = "rodiojack_backend",
+    feature = "jackaudio_backend",
 )))]
 compile_error!("At least one of the backend features is required!");
 static BACKEND_VALUES: &[&str] = &[
@@ -37,6 +39,10 @@ static BACKEND_VALUES: &[&str] = &[
     "portaudio",
     #[cfg(feature = "rodio_backend")]
     "rodio",
+    #[cfg(feature = "rodiojack_backend")]
+    "rodiojack",
+    #[cfg(feature = "jackaudio_backend")]
+    "jackaudio",
 ];
 
 /// The backend used by librespot
@@ -47,6 +53,7 @@ pub enum Backend {
     PortAudio,
     PulseAudio,
     Rodio,
+    RodioJack,
 }
 
 fn default_backend() -> Backend {
@@ -62,6 +69,7 @@ impl FromStr for Backend {
             "portaudio" => Ok(Backend::PortAudio),
             "pulseaudio" => Ok(Backend::PulseAudio),
             "rodio" => Ok(Backend::Rodio),
+            "rodiojack" => Ok(Backend::RodioJack),
             _ => unreachable!(),
         }
     }
@@ -74,6 +82,7 @@ impl fmt::Display for Backend {
             Backend::PortAudio => write!(f, "portaudio"),
             Backend::PulseAudio => write!(f, "pulseaudio"),
             Backend::Rodio => write!(f, "rodio"),
+            Backend::RodioJack => write!(f, "rodiojack"),
         }
     }
 }
