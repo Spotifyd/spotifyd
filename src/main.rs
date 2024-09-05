@@ -10,6 +10,8 @@ use daemonize::Daemonize;
 #[cfg(unix)]
 use log::error;
 use log::{info, trace, LevelFilter};
+#[cfg(target_os = "openbsd")]
+use pledge::pledge;
 #[cfg(windows)]
 use std::fs;
 use structopt::StructOpt;
@@ -85,6 +87,15 @@ fn setup_logger(log_target: LogTarget, verbose: bool) -> eyre::Result<()> {
 }
 
 fn main() -> eyre::Result<()> {
+    // Start with superset of all potentially required promises.
+    // Drop later after CLI arguments and configuration files were parsed.
+    #[cfg(target_os = "openbsd")]
+    pledge(
+        "stdio rpath wpath cpath inet mcast flock chown unix dns proc exec audio",
+        None,
+    )
+    .unwrap();
+
     color_eyre::install().wrap_err("Couldn't initialize error reporting")?;
 
     let mut cli_config: CliConfig = CliConfig::from_args();
@@ -163,6 +174,36 @@ fn main() -> eyre::Result<()> {
                 .expect("Couldn't spawn daemon");
 
             exit(0);
+        }
+    }
+
+    #[cfg(target_os = "openbsd")]
+    {
+        // At this point:
+        //   * --username-cmd, --password-cmd were handled
+        //     > no "proc exec"
+        //   * --pid, daemon(3) were handled
+        //     > no "cpath flock chown" for PID file
+        //     > no "proc" for double-fork(2)
+        //
+        // Required runtime promises:
+        // stdout/err, syslog(3)    "stdio"
+        // ${TMPDIR}/.tmp*, cache   "[rwc]path"
+        // Spotify API/Connect      "inet dns"
+        // D-Bus, MPRIS             "unix"
+        // Zeroconf Discovery       "mcast"
+        // PortAudio, sio_open(3)  ("[rwc]path unix inet audio")
+        // > after sndio(7) cookie  "audio"
+
+        // --on-song-change-hook aka. "onevent", run via --shell aka. "shell"
+        if internal_config.onevent.is_some() {
+            pledge(
+                "stdio rpath wpath cpath inet mcast unix dns proc exec audio",
+                None,
+            )
+            .unwrap();
+        } else {
+            pledge("stdio rpath wpath cpath inet mcast unix dns audio", None).unwrap();
         }
     }
 

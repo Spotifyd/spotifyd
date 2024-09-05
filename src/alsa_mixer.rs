@@ -25,7 +25,7 @@ impl AlsaMixer {
 
         let volume_steps = (max - min) as f64;
         let normalised_volume = if self.linear_scaling {
-            (((volume as f64) / (u16::max_value() as f64)) * volume_steps) as i64 + min
+            (((volume as f64) / (u16::MAX as f64)) * volume_steps) as i64 + min
         } else {
             ((volume as f64 + 1.0).log((u16::MAX as f64) + 1.0) * volume_steps).floor() as i64 + min
         };
@@ -46,8 +46,8 @@ impl Mixer for AlsaMixer {
 
     fn volume(&self) -> u16 {
         let selem_id = alsa::mixer::SelemId::new(&self.mixer, 0);
-        match alsa::mixer::Mixer::new(&self.device, false)
-            .ok()
+        let mixer = alsa::mixer::Mixer::new(&self.device, false).ok();
+        let vol = mixer
             .as_ref()
             .and_then(|mixer| mixer.find_selem(&selem_id))
             .and_then(|elem| {
@@ -58,9 +58,10 @@ impl Mixer for AlsaMixer {
                         (((volume - min) as f64 / (max - min) as f64) * (u16::MAX as f64)).floor()
                             as u16
                     })
-            }) {
+            });
+        match vol {
             Some(vol) => vol,
-            _ => {
+            None => {
                 error!(
                     "Couldn't read volume from alsa device with name \"{}\".",
                     self.device

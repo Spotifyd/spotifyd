@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- retry enabling discovery several times before exiting ([#1228])
+
 ### Changed
 - Credential caching has been re-enabled. ([#1214])
 
@@ -14,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [#1214]: https://github.com/Spotifyd/spotifyd/pull/1214
 [#1229]: https://github.com/Spotifyd/spotifyd/pull/1229
+[#1228]: https://github.com/Spotifyd/spotifyd/pull/1228
 
 ## [0.3.5]
 

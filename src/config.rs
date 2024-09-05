@@ -8,13 +8,14 @@ use gethostname::gethostname;
 use librespot_core::{
     cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version,
 };
-use librespot_playback::config::{
-    AudioFormat as LSAudioFormat, Bitrate as LSBitrate, PlayerConfig,
+use librespot_playback::{
+    config::{AudioFormat as LSAudioFormat, Bitrate as LSBitrate, PlayerConfig},
+    dither::{mk_ditherer, DithererBuilder, TriangularDitherer},
 };
 use log::{error, info, warn};
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
-use std::{fmt, fs, path::Path, path::PathBuf, str::FromStr, string::ToString};
+use std::{fmt, fs, path::Path, path::PathBuf, str::FromStr};
 use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
 
@@ -24,7 +25,8 @@ const CONFIG_FILE_NAME: &str = "spotifyd.conf";
     feature = "pulseaudio_backend",
     feature = "portaudio_backend",
     feature = "alsa_backend",
-    feature = "rodio_backend"
+    feature = "rodio_backend",
+    feature = "rodiojack_backend",
 )))]
 compile_error!("At least one of the backend features is required!");
 static BACKEND_VALUES: &[&str] = &[
@@ -36,6 +38,8 @@ static BACKEND_VALUES: &[&str] = &[
     "portaudio",
     #[cfg(feature = "rodio_backend")]
     "rodio",
+    #[cfg(feature = "rodiojack_backend")]
+    "rodiojack",
 ];
 
 /// The backend used by librespot
@@ -46,6 +50,7 @@ pub enum Backend {
     PortAudio,
     PulseAudio,
     Rodio,
+    RodioJack,
 }
 
 fn default_backend() -> Backend {
@@ -61,18 +66,20 @@ impl FromStr for Backend {
             "portaudio" => Ok(Backend::PortAudio),
             "pulseaudio" => Ok(Backend::PulseAudio),
             "rodio" => Ok(Backend::Rodio),
+            "rodiojack" => Ok(Backend::RodioJack),
             _ => unreachable!(),
         }
     }
 }
 
-impl ToString for Backend {
-    fn to_string(&self) -> String {
+impl fmt::Display for Backend {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Backend::Alsa => "alsa".to_string(),
-            Backend::PortAudio => "portaudio".to_string(),
-            Backend::PulseAudio => "pulseaudio".to_string(),
-            Backend::Rodio => "rodio".to_string(),
+            Backend::Alsa => write!(f, "alsa"),
+            Backend::PortAudio => write!(f, "portaudio"),
+            Backend::PulseAudio => write!(f, "pulseaudio"),
+            Backend::Rodio => write!(f, "rodio"),
+            Backend::RodioJack => write!(f, "rodiojack"),
         }
     }
 }
@@ -182,10 +189,10 @@ impl FromStr for DeviceType {
     }
 }
 
-impl ToString for DeviceType {
-    fn to_string(&self) -> String {
+impl fmt::Display for DeviceType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let dt: LSDeviceType = self.into();
-        format!("{}", dt)
+        write!(f, "{dt}")
     }
 }
 
@@ -259,11 +266,11 @@ impl FromStr for DBusType {
     }
 }
 
-impl ToString for DBusType {
-    fn to_string(&self) -> String {
+impl fmt::Display for DBusType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            DBusType::Session => "session".to_string(),
-            DBusType::System => "system".to_string(),
+            DBusType::Session => write!(f, "session"),
+            DBusType::System => write!(f, "system"),
         }
     }
 }
@@ -295,14 +302,14 @@ impl FromStr for AudioFormat {
     }
 }
 
-impl ToString for AudioFormat {
-    fn to_string(&self) -> String {
+impl fmt::Display for AudioFormat {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            AudioFormat::F32 => "F32".to_string(),
-            AudioFormat::S32 => "S32".to_string(),
-            AudioFormat::S24 => "S24".to_string(),
-            AudioFormat::S24_3 => "S24_3".to_string(),
-            AudioFormat::S16 => "S16".to_string(),
+            AudioFormat::F32 => write!(f, "F32"),
+            AudioFormat::S32 => write!(f, "S32"),
+            AudioFormat::S24 => write!(f, "S24"),
+            AudioFormat::S24_3 => write!(f, "S24_3"),
+            AudioFormat::S16 => write!(f, "S16"),
         }
     }
 }
@@ -829,6 +836,14 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         None => info!("No proxy specified"),
     }
 
+    // choose default ditherer the same way librespot does
+    let ditherer: Option<DithererBuilder> = match audio_format {
+        LSAudioFormat::S16 | LSAudioFormat::S24 | LSAudioFormat::S24_3 => {
+            Some(mk_ditherer::<TriangularDitherer>)
+        }
+        _ => None,
+    };
+
     // TODO: when we were on librespot 0.1.5, all PlayerConfig values were available in the
     //  Spotifyd config. The upgrade to librespot 0.2.0 introduces new config variables, and we
     //  should consider adding them to Spotifyd's config system.
@@ -837,6 +852,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         normalisation: config.shared_config.volume_normalisation,
         normalisation_pregain_db: normalisation_pregain,
         gapless: true,
+        ditherer,
         ..Default::default()
     };
 
