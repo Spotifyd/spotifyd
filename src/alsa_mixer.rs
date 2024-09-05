@@ -25,9 +25,9 @@ impl AlsaMixer {
 
         let volume_steps = (max - min) as f64;
         let normalised_volume = if self.linear_scaling {
-            ((f64::from(volume) / f64::from(u16::max_value())) * volume_steps) as i64 + min
+            ((f64::from(volume) / f64::from(u16::MAX)) * volume_steps) as i64 + min
         } else {
-            (f64::from(volume).log(f64::from(u16::max_value())) * volume_steps).floor() as i64 + min
+            (f64::from(volume).log(f64::from(u16::MAX)) * volume_steps).floor() as i64 + min
         };
 
         elem.set_playback_volume_all(normalised_volume)?;
