@@ -693,6 +693,7 @@ pub(crate) struct SpotifydConfig {
     #[allow(unused)]
     pub(crate) use_keyring: bool,
     pub(crate) use_mpris: bool,
+    #[allow(unused)]
     pub(crate) dbus_type: DBusType,
     pub(crate) cache: Option<Cache>,
     pub(crate) backend: Option<String>,
@@ -714,7 +715,6 @@ pub(crate) struct SpotifydConfig {
     pub(crate) shell: String,
     pub(crate) zeroconf_port: Option<u16>,
     pub(crate) device_type: String,
-    pub(crate) autoplay: bool,
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
@@ -879,17 +879,19 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         device_name,
         player_config: pc,
         session_config: SessionConfig {
-            user_agent: version::VERSION_STRING.to_string(),
+            client_id: version::VERSION_STRING.to_string(),
             device_id,
             proxy: proxy_url,
             ap_port: Some(443),
+            // TODO: add ability to configure tmp_dir
+            tmp_dir: SessionConfig::default().tmp_dir,
+            autoplay: Some(autoplay),
         },
         onevent: config.shared_config.on_song_change_hook,
         pid,
         shell,
         zeroconf_port: config.shared_config.zeroconf_port,
         device_type,
-        autoplay,
     }
 }
 

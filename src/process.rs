@@ -54,23 +54,9 @@ pub(crate) fn spawn_program_on_event(
 ) -> Result<Child, Error> {
     let mut env = HashMap::new();
     match event {
-        PlayerEvent::Changed {
-            old_track_id,
-            new_track_id,
-        } => {
-            env.insert("OLD_TRACK_ID", old_track_id.to_base62().unwrap());
-            env.insert("PLAYER_EVENT", "change".to_string());
-            env.insert("TRACK_ID", new_track_id.to_base62().unwrap());
-        }
-        PlayerEvent::Started {
-            track_id,
-            play_request_id,
-            position_ms,
-        } => {
-            env.insert("PLAYER_EVENT", "start".to_string());
-            env.insert("TRACK_ID", track_id.to_base62().unwrap());
+        PlayerEvent::PlayRequestIdChanged { play_request_id } => {
+            env.insert("PLAYER_EVENT", "play_request_id_changed".to_string());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-            env.insert("POSITION_MS", position_ms.to_string());
         }
         PlayerEvent::Stopped {
             track_id,
@@ -90,29 +76,29 @@ pub(crate) fn spawn_program_on_event(
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
             env.insert("POSITION_MS", position_ms.to_string());
         }
+        PlayerEvent::Preloading { track_id } => {
+            env.insert("PLAYER_EVENT", "preloading".to_string());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
+        }
         PlayerEvent::Playing {
             track_id,
             play_request_id,
             position_ms,
-            duration_ms,
         } => {
             env.insert("PLAYER_EVENT", "play".to_string());
             env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
             env.insert("POSITION_MS", position_ms.to_string());
-            env.insert("DURATION_MS", duration_ms.to_string());
         }
         PlayerEvent::Paused {
             track_id,
             play_request_id,
             position_ms,
-            duration_ms,
         } => {
             env.insert("PLAYER_EVENT", "pause".to_string());
             env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
             env.insert("POSITION_MS", position_ms.to_string());
-            env.insert("DURATION_MS", duration_ms.to_string());
         }
         PlayerEvent::TimeToPreloadNextTrack {
             track_id,
@@ -130,10 +116,6 @@ pub(crate) fn spawn_program_on_event(
             env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
         }
-        PlayerEvent::VolumeSet { volume } => {
-            env.insert("PLAYER_EVENT", "volumeset".to_string());
-            env.insert("VOLUME", volume.to_string());
-        }
         PlayerEvent::Unavailable {
             play_request_id,
             track_id,
@@ -142,9 +124,81 @@ pub(crate) fn spawn_program_on_event(
             env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
         }
-        PlayerEvent::Preloading { track_id } => {
-            env.insert("PLAYER_EVENT", "preloading".to_string());
+        PlayerEvent::VolumeChanged { volume } => {
+            env.insert("PLAYER_EVENT", "volume_changed".to_string());
+            env.insert("VOLUME", volume.to_string());
+        }
+        PlayerEvent::PositionCorrection {
+            play_request_id,
+            track_id,
+            position_ms,
+        } => {
+            env.insert("PLAYER_EVENT", "position_correction".to_string());
             env.insert("TRACK_ID", track_id.to_base62().unwrap());
+            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+            env.insert("POSITION_MS", position_ms.to_string());
+        }
+        PlayerEvent::Seeked {
+            play_request_id,
+            track_id,
+            position_ms,
+        } => {
+            env.insert("PLAYER_EVENT", "seeked".to_string());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
+            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+            env.insert("POSITION_MS", position_ms.to_string());
+        }
+        PlayerEvent::TrackChanged { audio_item } => {
+            // TODO: Do we want other audio_item fields?
+            env.insert("PLAYER_EVENT", "track_changed".to_string());
+            env.insert("TRACK_ID", audio_item.track_id.to_base62().unwrap());
+        }
+        PlayerEvent::SessionConnected {
+            connection_id,
+            user_name,
+        } => {
+            env.insert("PLAYER_EVENT", "session_connected".to_string());
+            env.insert("CONNECTION_ID", connection_id);
+            env.insert("USER_NAME", user_name);
+        }
+        PlayerEvent::SessionDisconnected {
+            connection_id,
+            user_name,
+        } => {
+            env.insert("PLAYER_EVENT", "session_disconnected".to_string());
+            env.insert("CONNECTION_ID", connection_id);
+            env.insert("USER_NAME", user_name);
+        }
+        PlayerEvent::SessionClientChanged {
+            client_id,
+            client_name,
+            client_brand_name,
+            client_model_name,
+        } => {
+            env.insert("PLAYER_EVENT", "session_client_changed".to_string());
+            env.insert("CLIENT_ID", client_id);
+            env.insert("CLIENT_NAME", client_name);
+            env.insert("CLIENT_BRAND_NAME", client_brand_name);
+            env.insert("CLIENT_MODEL_NAME", client_model_name);
+        }
+        PlayerEvent::ShuffleChanged { shuffle } => {
+            env.insert("PLAYER_EVENT", "shuffle_changed".to_string());
+            env.insert("SHUFFLE", shuffle.to_string());
+        }
+        PlayerEvent::RepeatChanged { repeat } => {
+            env.insert("PLAYER_EVENT", "repeat_changed".to_string());
+            env.insert("REPEAT", repeat.to_string());
+        }
+        PlayerEvent::AutoPlayChanged { auto_play } => {
+            env.insert("PLAYER_EVENT", "auto_play_changed".to_string());
+            env.insert("AUTO_PLAY", auto_play.to_string());
+        }
+        PlayerEvent::FilterExplicitContentChanged { filter } => {
+            env.insert(
+                "PLAYER_EVENT",
+                "filter_explicit_content_changed".to_string(),
+            );
+            env.insert("FILTER", filter.to_string());
         }
     }
     spawn_program(shell, cmd, env)

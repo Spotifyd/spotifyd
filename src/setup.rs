@@ -15,15 +15,15 @@ use librespot_playback::{
 };
 #[allow(unused_imports)] // cfg
 use log::{debug, error, info, warn};
-use std::{str::FromStr, thread, time::Duration};
+use std::{str::FromStr, sync::Arc, thread, time::Duration};
 
 pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
     let mixer = {
         match config.volume_controller {
             config::VolumeController::None => {
                 info!("Using no volume controller.");
-                Box::new(|| Box::new(crate::no_mixer::NoMixer) as Box<dyn Mixer>)
-                    as Box<dyn FnMut() -> Box<dyn Mixer>>
+                Box::new(|| Arc::new(crate::no_mixer::NoMixer) as Arc<dyn Mixer>)
+                    as Box<dyn FnMut() -> Arc<dyn Mixer>>
             }
             #[cfg(feature = "alsa_backend")]
             config::VolumeController::Alsa | config::VolumeController::AlsaLinear => {
@@ -36,22 +36,22 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
                     config::VolumeController::AlsaLinear
                 );
                 Box::new(move || {
-                    Box::new(alsa_mixer::AlsaMixer {
+                    Arc::new(alsa_mixer::AlsaMixer {
                         device: control_device
                             .clone()
                             .or_else(|| audio_device.clone())
                             .unwrap_or_else(|| "default".to_string()),
                         mixer: mixer.clone().unwrap_or_else(|| "Master".to_string()),
                         linear_scaling: linear,
-                    }) as Box<dyn mixer::Mixer>
-                }) as Box<dyn FnMut() -> Box<dyn Mixer>>
+                    }) as Arc<dyn mixer::Mixer>
+                }) as Box<dyn FnMut() -> Arc<dyn Mixer>>
             }
             _ => {
                 info!("Using software volume controller.");
                 Box::new(move || {
-                    Box::new(mixer::softmixer::SoftMixer::open(MixerConfig::default()))
-                        as Box<dyn Mixer>
-                }) as Box<dyn FnMut() -> Box<dyn Mixer>>
+                    Arc::new(mixer::softmixer::SoftMixer::open(MixerConfig::default()))
+                        as Arc<dyn Mixer>
+                }) as Box<dyn FnMut() -> Arc<dyn Mixer>>
             }
         }
     };
@@ -60,7 +60,6 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
     let player_config = config.player_config;
     let session_config = config.session_config;
     let backend = config.backend.clone();
-    let autoplay = config.autoplay;
 
     let has_volume_ctrl = !matches!(config.volume_controller, config::VolumeController::None);
 
@@ -95,16 +94,22 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
             CredentialsProvider::SpotifyCredentials(credentials)
         } else {
             info!("no usable credentials found, enabling discovery");
-            debug!("Using device id '{}'", session_config.device_id);
+            debug!(
+                "Using (device id, client_id) ('{}', '{}')",
+                session_config.device_id, session_config.client_id
+            );
             const RETRY_MAX: u8 = 4;
             let mut retry_counter = 0;
             let mut backoff = Duration::from_secs(5);
             let discovery_stream = loop {
-                match librespot_discovery::Discovery::builder(session_config.device_id.clone())
-                    .name(config.device_name.clone())
-                    .device_type(device_type)
-                    .port(zeroconf_port)
-                    .launch()
+                match librespot_discovery::Discovery::builder(
+                    session_config.device_id.clone(),
+                    session_config.client_id.clone(),
+                )
+                .name(config.device_name.clone())
+                .device_type(device_type)
+                .port(zeroconf_port)
+                .launch()
                 {
                     Ok(discovery_stream) => break discovery_stream,
                     Err(err) => {
@@ -143,7 +148,6 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
         has_volume_ctrl,
         shell: config.shell,
         device_type,
-        autoplay,
         use_mpris: config.use_mpris,
         dbus_type: config.dbus_type,
     }
@@ -155,7 +159,7 @@ fn get_credentials(
     password: &Option<String>,
 ) -> Option<Credentials> {
     if let Some(credentials) = cache.as_ref().and_then(Cache::credentials) {
-        if username.as_ref() == Some(&credentials.username) {
+        if username == &credentials.username {
             return Some(credentials);
         }
     }

@@ -28,11 +28,11 @@ structopt = "0.3.17"
 tokio = {version = "1.26.0", features = ["signal", "rt-multi-thread", "process", "io-std"] }
 tokio-stream = "0.1.7"
 url = "2.2.2"
-librespot-audio = { version = "0.4", default-features = false }
-librespot-playback = { version = "0.4", default-features = false }
-librespot-core = { version = "0.4" }
-librespot-discovery = { version = "0.4" }
-librespot-connect = { version = "0.4" }
+librespot-audio = { version = "0.5", default-features = false }
+librespot-playback = { version = "0.5", default-features = false }
+librespot-core = { version = "0.5" }
+librespot-discovery = { version = "0.5" }
+librespot-connect = { version = "0.5" }
 toml = "0.7"
 color-eyre = "0.6"
 directories = "5.0.1"
