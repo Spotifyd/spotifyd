@@ -166,7 +166,8 @@ async fn create_dbus_server(
         DBusType::Session => connection::new_session_sync(),
         DBusType::System => connection::new_system_sync(),
     }
-    .expect("Failed to initialize DBus connection");
+    .expect("Failed to initialize DBus connection. If you are running headless, \
+             try compiling without D-Bus support or using the -slim release.");
     tokio::spawn(async {
         let err = resource.await;
         panic!("Lost connection to D-Bus: {}", err);
