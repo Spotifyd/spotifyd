@@ -6,6 +6,7 @@
   - [Installing on a Raspberry Pi](./installation/Raspberry-Pi.md)
   - [Installing on Ubuntu (from source)](./installation/Ubuntu.md)
   - [Cross Compiling on Ubuntu](./installation/Cross-Compiling-on-Ubuntu.md)
+  - [Cross Compilation using Docker](./installation/cross-compile-using-docker.md)
   - [Installing with Homebrew on macOS](./installation/MacOS.md)
   - [Installing on FreeBSD](./installation/FreeBSD.md)
   - [Installing on OpenBSD](./installation/OpenBSD.md)
