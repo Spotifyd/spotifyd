@@ -68,3 +68,6 @@ assets = [
     ["README.md", "usr/share/doc/spotifyd/README", "644"],
     ["contrib/spotifyd.service", "etc/systemd/user/", "644"],
 ]
+
+[profile.release]
+lto = true
