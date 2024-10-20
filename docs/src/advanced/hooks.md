@@ -1,0 +1,1 @@
+# Extending spotifyd with hooks

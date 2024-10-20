@@ -1,0 +1,1 @@
+# MPRIS on headless systems
