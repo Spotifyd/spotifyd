@@ -6,7 +6,7 @@ description = "A Spotify daemon"
 repository = "https://github.com/Spotifyd/spotifyd"
 license = "GPL-3.0-only"
 version = "0.3.5"
-rust-version = "1.67"
+rust-version = "1.74"
 
 [dependencies]
 alsa = { version = "0.9.1", optional = true }
@@ -28,14 +28,16 @@ structopt = "0.3.17"
 tokio = {version = "1.26.0", features = ["signal", "rt-multi-thread", "process", "io-std"] }
 tokio-stream = "0.1.7"
 url = "2.2.2"
-librespot-audio = { version = "0.4", default-features = false }
-librespot-playback = { version = "0.4", default-features = false }
-librespot-core = { version = "0.4" }
-librespot-discovery = { version = "0.4" }
-librespot-connect = { version = "0.4" }
+librespot-audio = { version = "0.5", default-features = false }
+librespot-playback = { version = "0.5", default-features = false }
+librespot-core = { version = "0.5" }
+librespot-discovery = { version = "0.5" }
+librespot-connect = { version = "0.5" }
+librespot-metadata = "0.5.0"
 toml = "0.8.19"
 color-eyre = "0.6"
 directories = "5.0.1"
+thiserror = "1.0.64"
 
 [target."cfg(unix)".dependencies]
 daemonize = "0.5"

@@ -8,33 +8,15 @@ use futures::{
     stream::Peekable,
     Future, FutureExt, StreamExt,
 };
-use librespot_connect::spirc::Spirc;
-use librespot_core::{
-    authentication::Credentials,
-    cache::Cache,
-    config::{ConnectConfig, DeviceType, SessionConfig},
-    session::{Session, SessionError},
-};
+use librespot_connect::{config::ConnectConfig, spirc::Spirc};
+use librespot_core::{authentication::Credentials, config::DeviceType, session::Session, Error};
 use librespot_discovery::Discovery;
-use librespot_playback::{
-    audio_backend::Sink,
-    config::{AudioFormat, PlayerConfig},
-    mixer::Mixer,
-    player::Player,
-};
+use librespot_playback::{mixer::Mixer, player::Player};
 use log::error;
 use std::pin::Pin;
 use std::sync::Arc;
 
-pub struct AudioSetup {
-    pub mixer: Box<dyn FnMut() -> Box<dyn Mixer>>,
-    pub backend: fn(Option<String>, AudioFormat) -> Box<dyn Sink>,
-    pub audio_device: Option<String>,
-    pub audio_format: AudioFormat,
-}
-
 pub struct SpotifydState {
-    pub cache: Option<Cache>,
     pub device_name: String,
     pub player_event_program: Option<String>,
 }
@@ -73,11 +55,10 @@ impl CredentialsProvider {
 }
 
 pub(crate) struct MainLoop {
-    pub(crate) audio_setup: AudioSetup,
     pub(crate) spotifyd_state: SpotifydState,
-    pub(crate) player_config: PlayerConfig,
-    pub(crate) session_config: SessionConfig,
-    pub(crate) autoplay: bool,
+    pub(crate) mixer: Box<dyn FnMut() -> Arc<dyn Mixer>>,
+    pub(crate) session: Session,
+    pub(crate) player: Arc<Player>,
     pub(crate) has_volume_ctrl: bool,
     pub(crate) initial_volume: Option<u16>,
     pub(crate) shell: String,
@@ -90,15 +71,25 @@ pub(crate) struct MainLoop {
 }
 
 impl MainLoop {
-    async fn get_session(&mut self) -> Result<Session, SessionError> {
+    async fn get_connection(&mut self) -> Result<(Spirc, impl Future<Output = ()>), Error> {
         let creds = self.credentials_provider.get_credentials().await;
+        self.session.connect(creds.clone(), true).await?;
 
-        let session_config = self.session_config.clone();
-        let cache = self.spotifyd_state.cache.clone();
-
-        Session::connect(session_config, creds, cache, true)
-            .await
-            .map(|(session, _creds)| session)
+        // TODO: expose is_group
+        Spirc::new(
+            ConnectConfig {
+                name: self.spotifyd_state.device_name.clone(),
+                device_type: self.device_type,
+                is_group: false,
+                initial_volume: self.initial_volume,
+                has_volume_ctrl: self.has_volume_ctrl,
+            },
+            self.session.clone(),
+            creds,
+            self.player.clone(),
+            (self.mixer)(),
+        )
+        .await
     }
 
     pub(crate) async fn run(&mut self) {
@@ -107,43 +98,19 @@ impl MainLoop {
         }
 
         'mainloop: loop {
-            let session = tokio::select!(
+            let (spirc, spirc_task) = tokio::select!(
                 _ = &mut ctrl_c => {
                     break 'mainloop;
                 }
-                session = self.get_session() => {
-                    match session {
-                        Ok(session) => session,
+                spirc = self.get_connection() => {
+                    match spirc {
+                        Ok(spirc) => spirc,
                         Err(err) => {
                             error!("failed to connect to spotify: {}", err);
                             break 'mainloop;
                         }
                     }
                 }
-            );
-
-            let mixer = (self.audio_setup.mixer)();
-            let backend = self.audio_setup.backend;
-            let audio_device = self.audio_setup.audio_device.clone();
-            let audio_format = self.audio_setup.audio_format;
-            let (player, mut event_channel) = Player::new(
-                self.player_config.clone(),
-                session.clone(),
-                mixer.get_soft_volume(),
-                move || (backend)(audio_device, audio_format),
-            );
-
-            let (spirc, spirc_task) = Spirc::new(
-                ConnectConfig {
-                    autoplay: self.autoplay,
-                    name: self.spotifyd_state.device_name.clone(),
-                    device_type: self.device_type,
-                    initial_volume: self.initial_volume,
-                    has_volume_ctrl: self.has_volume_ctrl,
-                },
-                session.clone(),
-                player,
-                mixer,
             );
 
             tokio::pin!(spirc_task);
@@ -157,7 +124,7 @@ impl MainLoop {
             let mpris_event_tx = if self.use_mpris {
                 let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
                 dbus_server = Box::pin(DbusServer::new(
-                    session,
+                    self.session.clone(),
                     shared_spirc.clone(),
                     self.spotifyd_state.device_name.clone(),
                     rx,
@@ -170,16 +137,18 @@ impl MainLoop {
 
             let mut running_event_program = Box::pin(Fuse::terminated());
 
+            let mut event_channel = self.player.get_player_event_channel();
+
             loop {
                 tokio::select!(
                     // a new session has been started via the discovery stream
                     _ = self.credentials_provider.incoming_connection() => {
-                        shared_spirc.shutdown();
+                        let _ = shared_spirc.shutdown();
                         break;
                     }
                     // the program should shut down
                     _ = &mut ctrl_c => {
-                        shared_spirc.shutdown();
+                        let _ = shared_spirc.shutdown();
                         break 'mainloop;
                     }
                     // spirc was shut down by some external factor
@@ -188,7 +157,7 @@ impl MainLoop {
                     }
                     // dbus stopped unexpectedly
                     _ = &mut dbus_server => {
-                        shared_spirc.shutdown();
+                        let _ = shared_spirc.shutdown();
                         break 'mainloop;
                     }
                     // a new player event is available and no program is running
