@@ -16,6 +16,6 @@
   - [Running as a Service](./config/services/README.md)
     - [Running as systemd service](./config/services/Systemd.md)
     - [Running as launchd service (MacOS)](./config/services/MacOS.md)
-- Other
+- [Other]()
   - [D-Bus control](./other/D-Bus-control.md)
 
