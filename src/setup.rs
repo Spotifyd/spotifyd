@@ -6,19 +6,19 @@ use crate::{
 };
 #[cfg(feature = "dbus_keyring")]
 use keyring::Entry;
-use librespot_core::{authentication::Credentials, cache::Cache, config::DeviceType};
-use librespot_playback::mixer::MixerConfig;
+use librespot_core::{authentication::Credentials, cache::Cache, config::DeviceType, Session};
 use librespot_playback::{
     audio_backend::{Sink, BACKENDS},
     config::AudioFormat,
     mixer::{self, Mixer},
 };
+use librespot_playback::{mixer::MixerConfig, player::Player};
 #[allow(unused_imports)] // cfg
 use log::{debug, error, info, warn};
 use std::{str::FromStr, sync::Arc, thread, time::Duration};
 
 pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
-    let mixer = {
+    let mut mixer = {
         match config.volume_controller {
             config::VolumeController::None => {
                 info!("Using no volume controller.");
@@ -43,7 +43,7 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
                             .unwrap_or_else(|| "default".to_string()),
                         mixer: mixer.clone().unwrap_or_else(|| "Master".to_string()),
                         linear_scaling: linear,
-                    }) as Arc<dyn mixer::Mixer>
+                    }) as Arc<dyn Mixer>
                 }) as Box<dyn FnMut() -> Arc<dyn Mixer>>
             }
             _ => {
@@ -129,21 +129,28 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
         };
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
+
+    let session = Session::new(session_config, cache);
+    let player = {
+        let audio_device = config.audio_device;
+        let audio_format = config.audio_format;
+        Player::new(
+            player_config,
+            session.clone(),
+            mixer().get_soft_volume(),
+            move || backend(audio_device, audio_format),
+        )
+    };
+
     main_loop::MainLoop {
         credentials_provider,
-        audio_setup: main_loop::AudioSetup {
-            mixer,
-            backend,
-            audio_device: config.audio_device,
-            audio_format: config.audio_format,
-        },
+        mixer,
         spotifyd_state: main_loop::SpotifydState {
-            cache,
             device_name: config.device_name,
             player_event_program: config.onevent,
         },
-        player_config,
-        session_config,
+        session,
+        player,
         initial_volume: config.initial_volume,
         has_volume_ctrl,
         shell: config.shell,

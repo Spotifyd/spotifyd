@@ -9,20 +9,9 @@ use futures::{
     Future, FutureExt, StreamExt,
 };
 use librespot_connect::{config::ConnectConfig, spirc::Spirc};
-use librespot_core::{
-    authentication::Credentials,
-    cache::Cache,
-    config::{DeviceType, SessionConfig},
-    session::Session,
-    Error,
-};
+use librespot_core::{authentication::Credentials, config::DeviceType, session::Session, Error};
 use librespot_discovery::Discovery;
-use librespot_playback::{
-    audio_backend::Sink,
-    config::{AudioFormat, PlayerConfig},
-    mixer::Mixer,
-    player::Player,
-};
+use librespot_playback::{audio_backend::Sink, config::AudioFormat, mixer::Mixer, player::Player};
 use log::error;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -35,7 +24,6 @@ pub struct AudioSetup {
 }
 
 pub struct SpotifydState {
-    pub cache: Option<Cache>,
     pub device_name: String,
     pub player_event_program: Option<String>,
 }
@@ -74,10 +62,10 @@ impl CredentialsProvider {
 }
 
 pub(crate) struct MainLoop {
-    pub(crate) audio_setup: AudioSetup,
     pub(crate) spotifyd_state: SpotifydState,
-    pub(crate) player_config: PlayerConfig,
-    pub(crate) session_config: SessionConfig,
+    pub(crate) mixer: Box<dyn FnMut() -> Arc<dyn Mixer>>,
+    pub(crate) session: Session,
+    pub(crate) player: Arc<Player>,
     pub(crate) has_volume_ctrl: bool,
     pub(crate) initial_volume: Option<u16>,
     pub(crate) shell: String,
@@ -90,12 +78,25 @@ pub(crate) struct MainLoop {
 }
 
 impl MainLoop {
-    async fn get_session(&mut self, credentials: Credentials) -> Result<Session, Error> {
-        let session_config = self.session_config.clone();
-        let cache = self.spotifyd_state.cache.clone();
-        let session = Session::new(session_config, cache);
+    async fn get_connection(&mut self) -> Result<(Spirc, impl Future<Output = ()>), Error> {
+        let creds = self.credentials_provider.get_credentials().await;
+        self.session.connect(creds.clone(), true).await?;
 
-        session.connect(credentials, true).await.map(|()| session)
+        // TODO: expose is_group
+        Spirc::new(
+            ConnectConfig {
+                name: self.spotifyd_state.device_name.clone(),
+                device_type: self.device_type,
+                is_group: false,
+                initial_volume: self.initial_volume,
+                has_volume_ctrl: self.has_volume_ctrl,
+            },
+            self.session.clone(),
+            creds,
+            self.player.clone(),
+            (self.mixer)(),
+        )
+        .await
     }
 
     pub(crate) async fn run(&mut self) {
@@ -104,15 +105,13 @@ impl MainLoop {
         }
 
         'mainloop: loop {
-            let credentials = self.credentials_provider.get_credentials().await;
-
-            let session = tokio::select!(
+            let (spirc, spirc_task) = tokio::select!(
                 _ = &mut ctrl_c => {
                     break 'mainloop;
                 }
-                session = self.get_session(credentials.clone()) => {
-                    match session {
-                        Ok(session) => session,
+                spirc = self.get_connection() => {
+                    match spirc {
+                        Ok(spirc) => spirc,
                         Err(err) => {
                             error!("failed to connect to spotify: {}", err);
                             break 'mainloop;
@@ -120,37 +119,6 @@ impl MainLoop {
                     }
                 }
             );
-
-            let mixer = (self.audio_setup.mixer)();
-            let backend = self.audio_setup.backend;
-            let audio_device = self.audio_setup.audio_device.clone();
-            let audio_format = self.audio_setup.audio_format;
-            let player = Player::new(
-                self.player_config.clone(),
-                session.clone(),
-                mixer.get_soft_volume(),
-                move || (backend)(audio_device, audio_format),
-            );
-            let mut event_channel = player.get_player_event_channel();
-
-            let Ok((spirc, spirc_task)) = Spirc::new(
-                ConnectConfig {
-                    name: self.spotifyd_state.device_name.clone(),
-                    device_type: self.device_type,
-                    initial_volume: self.initial_volume,
-                    has_volume_ctrl: self.has_volume_ctrl,
-                    // TODO: Investigate what this flag does and if we care
-                    is_group: false,
-                },
-                session.clone(),
-                credentials,
-                player,
-                mixer,
-            )
-            .await
-            .map_err(|err| error!("failed to create spirc: {}", err)) else {
-                break 'mainloop;
-            };
 
             tokio::pin!(spirc_task);
 
@@ -163,7 +131,7 @@ impl MainLoop {
             let mpris_event_tx = if self.use_mpris {
                 let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
                 dbus_server = Box::pin(DbusServer::new(
-                    session,
+                    self.session.clone(),
                     shared_spirc.clone(),
                     self.spotifyd_state.device_name.clone(),
                     rx,
@@ -176,6 +144,7 @@ impl MainLoop {
 
             let mut running_event_program = Box::pin(Fuse::terminated());
 
+            let mut event_channel = self.player.get_player_event_channel();
             loop {
                 tokio::select!(
                     // a new session has been started via the discovery stream

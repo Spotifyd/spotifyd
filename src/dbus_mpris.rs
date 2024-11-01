@@ -43,7 +43,6 @@ pub struct DbusServer {
     event_tx: Option<UnboundedSender<PlayerEvent>>,
 }
 
-const CLIENT_ID: &str = "2c1ea588dfbc4a989e2426f8385297c3";
 const SCOPE: &str =
     "user-read-playback-state,user-modify-playback-state,user-read-currently-playing";
 
@@ -328,10 +327,8 @@ async fn create_dbus_server(
                         && (0..=duration).contains(&pos)
                     {
                         // pos is in microseconds, seek_track takes milliseconds
-                        let _ = sp_client.seek_track(
-                            Duration::microseconds(pos),
-                            playback.device.id.as_deref(),
-                        );
+                        let _ = sp_client
+                            .seek_track(Duration::microseconds(pos), playback.device.id.as_deref());
                     }
                 }
                 Ok(())

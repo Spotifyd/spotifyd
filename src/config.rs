@@ -5,9 +5,7 @@ use crate::{
 };
 use color_eyre::Report;
 use gethostname::gethostname;
-use librespot_core::{
-    cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig, version,
-};
+use librespot_core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig};
 use librespot_playback::{
     config::{AudioFormat as LSAudioFormat, Bitrate as LSBitrate, PlayerConfig},
     dither::{mk_ditherer, DithererBuilder, TriangularDitherer},
@@ -20,6 +18,7 @@ use structopt::{clap::AppSettings, StructOpt};
 use url::Url;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
+const CLIENT_ID: &str = "2c1ea588dfbc4a989e2426f8385297c3";
 
 #[cfg(not(any(
     feature = "pulseaudio_backend",
@@ -879,7 +878,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         device_name,
         player_config: pc,
         session_config: SessionConfig {
-            client_id: version::VERSION_STRING.to_string(),
+            client_id: std::env::var("SPOTIFYD_CLIENT_ID").unwrap_or_else(|_| CLIENT_ID.to_string()),
             device_id,
             proxy: proxy_url,
             ap_port: Some(443),

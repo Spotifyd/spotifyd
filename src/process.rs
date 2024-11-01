@@ -1,4 +1,5 @@
 use crate::error::Error;
+use librespot_metadata::audio::item::AudioItem;
 use librespot_playback::player::PlayerEvent;
 use log::info;
 use std::{collections::HashMap, process::Stdio};
@@ -44,6 +45,18 @@ fn spawn_program(shell: &str, cmd: &str, env: HashMap<&str, String>) -> Result<C
     Ok(child)
 }
 
+fn audio_item_to_env(audio_item: Box<AudioItem>, env: &mut HashMap<&str, String>) {
+    env.insert(
+        "TRACK_ID",
+        audio_item.track_id.to_base62().unwrap_or_default(),
+    );
+    env.insert("TRACK_NAME", audio_item.name);
+    env.insert("TRACK_DURATION", audio_item.duration_ms.to_string());
+    if let Some(cover) = audio_item.covers.into_iter().max_by_key(|c| c.width) {
+        env.insert("TRACK_COVER", cover.url);
+    }
+}
+
 /// Spawns provided command in a subprocess using the provided shell.
 /// Various environment variables are included in the subprocess's environment
 /// depending on the `PlayerEvent` that was passed in.
@@ -55,7 +68,7 @@ pub(crate) fn spawn_program_on_event(
     let mut env = HashMap::new();
     match event {
         PlayerEvent::PlayRequestIdChanged { play_request_id } => {
-            env.insert("PLAYER_EVENT", "play_request_id_changed".to_string());
+            env.insert("PLAYER_EVENT", "playrequestid_changed".to_string());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
         }
         PlayerEvent::Stopped {
@@ -85,7 +98,7 @@ pub(crate) fn spawn_program_on_event(
             play_request_id,
             position_ms,
         } => {
-            env.insert("PLAYER_EVENT", "play".to_string());
+            env.insert("PLAYER_EVENT", "start".to_string());
             env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
             env.insert("POSITION_MS", position_ms.to_string());
@@ -125,7 +138,7 @@ pub(crate) fn spawn_program_on_event(
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
         }
         PlayerEvent::VolumeChanged { volume } => {
-            env.insert("PLAYER_EVENT", "volume_changed".to_string());
+            env.insert("PLAYER_EVENT", "volumeset".to_string());
             env.insert("VOLUME", volume.to_string());
         }
         PlayerEvent::PositionCorrection {
@@ -133,7 +146,7 @@ pub(crate) fn spawn_program_on_event(
             track_id,
             position_ms,
         } => {
-            env.insert("PLAYER_EVENT", "position_correction".to_string());
+            env.insert("PLAYER_EVENT", "positioncorrection".to_string());
             env.insert("TRACK_ID", track_id.to_base62().unwrap());
             env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
             env.insert("POSITION_MS", position_ms.to_string());
@@ -149,25 +162,25 @@ pub(crate) fn spawn_program_on_event(
             env.insert("POSITION_MS", position_ms.to_string());
         }
         PlayerEvent::TrackChanged { audio_item } => {
-            // TODO: Do we want other audio_item fields?
-            env.insert("PLAYER_EVENT", "track_changed".to_string());
+            env.insert("PLAYER_EVENT", "change".to_string());
             env.insert("TRACK_ID", audio_item.track_id.to_base62().unwrap());
+            audio_item_to_env(audio_item, &mut env);
         }
         PlayerEvent::SessionConnected {
             connection_id,
             user_name,
         } => {
-            env.insert("PLAYER_EVENT", "session_connected".to_string());
+            env.insert("PLAYER_EVENT", "sessionconnected".to_string());
             env.insert("CONNECTION_ID", connection_id);
-            env.insert("USER_NAME", user_name);
+            env.insert("USERNAME", user_name);
         }
         PlayerEvent::SessionDisconnected {
             connection_id,
             user_name,
         } => {
-            env.insert("PLAYER_EVENT", "session_disconnected".to_string());
+            env.insert("PLAYER_EVENT", "sessiondisconnected".to_string());
             env.insert("CONNECTION_ID", connection_id);
-            env.insert("USER_NAME", user_name);
+            env.insert("USERNAME", user_name);
         }
         PlayerEvent::SessionClientChanged {
             client_id,
@@ -175,11 +188,11 @@ pub(crate) fn spawn_program_on_event(
             client_brand_name,
             client_model_name,
         } => {
-            env.insert("PLAYER_EVENT", "session_client_changed".to_string());
+            env.insert("PLAYER_EVENT", "clientchanged".to_string());
             env.insert("CLIENT_ID", client_id);
             env.insert("CLIENT_NAME", client_name);
-            env.insert("CLIENT_BRAND_NAME", client_brand_name);
-            env.insert("CLIENT_MODEL_NAME", client_model_name);
+            env.insert("CLIENT_BRAND", client_brand_name);
+            env.insert("CLIENT_MODEL", client_model_name);
         }
         PlayerEvent::ShuffleChanged { shuffle } => {
             env.insert("PLAYER_EVENT", "shuffle_changed".to_string());
@@ -187,18 +200,16 @@ pub(crate) fn spawn_program_on_event(
         }
         PlayerEvent::RepeatChanged { repeat } => {
             env.insert("PLAYER_EVENT", "repeat_changed".to_string());
-            env.insert("REPEAT", repeat.to_string());
+            let repeat = if repeat { "all" } else { "none" }.to_string();
+            env.insert("REPEAT", repeat);
         }
         PlayerEvent::AutoPlayChanged { auto_play } => {
-            env.insert("PLAYER_EVENT", "auto_play_changed".to_string());
-            env.insert("AUTO_PLAY", auto_play.to_string());
+            env.insert("PLAYER_EVENT", "autoplay_changed".to_string());
+            env.insert("AUTOPLAY", auto_play.to_string());
         }
         PlayerEvent::FilterExplicitContentChanged { filter } => {
-            env.insert(
-                "PLAYER_EVENT",
-                "filter_explicit_content_changed".to_string(),
-            );
-            env.insert("FILTER", filter.to_string());
+            env.insert("PLAYER_EVENT", "filterexplicit_changed".to_string());
+            env.insert("FILTEREXPLICIT", filter.to_string());
         }
     }
     spawn_program(shell, cmd, env)
