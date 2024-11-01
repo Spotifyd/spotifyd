@@ -15,10 +15,7 @@ use futures::{
 };
 use librespot_connect::spirc::Spirc;
 use librespot_core::{
-    keymaster::{get_token, Token as LibrespotToken},
-    mercury::MercuryError,
-    session::Session,
-    spotify_id::SpotifyAudioType,
+    session::Session, spotify_id::SpotifyItemType, token::Token as LibrespotToken, Error,
 };
 use librespot_playback::player::PlayerEvent;
 use log::{error, info, warn};
@@ -30,7 +27,7 @@ use rspotify::{
     prelude::*,
     AuthCodeSpotify, Token as RspotifyToken,
 };
-use std::{collections::HashMap, env, pin::Pin, sync::Arc};
+use std::{collections::HashMap, pin::Pin, sync::Arc};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 pub struct DbusServer {
@@ -39,7 +36,7 @@ pub struct DbusServer {
     spotify_client: Arc<AuthCodeSpotify>,
     dbus_type: DBusType,
     #[allow(clippy::type_complexity)]
-    token_request: Option<Pin<Box<dyn Future<Output = Result<LibrespotToken, MercuryError>>>>>,
+    token_request: Option<Pin<Box<dyn Future<Output = Result<LibrespotToken, Error>>>>>,
     dbus_future: Option<Pin<Box<dyn Future<Output = ()>>>>,
     device_name: String,
     event_rx: UnboundedReceiver<PlayerEvent>,
@@ -98,7 +95,8 @@ impl Future for DbusServer {
                         }
                     };
 
-                    let expires_in = Duration::seconds(token.expires_in as i64);
+                    let expires_in =
+                        Duration::from_std(token.expires_in).unwrap_or(Duration::max_value());
                     let api_token = RspotifyToken {
                         access_token: token.access_token,
                         expires_in,
@@ -127,10 +125,7 @@ impl Future for DbusServer {
             } else {
                 self.token_request = Some(Box::pin({
                     let sess = self.session.clone();
-                    // This is more meant as a fast hotfix than anything else!
-                    let client_id =
-                        env::var("SPOTIFYD_CLIENT_ID").unwrap_or_else(|_| CLIENT_ID.to_string());
-                    async move { get_token(&sess, &client_id, SCOPE).await }
+                    async move { sess.token_provider().get_token(SCOPE).await }
                 }));
             }
         }
@@ -281,7 +276,7 @@ async fn create_dbus_server(
                 if playback.device.name == mv_device_name {
                     let new_pos = playback
                         .progress
-                        .and_then(|d| d.checked_add(&Duration::milliseconds(pos / 1000)));
+                        .and_then(|d| d.checked_add(&Duration::microseconds(pos)));
 
                     if let Some(new_pos) = new_pos {
                         let duration: Duration = match playback.item {
@@ -334,7 +329,7 @@ async fn create_dbus_server(
                     {
                         // pos is in microseconds, seek_track takes milliseconds
                         let _ = sp_client.seek_track(
-                            Duration::milliseconds(pos / 1000),
+                            Duration::microseconds(pos),
                             playback.device.id.as_deref(),
                         );
                     }
@@ -581,7 +576,7 @@ async fn create_dbus_server(
     // Store current playback state to be able to detect changes
     let mut last_track_id = None;
     let mut last_playback_status = None;
-    let mut last_volume = None;
+    let mut last_volume = None::<u16>;
 
     loop {
         let event = event_rx
@@ -592,9 +587,9 @@ async fn create_dbus_server(
 
         // Update playback state from event
         let (track_id, playback_status, player_volume) = match event {
-            PlayerEvent::VolumeSet { volume } => {
-                (last_track_id, last_playback_status, Some(volume))
-            }
+            // PlayerEvent::VolumeSet { volume } => {
+            //     (last_track_id, last_playback_status, Some(volume))
+            // }
             PlayerEvent::Playing {
                 track_id,
                 position_ms,
@@ -630,22 +625,22 @@ async fn create_dbus_server(
                 }
             } else {
                 if let Some(track_id) = track_id {
-                    let item = match track_id.audio_type {
-                        SpotifyAudioType::Track => {
+                    let item = match track_id.item_type {
+                        SpotifyItemType::Track => {
                             let track_id = TrackId::from_id(track_id.to_base62().unwrap()).unwrap();
                             let track = spotify_api_client
                                 .track(track_id, None)
                                 .map(PlayableItem::Track);
                             Some(track)
                         }
-                        SpotifyAudioType::Podcast => {
+                        SpotifyItemType::Episode => {
                             let id = EpisodeId::from_id(track_id.to_base62().unwrap()).unwrap();
                             let episode = spotify_api_client
                                 .get_an_episode(id, None)
                                 .map(PlayableItem::Episode);
                             Some(episode)
                         }
-                        SpotifyAudioType::NonPlayable => None,
+                        _ => None,
                     };
 
                     if let Some(item) = item {
