@@ -44,6 +44,9 @@ syslog = "6"
 [target."cfg(target_os = \"macos\")".dependencies]
 whoami = "1"
 
+[target."cfg(target_os = \"openbsd\")".dependencies]
+pledge = "0.4.2"
+
 [dev-dependencies]
 env_logger = "0.11"
 
@@ -51,10 +54,12 @@ env_logger = "0.11"
 alsa_backend = ["librespot-playback/alsa-backend", "alsa"]
 dbus_keyring = ["keyring"]
 dbus_mpris = ["dbus", "dbus-tokio", "dbus-crossroads", "rspotify"]
-default = ["alsa_backend"]
+pipe_backend = []
+default = ["alsa_backend", "pipe_backend"]
 portaudio_backend = ["librespot-playback/portaudio-backend"]
 pulseaudio_backend = ["librespot-playback/pulseaudio-backend"]
 rodio_backend = ["librespot-playback/rodio-backend"]
+rodiojack_backend = ["librespot-playback/rodiojack-backend"]
 
 [package.metadata.deb]
 depends = "$auto, systemd, pulseaudio"
@@ -64,3 +69,6 @@ assets = [
     ["README.md", "usr/share/doc/spotifyd/README", "644"],
     ["contrib/spotifyd.service", "etc/systemd/user/", "644"],
 ]
+
+[profile.release]
+lto = true

@@ -10,7 +10,7 @@ The provided binaries come in two flavours, `slim` and `full`. Each are compiled
 
 There are packages for the following systems:
 
-- [Arch Linux (via the Community repository)](https://archlinux.org/packages/community/x86_64/spotifyd/)
+- [Arch Linux (via the Extra repository)](https://archlinux.org/packages/extra/x86_64/spotifyd/)
 - [MacOS (via homebrew)](./MacOS.md)
 
 ## Building from source
@@ -83,6 +83,6 @@ To enable an additional audio backend, pass `<audio_backend_name>_backend` as a 
 | Feature Flag | Description                                                                         |
 |--------------|-------------------------------------------------------------------------------------|
 | dbus_keyring | Provides password authentication over the system's keyring (supports all platforms) |
-| dbus_mpris   | Provides multimedia key support (Linux only)                                      |
+| dbus_mpris   | Provides multimedia key support (Linux and BSD only)                                |
 
 > __Note:__ Compiling Spotifyd with all features and the pulseaudio backend on Ubuntu would result in the following command: `cargo build --release --no-default-features --features pulseaudio_backend,dbus_keyring,dbus_mpris`

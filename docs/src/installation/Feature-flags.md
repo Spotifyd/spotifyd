@@ -60,3 +60,15 @@ cargo build --release --no-default-features --features="rodio_backend"
 On Linux you will need the development package for alsa and make/gcc. (`libasound2-dev`,`build-essential` on debian, `alsa-lib-devel`,`make`,`gcc` on fedora)
 
 [mpris-specification]: https://specifications.freedesktop.org/mpris-spec/latest/
+
+### JACK Audio Connection Kit
+
+To use the [JACK](http://jackaudio.org) backend on Linux, compile with the `--features` flag to enable it:
+
+```bash
+cargo build --release --no-default-features --features="rodiojack_backend"
+```
+
+You will need the development packages for alsa, make/gcc, and JACK. (`libasound2-dev`, `build-essential`, and `libjack-dev` on Debian; `alsa-lib-devel`, `make`, `gcc`, and `jack-audio-connection-kit-devel` on Fedora.)
+
+> __Note__: when Spotifyd starts with this backend, it will create a JACK output device named `cpal_client_out` with two ports: `out_0` for the left channel and `out_1` for the right.
