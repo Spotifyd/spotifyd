@@ -13,6 +13,7 @@ use librespot_playback::{
     dither::{mk_ditherer, DithererBuilder, TriangularDitherer},
 };
 use log::{error, info, warn};
+use once_cell::sync::Lazy;
 use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
 use sha1::{Digest, Sha1};
 use std::{fmt, fs, path::Path, path::PathBuf, str::FromStr};
@@ -332,32 +333,100 @@ impl From<AudioFormat> for LSAudioFormat {
     }
 }
 
-#[derive(Debug, Default, StructOpt)]
+pub static ABOUT_INFO: Lazy<String> = Lazy::new(format_features_info);
+
+// Features functionality
+fn format_features_info() -> String {
+    let features = get_enabled_features();
+    let backends = get_enabled_backends();
+
+    let features_str = if features.is_empty() {
+        "No features enabled".to_string()
+    } else {
+        features.join(", ")
+    };
+
+    // Get the version from the Cargo environment variable
+    let version = env!("CARGO_PKG_VERSION");
+
+    // Format the string with version under the title, and avoid repeating version elsewhere
+    format!(
+        "A Spotify daemon\nspotifyd {}\nfeatures: {}\naudio backends: {}",
+        version,
+        features_str,
+        backends.join(", ")
+    )
+}
+
+pub fn get_enabled_backends() -> Vec<&'static str> {
+    let backends = vec![
+        #[cfg(feature = "alsa_backend")]
+        "alsa",
+        #[cfg(feature = "pulseaudio_backend")]
+        "pulseaudio",
+        #[cfg(feature = "rodio_backend")]
+        "rodio",
+        #[cfg(feature = "portaudio_backend")]
+        "portaudio",
+        #[cfg(feature = "rodiojack_backend")]
+        "rodiojack",
+        #[cfg(feature = "pipe_backend")]
+        "pipe",
+    ];
+
+    backends
+}
+
+pub fn get_enabled_features() -> Vec<&'static str> {
+    let mut features = Vec::new();
+
+    #[cfg(feature = "dbus_mpris")]
+    features.push("MPRIS");
+
+    #[cfg(feature = "dbus_keyring")]
+    features.push("keyring");
+
+    features
+}
+
+#[derive(Debug, StructOpt)]
 #[structopt(
-    about = "A Spotify daemon",
+    about = &**ABOUT_INFO, // Use double dereference to get `&str`
     author,
     name = "spotifyd",
     setting(AppSettings::ColoredHelp)
 )]
 pub struct CliConfig {
-    /// The path to the config file to use
+    // The path to the config file to use
     #[structopt(long, value_name = "string")]
     pub config_path: Option<PathBuf>,
 
-    /// If set, starts spotifyd without detaching
+    // If set, starts spotifyd without detaching
     #[structopt(long)]
     pub no_daemon: bool,
 
-    /// Prints more verbose output
+    // Prints more verbose output
     #[structopt(long)]
     pub verbose: bool,
 
-    /// Path to PID file.
+    // Path to PID file.
     #[structopt(long)]
     pub pid: Option<PathBuf>,
 
     #[structopt(flatten)]
     pub shared_config: SharedConfigValues,
+}
+
+impl Default for CliConfig {
+    fn default() -> Self {
+        CliConfig {
+            config_path: None,
+            no_daemon: false,
+            verbose: false,
+            pid: None,
+            shared_config: SharedConfigValues::default(),
+        }
+    }
 }
 
 // A struct that holds all allowed config fields.

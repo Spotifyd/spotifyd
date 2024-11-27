@@ -1,4 +1,5 @@
 use crate::config::CliConfig;
+use crate::config::ABOUT_INFO;
 #[cfg(unix)]
 use color_eyre::eyre::eyre;
 use color_eyre::{
@@ -97,6 +98,12 @@ fn main() -> eyre::Result<()> {
     .unwrap();
 
     color_eyre::install().wrap_err("Couldn't initialize error reporting")?;
+
+    // Handle --version explicitly
+    if std::env::args().any(|arg| arg == "--version") {
+        println!("{}", &**ABOUT_INFO);
+        return Ok(());
+    }
 
     let mut cli_config: CliConfig = CliConfig::from_args();
 
