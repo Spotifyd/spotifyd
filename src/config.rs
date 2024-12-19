@@ -132,6 +132,14 @@ static DEVICETYPE_VALUES: &[&str] = &[
     "avr",
     "stb",
     "audiodongle",
+    "gameconsole",
+    "castaudio",
+    "castvideo",
+    "automobile",
+    "smartwatch",
+    "chromebook",
+    "carthing",
+    "homething",
 ];
 
 // Spotify's device type (copied from it's config.rs)
@@ -150,6 +158,16 @@ pub enum DeviceType {
     #[serde(rename = "s_t_b")]
     Stb = 7,
     AudioDongle = 8,
+    GameConsole = 9,
+    CastAudio = 10,
+    CastVideo = 11,
+    Automobile = 12,
+    Smartwatch = 13,
+    Chromebook = 14,
+    UnknownSpotify = 15,
+    CarThing = 16,
+    Observer = 17,
+    HomeThing = 18,
 }
 
 impl From<LSDeviceType> for DeviceType {
@@ -164,8 +182,16 @@ impl From<LSDeviceType> for DeviceType {
             LSDeviceType::Avr => DeviceType::Avr,
             LSDeviceType::Stb => DeviceType::Stb,
             LSDeviceType::AudioDongle => DeviceType::AudioDongle,
-            // TODO: Implement new LibreSpot device types in Spotifyd
-            _ => DeviceType::Unknown,
+            LSDeviceType::GameConsole => DeviceType::GameConsole,
+            LSDeviceType::CastAudio => DeviceType::CastAudio,
+            LSDeviceType::CastVideo => DeviceType::CastVideo,
+            LSDeviceType::Automobile => DeviceType::Automobile,
+            LSDeviceType::Smartwatch => DeviceType::Smartwatch,
+            LSDeviceType::Chromebook => DeviceType::Chromebook,
+            LSDeviceType::UnknownSpotify => DeviceType::UnknownSpotify,
+            LSDeviceType::CarThing => DeviceType::CarThing,
+            LSDeviceType::Observer => DeviceType::Observer,
+            LSDeviceType::HomeThing => DeviceType::HomeThing,
         }
     }
 }
@@ -182,6 +208,16 @@ impl From<&DeviceType> for LSDeviceType {
             DeviceType::Avr => LSDeviceType::Avr,
             DeviceType::Stb => LSDeviceType::Stb,
             DeviceType::AudioDongle => LSDeviceType::AudioDongle,
+            DeviceType::GameConsole => LSDeviceType::GameConsole,
+            DeviceType::CastAudio => LSDeviceType::CastAudio,
+            DeviceType::CastVideo => LSDeviceType::CastVideo,
+            DeviceType::Automobile => LSDeviceType::Automobile,
+            DeviceType::Smartwatch => LSDeviceType::Smartwatch,
+            DeviceType::Chromebook => LSDeviceType::Chromebook,
+            DeviceType::UnknownSpotify => LSDeviceType::UnknownSpotify,
+            DeviceType::CarThing => LSDeviceType::CarThing,
+            DeviceType::Observer => LSDeviceType::Observer,
+            DeviceType::HomeThing => LSDeviceType::HomeThing,
         }
     }
 }
