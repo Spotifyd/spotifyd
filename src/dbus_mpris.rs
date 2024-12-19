@@ -226,10 +226,16 @@ async fn create_dbus_server(
             .get(|_, _| Ok(Vec::<String>::new()));
     });
 
+    let mut on_seeked: Option<
+        Box<dyn Fn(&dbus::Path, &(i64,)) -> dbus::Message + Send + Sync + 'static>,
+    > = None;
+
     // The following methods and properties are part of the MediaPlayer2.Player interface.
     // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 
     let player_interface: IfaceToken<()> = cr.register("org.mpris.MediaPlayer2.Player", |b| {
+        on_seeked = Some(b.signal::<(i64,), _>("Seeked", ("Position",)).msg_fn());
+
         let local_spirc = spirc.clone();
         b.method("VolumeUp", (), (), move |_, _, (): ()| {
             local_spirc.volume_up();
@@ -688,14 +694,12 @@ async fn create_dbus_server(
         }
 
         // if position in track has changed emit a Seeked signal
-        if let Some(position_ms) = seeked_position_ms {
-            let msg = dbus::message::Message::signal(
+        if let (Some(position_ms), Some(build_msg)) = (seeked_position_ms, &on_seeked) {
+            let msg = build_msg(
                 &dbus::Path::new("/org/mpris/MediaPlayer2").unwrap(),
-                &dbus::strings::Interface::new("org.mpris.MediaPlayer2.Player").unwrap(),
-                &dbus::strings::Member::new("Seeked").unwrap(),
-            )
-            // position should be in microseconds
-            .append1(position_ms as i64 * 1000);
+                &(position_ms as i64 * 1000,),
+            );
+
             conn.send(msg).unwrap();
         }
     }
