@@ -18,12 +18,11 @@ use log::{debug, error, info, warn};
 use std::{str::FromStr, sync::Arc, thread, time::Duration};
 
 pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLoop {
-    let mut mixer = {
+    let mixer: Arc<dyn Mixer> = {
         match config.volume_controller {
             config::VolumeController::None => {
                 info!("Using no volume controller.");
-                Box::new(|| Arc::new(crate::no_mixer::NoMixer) as Arc<dyn Mixer>)
-                    as Box<dyn FnMut() -> Arc<dyn Mixer>>
+                Arc::new(crate::no_mixer::NoMixer)
             }
             #[cfg(feature = "alsa_backend")]
             config::VolumeController::Alsa | config::VolumeController::AlsaLinear => {
@@ -35,23 +34,18 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
                     config.volume_controller,
                     config::VolumeController::AlsaLinear
                 );
-                Box::new(move || {
-                    Arc::new(alsa_mixer::AlsaMixer {
-                        device: control_device
-                            .clone()
-                            .or_else(|| audio_device.clone())
-                            .unwrap_or_else(|| "default".to_string()),
-                        mixer: mixer.clone().unwrap_or_else(|| "Master".to_string()),
-                        linear_scaling: linear,
-                    }) as Arc<dyn Mixer>
-                }) as Box<dyn FnMut() -> Arc<dyn Mixer>>
+                Arc::new(alsa_mixer::AlsaMixer {
+                    device: control_device
+                        .clone()
+                        .or_else(|| audio_device.clone())
+                        .unwrap_or_else(|| "default".to_string()),
+                    mixer: mixer.clone().unwrap_or_else(|| "Master".to_string()),
+                    linear_scaling: linear,
+                })
             }
             _ => {
                 info!("Using software volume controller.");
-                Box::new(move || {
-                    Arc::new(mixer::softmixer::SoftMixer::open(MixerConfig::default()))
-                        as Arc<dyn Mixer>
-                }) as Box<dyn FnMut() -> Arc<dyn Mixer>>
+                Arc::new(mixer::softmixer::SoftMixer::open(MixerConfig::default()))
             }
         }
     };
@@ -134,7 +128,7 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
         Player::new(
             player_config,
             session.clone(),
-            mixer().get_soft_volume(),
+            mixer.get_soft_volume(),
             move || backend(audio_device, audio_format),
         )
     };
