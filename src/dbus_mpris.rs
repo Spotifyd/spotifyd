@@ -439,7 +439,12 @@ async fn create_dbus_server(
     );
 
     let mut spirc: Option<Arc<Spirc>> = None;
-    let mut cur_conn_id: Option<String> = None;
+
+    struct ConnectionData {
+        conn_id: String,
+        seeked_fn: SeekedSignal,
+    }
+    let mut cur_conn: Option<ConnectionData> = None;
 
     loop {
         tokio::select! {
@@ -456,18 +461,23 @@ async fn create_dbus_server(
                 if let PlayerEvent::SessionConnected { connection_id, .. } = event {
                     let mut cr = crossroads.lock().await;
                     let spirc = spirc.clone().unwrap();
-                    register_player_interface(&mut cr, spirc, current_state.clone(), quit_tx.clone());
-                    if cur_conn_id.is_none() {
+                    let seeked_fn = register_player_interface(
+                        &mut cr,
+                        spirc,
+                        current_state.clone(),
+                        quit_tx.clone(),
+                    );
+                    if cur_conn.is_none() {
                         conn.request_name(&mpris_name, true, true, true).await?;
                     }
-                    cur_conn_id = Some(connection_id);
+                    cur_conn = Some(ConnectionData { conn_id: connection_id, seeked_fn });
                 } else if let PlayerEvent::SessionDisconnected { connection_id, .. } = event {
                     // if this message isn't outdated yet, we vanish from the bus
-                    if cur_conn_id == Some(connection_id) {
+                    if cur_conn.as_ref().is_some_and(|d| d.conn_id == connection_id) {
                         let mut cr = crossroads.lock().await;
                         conn.release_name(&mpris_name).await?;
                         cr.remove::<()>(&MPRIS_PATH.into());
-                        cur_conn_id = None;
+                        cur_conn = None;
                     }
                 } else {
                     let (changed, seeked) = current_state
@@ -476,19 +486,17 @@ async fn create_dbus_server(
                         .handle_event(event);
 
                     if seeked {
-                        if let Some(position) = current_state
+                        let position = current_state
                             .read()
                             .expect("state has been poisoned")
-                            .get_position()
+                            .get_position();
+                        if let Some((ConnectionData { seeked_fn, .. }, position)) =
+                            Option::zip(cur_conn.as_ref(), position)
                         {
-                            let msg = dbus::message::Message::signal(
-                                &dbus::Path::new(MPRIS_PATH).unwrap(),
-                                &dbus::strings::Interface::new("org.mpris.MediaPlayer2.Player")
-                                    .unwrap(),
-                                &dbus::strings::Member::new("Seeked").unwrap(),
-                            )
-                            // position should be in microseconds
-                            .append1(position.num_microseconds().unwrap_or_default());
+                            let msg = seeked_fn(
+                                &MPRIS_PATH.into(),
+                                &(position.num_microseconds().unwrap_or_default(),),
+                            );
                             conn.send(msg).unwrap();
                         }
                     }
@@ -534,12 +542,14 @@ async fn create_dbus_server(
     Ok(())
 }
 
+type SeekedSignal = Box<dyn Fn(&dbus::Path, &(i64,)) -> dbus::Message + Send + Sync + 'static>;
+
 fn register_player_interface(
     cr: &mut Crossroads,
     spirc: Arc<Spirc>,
     current_state: Arc<CurrentState>,
     quit_tx: tokio::sync::mpsc::UnboundedSender<()>,
-) {
+) -> SeekedSignal {
     // The following methods and properties are part of the MediaPlayer2 interface.
     // https://specifications.freedesktop.org/mpris-spec/latest/Media_Player.html
     let media_player2_interface = cr.register("org.mpris.MediaPlayer2", move |b| {
@@ -578,7 +588,10 @@ fn register_player_interface(
     // The following methods and properties are part of the MediaPlayer2.Player interface.
     // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 
+    let mut seeked_signal = None;
+
     let player_interface: IfaceToken<()> = cr.register("org.mpris.MediaPlayer2.Player", |b| {
+        seeked_signal = Some(b.signal::<(i64,), _>("Seeked", ("Position",)).msg_fn());
         let local_spirc = spirc.clone();
         b.method("VolumeUp", (), (), move |_, _, (): ()| {
             local_spirc.volume_up().map_err(|e| MethodErr::failed(&e))
@@ -771,6 +784,8 @@ fn register_player_interface(
     });
 
     cr.insert(MPRIS_PATH, &[media_player2_interface, player_interface], ());
+
+    seeked_signal.expect("player interface has not been registered")
 }
 
 fn register_controls_interface(cr: &mut Crossroads, spirc: Arc<Spirc>) {
