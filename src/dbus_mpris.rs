@@ -21,16 +21,19 @@ use std::convert::TryFrom;
 use std::{
     collections::HashMap,
     pin::Pin,
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, RwLock},
 };
 use thiserror::Error;
 use time::format_description::well_known::Iso8601;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use tokio::sync::{
+    mpsc::{UnboundedReceiver, UnboundedSender},
+    Mutex,
+};
 
 type DbusMap = HashMap<String, Variant<Box<dyn RefArg>>>;
 
-const MPRIS_PATH: &'static str = "/org/mpris/MediaPlayer2";
-const CONTROLS_PATH: &'static str = "/rs/spotifyd/Controls";
+const MPRIS_PATH: &str = "/org/mpris/MediaPlayer2";
+const CONTROLS_PATH: &str = "/rs/spotifyd/Controls";
 
 pub enum ControlMessage {
     SetSpirc(Arc<Spirc>),
@@ -97,7 +100,7 @@ enum PlaybackStatus {
 }
 
 impl PlaybackStatus {
-    fn to_mpris(&self) -> &'static str {
+    fn to_mpris(self) -> &'static str {
         match self {
             PlaybackStatus::Playing => "Playing",
             PlaybackStatus::Paused => "Paused",
@@ -137,7 +140,7 @@ enum RepeatState {
 }
 
 impl RepeatState {
-    fn to_mpris(&self) -> &'static str {
+    fn to_mpris(self) -> &'static str {
         match self {
             RepeatState::None => "None",
             // RepeatState::Track => "Track",
@@ -427,8 +430,10 @@ async fn create_dbus_server(
     conn.start_receive(
         MatchRule::new_method_call(),
         Box::new(move |msg, conn| {
-            let mut cr = cr.lock().unwrap();
-            cr.handle_message(msg, conn).unwrap();
+            tokio::task::block_in_place(|| {
+                let mut cr = cr.blocking_lock();
+                cr.handle_message(msg, conn).unwrap();
+            });
             true
         }),
     );
@@ -449,7 +454,7 @@ async fn create_dbus_server(
                 let event = event.expect("event channel was unexpectedly closed");
 
                 if let PlayerEvent::SessionConnected { connection_id, .. } = event {
-                    let mut cr = crossroads.lock().unwrap();
+                    let mut cr = crossroads.lock().await;
                     let spirc = spirc.clone().unwrap();
                     register_player_interface(&mut cr, spirc, current_state.clone(), quit_tx.clone());
                     if cur_conn_id.is_none() {
@@ -459,7 +464,7 @@ async fn create_dbus_server(
                 } else if let PlayerEvent::SessionDisconnected { connection_id, .. } = event {
                     // if this message isn't outdated yet, we vanish from the bus
                     if cur_conn_id == Some(connection_id) {
-                        let mut cr = crossroads.lock().unwrap();
+                        let mut cr = crossroads.lock().await;
                         conn.release_name(&mpris_name).await?;
                         cr.remove::<()>(&MPRIS_PATH.into());
                         cur_conn_id = None;
@@ -509,12 +514,12 @@ async fn create_dbus_server(
                         break;
                     },
                     ControlMessage::SetSpirc(new_spirc) => {
-                        let mut cr = crossroads.lock().unwrap();
+                        let mut cr = crossroads.lock().await;
                         register_controls_interface(&mut cr, new_spirc.clone());
                         spirc = Some(new_spirc);
                     }
                     ControlMessage::DropSpirc => {
-                        let mut cr = crossroads.lock().unwrap();
+                        let mut cr = crossroads.lock().await;
                         conn.release_name(&mpris_name).await?;
                         cr.remove::<()>(&MPRIS_PATH.into());
                         cr.remove::<()>(&CONTROLS_PATH.into());

@@ -56,7 +56,7 @@ pub enum Backend {
 }
 
 fn default_backend() -> Backend {
-    return Backend::from_str(BACKEND_VALUES.first().unwrap()).unwrap();
+    Backend::from_str(BACKEND_VALUES.first().unwrap()).unwrap()
 }
 
 impl FromStr for Backend {
