@@ -50,8 +50,8 @@ backend = "alsa" # use portaudio for BSD and macOS [homebrew]
 # list of valid devices, run `aplay -L`,
 device = "alsa_audio_device"  # omit for macOS
 
-# The PCM sample format to use. Possible values 
-# are F32, S32, S24, S24_3, S16. 
+# The PCM sample format to use. Possible values
+# are F32, S32, S24, S24_3, S16.
 # Change this value if you encounter errors like
 # "Alsa error PCM open ALSA function 'snd_pcm_hw_params_set_format' failed with error 'EINVAL: Invalid argument'"
 audio_format = "S16"
@@ -117,7 +117,9 @@ proxy = "http://proxy.example.org:8080"
 
 # The displayed device type in Spotify clients.
 # Can be unknown, computer, tablet, smartphone, speaker, t_v,
-# a_v_r (Audio/Video Receiver), s_t_b (Set-Top Box), and audio_dongle.
+# a_v_r (Audio/Video Receiver), s_t_b (Set-Top Box), audio_dongle,
+# game_console, cast_audio, cast_video, automobile, smartwatch, chromebook,
+# unknown_spotify, car_thing, observer and home_thing.
 device_type = "speaker"
 ```
 
@@ -127,7 +129,7 @@ device_type = "speaker"
 
   Spotifyd is able to advertise itself on the network without credentials. To enable this, you must omit / comment any `username` / `username_cmd` or `password` / `password_cmd` in the configuration. Spotifyd will receive an authentication blob from Spotify when you choose it from the devices list.
 
-  > __Note:__ If you choose to go with this, it is also recommended to omit the `cache_path` and `cache_directory` options. Otherwise the first user to connect to the service will have its authentication blob cached by the service and nobody else will be able to connect to the service without clearing the cache.
+  > **Note:** If you choose to go with this, it is also recommended to omit the `cache_path` and `cache_directory` options. Otherwise the first user to connect to the service will have its authentication blob cached by the service and nobody else will be able to connect to the service without clearing the cache.
 
   This way, a Spotifyd instance can also be made available to multiple users.
 
@@ -146,9 +148,9 @@ device_type = "speaker"
 
 - **`use_keyring`** config entry / **`--use-keyring`** CLI flag <!-- omit in toc -->
 
-  > __Note:__ If choosing the user's keyring to store login credentials, running spotifyd as a systemd _system service_ is no longer possible. A system wide service cannot access a specific user's keyring. In this case, make sure to run spotifyd as a systemd _user service_. See [systemd configuration](services/Systemd.md).
+  > **Note:** If choosing the user's keyring to store login credentials, running spotifyd as a systemd _system service_ is no longer possible. A system wide service cannot access a specific user's keyring. In this case, make sure to run spotifyd as a systemd _user service_. See [systemd configuration](services/Systemd.md).
 
-  This features leverages [Linux's DBus Secret Service API][secret-storage-specification] or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, compile with the `dbus_keyring` feature and set the `use-keyring` config entry to `true` or pass the `--use-keyring` CLI flag  during start to the daemon. Remove the `password` and/or `password_cmd` config entries.
+  This features leverages [Linux's DBus Secret Service API][secret-storage-specification] or native macOS keychain in order to forgo the need to store your password directly in the config file. To use it, compile with the `dbus_keyring` feature and set the `use-keyring` config entry to `true` or pass the `--use-keyring` CLI flag during start to the daemon. Remove the `password` and/or `password_cmd` config entries.
 
   Your keyring entry needs to have the following attributes set:
 

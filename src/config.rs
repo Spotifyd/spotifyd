@@ -132,24 +132,42 @@ static DEVICETYPE_VALUES: &[&str] = &[
     "avr",
     "stb",
     "audiodongle",
+    "gameconsole",
+    "castaudio",
+    "castvideo",
+    "automobile",
+    "smartwatch",
+    "chromebook",
+    "carthing",
+    "homething",
 ];
 
 // Spotify's device type (copied from it's config.rs)
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
 #[serde(rename_all = "snake_case")]
 pub enum DeviceType {
-    Unknown = 0,
-    Computer = 1,
-    Tablet = 2,
-    Smartphone = 3,
-    Speaker = 4,
+    Unknown,
+    Computer,
+    Tablet,
+    Smartphone,
+    Speaker,
     #[serde(rename = "t_v")]
-    Tv = 5,
+    Tv,
     #[serde(rename = "a_v_r")]
-    Avr = 6,
+    Avr,
     #[serde(rename = "s_t_b")]
-    Stb = 7,
-    AudioDongle = 8,
+    Stb,
+    AudioDongle,
+    GameConsole,
+    CastAudio,
+    CastVideo,
+    Automobile,
+    Smartwatch,
+    Chromebook,
+    UnknownSpotify,
+    CarThing,
+    Observer,
+    HomeThing,
 }
 
 impl From<LSDeviceType> for DeviceType {
@@ -164,8 +182,16 @@ impl From<LSDeviceType> for DeviceType {
             LSDeviceType::Avr => DeviceType::Avr,
             LSDeviceType::Stb => DeviceType::Stb,
             LSDeviceType::AudioDongle => DeviceType::AudioDongle,
-            // TODO: Implement new LibreSpot device types in Spotifyd
-            _ => DeviceType::Unknown,
+            LSDeviceType::GameConsole => DeviceType::GameConsole,
+            LSDeviceType::CastAudio => DeviceType::CastAudio,
+            LSDeviceType::CastVideo => DeviceType::CastVideo,
+            LSDeviceType::Automobile => DeviceType::Automobile,
+            LSDeviceType::Smartwatch => DeviceType::Smartwatch,
+            LSDeviceType::Chromebook => DeviceType::Chromebook,
+            LSDeviceType::UnknownSpotify => DeviceType::UnknownSpotify,
+            LSDeviceType::CarThing => DeviceType::CarThing,
+            LSDeviceType::Observer => DeviceType::Observer,
+            LSDeviceType::HomeThing => DeviceType::HomeThing,
         }
     }
 }
@@ -182,6 +208,16 @@ impl From<&DeviceType> for LSDeviceType {
             DeviceType::Avr => LSDeviceType::Avr,
             DeviceType::Stb => LSDeviceType::Stb,
             DeviceType::AudioDongle => LSDeviceType::AudioDongle,
+            DeviceType::GameConsole => LSDeviceType::GameConsole,
+            DeviceType::CastAudio => LSDeviceType::CastAudio,
+            DeviceType::CastVideo => LSDeviceType::CastVideo,
+            DeviceType::Automobile => LSDeviceType::Automobile,
+            DeviceType::Smartwatch => LSDeviceType::Smartwatch,
+            DeviceType::Chromebook => LSDeviceType::Chromebook,
+            DeviceType::UnknownSpotify => LSDeviceType::UnknownSpotify,
+            DeviceType::CarThing => LSDeviceType::CarThing,
+            DeviceType::Observer => LSDeviceType::Observer,
+            DeviceType::HomeThing => LSDeviceType::HomeThing,
         }
     }
 }
