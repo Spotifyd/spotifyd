@@ -146,28 +146,28 @@ static DEVICETYPE_VALUES: &[&str] = &[
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
 #[serde(rename_all = "snake_case")]
 pub enum DeviceType {
-    Unknown = 0,
-    Computer = 1,
-    Tablet = 2,
-    Smartphone = 3,
-    Speaker = 4,
+    Unknown,
+    Computer,
+    Tablet,
+    Smartphone,
+    Speaker,
     #[serde(rename = "t_v")]
-    Tv = 5,
+    Tv,
     #[serde(rename = "a_v_r")]
-    Avr = 6,
+    Avr,
     #[serde(rename = "s_t_b")]
-    Stb = 7,
-    AudioDongle = 8,
-    GameConsole = 9,
-    CastAudio = 10,
-    CastVideo = 11,
-    Automobile = 12,
-    Smartwatch = 13,
-    Chromebook = 14,
-    UnknownSpotify = 15,
-    CarThing = 16,
-    Observer = 17,
-    HomeThing = 18,
+    Stb,
+    AudioDongle,
+    GameConsole,
+    CastAudio,
+    CastVideo,
+    Automobile,
+    Smartwatch,
+    Chromebook,
+    UnknownSpotify,
+    CarThing,
+    Observer,
+    HomeThing,
 }
 
 impl From<LSDeviceType> for DeviceType {
