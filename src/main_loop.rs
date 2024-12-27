@@ -62,7 +62,7 @@ impl CredentialsProvider {
 
 pub(crate) struct MainLoop {
     pub(crate) spotifyd_state: SpotifydState,
-    pub(crate) mixer: Box<dyn FnMut() -> Arc<dyn Mixer>>,
+    pub(crate) mixer: Arc<dyn Mixer>,
     pub(crate) session: Session,
     pub(crate) player: Arc<Player>,
     pub(crate) has_volume_ctrl: bool,
@@ -92,12 +92,12 @@ impl MainLoop {
             self.session.clone(),
             creds,
             self.player.clone(),
-            (self.mixer)(),
+            self.mixer.clone(),
         )
         .await
     }
 
-    pub(crate) async fn run(&mut self) {
+    pub(crate) async fn run(mut self) {
         tokio::pin! {
             let ctrl_c = tokio::signal::ctrl_c();
             // we don't necessarily have a dbus server
@@ -116,6 +116,9 @@ impl MainLoop {
         'mainloop: loop {
             let (spirc, spirc_task) = tokio::select!(
                 _ = &mut ctrl_c => {
+                    if let CredentialsProvider::Discovery(stream) = self.credentials_provider {
+                        let _ = stream.into_inner().shutdown().await;
+                    }
                     break 'mainloop;
                 }
                 spirc = self.get_connection() => {

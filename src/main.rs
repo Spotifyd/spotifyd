@@ -209,7 +209,7 @@ fn main() -> eyre::Result<()> {
 
     let runtime = Runtime::new().unwrap();
     runtime.block_on(async {
-        let mut initial_state = setup::initial_state(internal_config);
+        let initial_state = setup::initial_state(internal_config);
         initial_state.run().await;
     });
 
