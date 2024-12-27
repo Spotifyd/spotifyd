@@ -38,6 +38,7 @@ toml = "0.8.19"
 color-eyre = "0.6"
 directories = "5.0.1"
 thiserror = "1.0.64"
+time = { version = "0.3.37", default-features = false, features = ["formatting"] }
 
 [target."cfg(unix)".dependencies]
 daemonize = "0.5"

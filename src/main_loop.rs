@@ -2,6 +2,9 @@ use crate::config::DBusType;
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
 use crate::process::spawn_program_on_event;
+use futures::future::Either;
+#[cfg(not(feature = "dbus_mpris"))]
+use futures::future::Pending;
 use futures::{
     self,
     future::{self, Fuse, FusedFuture},
@@ -15,6 +18,9 @@ use librespot_playback::{mixer::Mixer, player::Player};
 use log::error;
 use std::pin::Pin;
 use std::sync::Arc;
+
+#[cfg(not(feature = "dbus_mpris"))]
+type DbusServer = Pending<()>;
 
 pub struct SpotifydState {
     pub device_name: String,
@@ -73,7 +79,6 @@ pub(crate) struct MainLoop {
 impl MainLoop {
     async fn get_connection(&mut self) -> Result<(Spirc, impl Future<Output = ()>), Error> {
         let creds = self.credentials_provider.get_credentials().await;
-        self.session.connect(creds.clone(), true).await?;
 
         // TODO: expose is_group
         Spirc::new(
@@ -95,7 +100,18 @@ impl MainLoop {
     pub(crate) async fn run(&mut self) {
         tokio::pin! {
             let ctrl_c = tokio::signal::ctrl_c();
+            // we don't necessarily have a dbus server
+            let dbus_server = Either::<DbusServer, _>::Right(future::pending());
         }
+
+        #[cfg(feature = "dbus_mpris")]
+        let mpris_event_tx = if self.use_mpris {
+            let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+            *dbus_server.as_mut() = Either::Left(DbusServer::new(rx, self.dbus_type));
+            Some(tx)
+        } else {
+            None
+        };
 
         'mainloop: loop {
             let (spirc, spirc_task) = tokio::select!(
@@ -117,23 +133,14 @@ impl MainLoop {
 
             let shared_spirc = Arc::new(spirc);
 
-            // we don't necessarily have a dbus server
-            let mut dbus_server: Pin<Box<dyn Future<Output = ()>>> = Box::pin(future::pending());
-
             #[cfg(feature = "dbus_mpris")]
-            let mpris_event_tx = if self.use_mpris {
-                let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-                dbus_server = Box::pin(DbusServer::new(
-                    self.session.clone(),
-                    shared_spirc.clone(),
-                    self.spotifyd_state.device_name.clone(),
-                    rx,
-                    self.dbus_type,
-                ));
-                Some(tx)
-            } else {
-                None
-            };
+            if let Either::Left(mut dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {
+                if let Err(err) = dbus_server.as_mut().set_spirc(shared_spirc.clone()) {
+                    error!("failed to configure dbus server: {err}");
+                    let _ = shared_spirc.shutdown();
+                    break 'mainloop;
+                }
+            }
 
             let mut running_event_program = Box::pin(Fuse::terminated());
 
@@ -156,9 +163,18 @@ impl MainLoop {
                         break;
                     }
                     // dbus stopped unexpectedly
-                    _ = &mut dbus_server => {
-                        let _ = shared_spirc.shutdown();
-                        break 'mainloop;
+                    result = &mut dbus_server => {
+                        #[cfg(feature = "dbus_mpris")]
+                        {
+                            if let Err(err) = result {
+                                error!("DBus terminated unexpectedly: {err}");
+                            }
+                            let _ = shared_spirc.shutdown();
+                            *dbus_server.as_mut() = Either::Right(future::pending());
+                            break 'mainloop;
+                        }
+                        #[cfg(not(feature = "dbus_mpris"))]
+                        result // unused variable
                     }
                     // a new player event is available and no program is running
                     event = event_channel.recv(), if running_event_program.is_terminated() => {
@@ -184,6 +200,21 @@ impl MainLoop {
                         }
                     }
                 )
+            }
+            #[cfg(feature = "dbus_mpris")]
+            if let Either::Left(dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {
+                if let Err(err) = dbus_server.drop_spirc() {
+                    error!("failed to reconfigure dbus server: {err}");
+                    break 'mainloop;
+                }
+            }
+        }
+        #[cfg(feature = "dbus_mpris")]
+        if let Either::Left(dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {
+            if dbus_server.shutdown() {
+                if let Err(err) = dbus_server.await {
+                    error!("failed to shutdown the dbus server: {err}");
+                }
             }
         }
     }
