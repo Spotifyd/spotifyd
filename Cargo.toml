@@ -18,7 +18,7 @@ fern = { version = "0.7.0", features = ["syslog-6"] }
 futures = "0.3.15"
 gethostname = "0.5.0"
 hex = "0.4"
-keyring = { version = "3.5", optional = true }
+keyring = { version = "3.5", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
 libc = "0.2.82"
 log = "0.4.6"
 serde = { version = "1.0.115", features = ["derive"] }
