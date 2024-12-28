@@ -8,24 +8,6 @@ use tokio::{
     process::{self, Command},
 };
 
-/// Blocks while provided command is run in a subprocess using the provided
-/// shell. If successful, returns the contents of the subprocess's `stdout` as a
-/// `String`.
-pub(crate) fn run_program(shell: &str, cmd: &str) -> Result<String, Error> {
-    info!("Running {:?} using {:?}", cmd, shell);
-    let output = std::process::Command::new(shell)
-        .arg("-c")
-        .arg(cmd)
-        .output()
-        .map_err(|e| Error::subprocess_with_err(shell, cmd, e))?;
-    if !output.status.success() {
-        let s = std::str::from_utf8(&output.stderr).map_err(|_| Error::subprocess(shell, cmd))?;
-        return Err(Error::subprocess_with_str(shell, cmd, s));
-    }
-    let s = String::from_utf8(output.stdout).map_err(|_| Error::subprocess(shell, cmd))?;
-    Ok(s)
-}
-
 /// Spawns provided command in a subprocess using the provided shell.
 fn spawn_program(shell: &str, cmd: &str, env: HashMap<&str, String>) -> Result<Child, Error> {
     info!(
