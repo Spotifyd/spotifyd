@@ -1,4 +1,5 @@
 use crate::config::CliConfig;
+use clap::Parser;
 #[cfg(unix)]
 use color_eyre::eyre::eyre;
 use color_eyre::{
@@ -14,7 +15,6 @@ use log::{info, trace, LevelFilter};
 use pledge::pledge;
 #[cfg(windows)]
 use std::fs;
-use structopt::StructOpt;
 use tokio::runtime::Runtime;
 
 #[cfg(feature = "alsa_backend")]
@@ -34,16 +34,15 @@ enum LogTarget {
     Syslog,
 }
 
-fn setup_logger(log_target: LogTarget, verbose: bool) -> eyre::Result<()> {
-    let log_level = if verbose {
-        LevelFilter::Trace
-    } else {
-        LevelFilter::Info
+fn setup_logger(log_target: LogTarget, verbose: u8) -> eyre::Result<()> {
+    let log_level = match verbose {
+        0 => LevelFilter::Info,
+        1 => LevelFilter::Debug,
+        2.. => LevelFilter::Trace,
     };
-
     let mut logger = fern::Dispatch::new().level(log_level);
 
-    logger = if verbose {
+    logger = if verbose > 0 {
         logger.format(|out, message, record| {
             out.finish(format_args!(
                 "[{} {}] {}",
@@ -107,7 +106,7 @@ fn main() -> eyre::Result<()> {
 
     color_eyre::install().wrap_err("Couldn't initialize error reporting")?;
 
-    let mut cli_config: CliConfig = CliConfig::from_args();
+    let mut cli_config = CliConfig::parse();
 
     let is_daemon = !cli_config.no_daemon;
 
@@ -218,9 +217,8 @@ fn main() -> eyre::Result<()> {
 
     let runtime = Runtime::new().unwrap();
     runtime.block_on(async {
-        let initial_state = setup::initial_state(internal_config);
+        let initial_state = setup::initial_state(internal_config)?;
         initial_state.run().await;
-    });
-
-    Ok(())
+        Ok(())
+    })
 }

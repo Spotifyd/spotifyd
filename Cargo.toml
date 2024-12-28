@@ -18,12 +18,10 @@ fern = { version = "0.7.0", features = ["syslog-6"] }
 futures = "0.3.15"
 gethostname = "0.5.0"
 hex = "0.4"
-keyring = { version = "3.5", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
 libc = "0.2.82"
 log = "0.4.6"
 serde = { version = "1.0.115", features = ["derive"] }
 sha-1 = "0.10"
-structopt = "0.3.17"
 tokio = {version = "1.26.0", features = ["signal", "rt-multi-thread", "process", "io-std"] }
 tokio-stream = "0.1.7"
 url = "2.2.2"
@@ -39,6 +37,7 @@ color-eyre = "0.6"
 directories = "5.0.1"
 thiserror = "2.0"
 time = { version = "0.3.37", default-features = false, features = ["formatting"] }
+clap = { version = "4.5.23", features = ["derive"] }
 
 [target."cfg(unix)".dependencies]
 daemonize = "0.5"
@@ -55,7 +54,6 @@ env_logger = "0.11"
 
 [features]
 alsa_backend = ["librespot-playback/alsa-backend", "alsa"]
-dbus_keyring = ["keyring"]
 dbus_mpris = ["dbus", "dbus-tokio", "dbus-crossroads"]
 pipe_backend = []
 default = ["alsa_backend", "pipe_backend"]
