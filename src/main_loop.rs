@@ -107,7 +107,8 @@ impl MainLoop {
         #[cfg(feature = "dbus_mpris")]
         let mpris_event_tx = if self.use_mpris {
             let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-            *dbus_server.as_mut() = Either::Left(DbusServer::new(rx, self.dbus_type));
+            *dbus_server.as_mut() =
+                Either::Left(DbusServer::new(rx, self.dbus_type, self.session.clone()));
             Some(tx)
         } else {
             None

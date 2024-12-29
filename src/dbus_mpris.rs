@@ -13,9 +13,11 @@ use futures::{
     task::{Context, Poll},
     Future,
 };
-use librespot_connect::spirc::Spirc;
+use librespot_connect::spirc::{Spirc, SpircLoadCommand};
+use librespot_core::{spotify_id::SpotifyItemType, Session, SpotifyId};
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
+use librespot_protocol::spirc::TrackRef;
 use log::{error, warn};
 use std::convert::TryFrom;
 use std::{
@@ -25,9 +27,12 @@ use std::{
 };
 use thiserror::Error;
 use time::format_description::well_known::Iso8601;
-use tokio::sync::{
-    mpsc::{UnboundedReceiver, UnboundedSender},
-    Mutex,
+use tokio::{
+    runtime::Handle,
+    sync::{
+        mpsc::{UnboundedReceiver, UnboundedSender},
+        Mutex,
+    },
 };
 
 type DbusMap = HashMap<String, Variant<Box<dyn RefArg>>>;
@@ -47,9 +52,13 @@ pub(crate) struct DbusServer {
 }
 
 impl DbusServer {
-    pub fn new(event_rx: UnboundedReceiver<PlayerEvent>, dbus_type: DBusType) -> DbusServer {
+    pub fn new(
+        event_rx: UnboundedReceiver<PlayerEvent>,
+        dbus_type: DBusType,
+        session: Session,
+    ) -> DbusServer {
         let (control_tx, control_rx) = tokio::sync::mpsc::unbounded_channel();
-        let dbus_future = Box::pin(create_dbus_server(event_rx, control_rx, dbus_type));
+        let dbus_future = Box::pin(create_dbus_server(event_rx, control_rx, dbus_type, session));
         DbusServer {
             dbus_future,
             control_tx,
@@ -145,6 +154,25 @@ impl RepeatState {
             RepeatState::None => "None",
             // RepeatState::Track => "Track",
             RepeatState::All => "Playlist",
+        }
+    }
+}
+
+impl From<RepeatState> for bool {
+    fn from(repeat: RepeatState) -> Self {
+        match repeat {
+            RepeatState::None => false,
+            RepeatState::All => true,
+        }
+    }
+}
+
+impl From<bool> for RepeatState {
+    fn from(repeat: bool) -> Self {
+        if repeat {
+            RepeatState::All
+        } else {
+            RepeatState::None
         }
     }
 }
@@ -258,11 +286,7 @@ impl CurrentStateInner {
                 insert_attr(&mut changed, "Shuffle", self.shuffle);
             }
             PlayerEvent::RepeatChanged { repeat } => {
-                self.repeat = if repeat {
-                    RepeatState::All
-                } else {
-                    RepeatState::None
-                };
+                self.repeat = repeat.into();
                 insert_attr(
                     &mut changed,
                     "LoopStatus",
@@ -392,6 +416,7 @@ async fn create_dbus_server(
     mut event_rx: UnboundedReceiver<PlayerEvent>,
     mut control_rx: UnboundedReceiver<ControlMessage>,
     dbus_type: DBusType,
+    session: Session,
 ) -> Result<(), DbusError> {
     let (resource, conn) = match dbus_type {
         DBusType::Session => connection::new_session_sync(),
@@ -468,6 +493,7 @@ async fn create_dbus_server(
                     let seeked_fn = register_player_interface(
                         &mut cr,
                         spirc,
+                        session.clone(),
                         current_state.clone(),
                         quit_tx.clone(),
                     );
@@ -551,6 +577,7 @@ type SeekedSignal = Box<dyn Fn(&dbus::Path, &(i64,)) -> dbus::Message + Send + S
 fn register_player_interface(
     cr: &mut Crossroads,
     spirc: Arc<Spirc>,
+    session: Session,
     current_state: Arc<CurrentState>,
     quit_tx: tokio::sync::mpsc::UnboundedSender<()>,
 ) -> SeekedSignal {
@@ -688,11 +715,83 @@ fn register_player_interface(
             },
         );
 
-        b.method("OpenUri", ("uri",), (), move |_, _, (_,): (String,)| {
-            warn!("OpenUri is currently not implemented");
-            Err::<(), _>(dbus::MethodErr::no_method(
-                "this method is currently not implemented",
-            ))
+        let local_spirc = spirc.clone();
+        let local_state = current_state.clone();
+        b.method("OpenUri", ("uri",), (), move |_, _, (uri,): (String,)| {
+            let id = SpotifyId::from_uri(&uri).map_err(|e| MethodErr::invalid_arg(&e))?;
+            let CurrentStateInner {
+                shuffle, repeat, ..
+            } = *local_state.read()?;
+
+            fn id_to_trackref(id: &SpotifyId) -> TrackRef {
+                let mut trackref = TrackRef::new();
+                if let Ok(uri) = id.to_uri() {
+                    trackref.set_uri(uri);
+                } else {
+                    trackref.set_gid(id.to_raw().to_vec());
+                }
+                trackref
+            }
+
+            let session = session.clone();
+
+            let (playing_track_index, context_uri, tracks) = Handle::current()
+                .block_on(async move {
+                    use librespot_metadata::*;
+                    Ok::<_, librespot_core::Error>(match id.item_type {
+                        SpotifyItemType::Album => {
+                            let album = Album::get(&session, &id).await?;
+                            (0, uri, album.tracks().map(id_to_trackref).collect())
+                        }
+                        SpotifyItemType::Artist => {
+                            let artist = Artist::get(&session, &id).await?;
+                            (
+                                0,
+                                uri,
+                                artist
+                                    .top_tracks
+                                    .for_country(&session.country())
+                                    .iter()
+                                    .map(id_to_trackref)
+                                    .collect(),
+                            )
+                        }
+                        SpotifyItemType::Playlist => {
+                            let playlist = Playlist::get(&session, &id).await?;
+                            (0, uri, playlist.tracks().map(id_to_trackref).collect())
+                        }
+                        SpotifyItemType::Track => {
+                            let track = Track::get(&session, &id).await?;
+                            (
+                                track.number as u32,
+                                track.album.id.to_uri()?,
+                                vec![id_to_trackref(&track.id)],
+                            )
+                        }
+                        SpotifyItemType::Episode => (0, uri, vec![id_to_trackref(&id)]),
+                        SpotifyItemType::Show => {
+                            let show = Show::get(&session, &id).await?;
+                            (0, uri, show.episodes.iter().map(id_to_trackref).collect())
+                        }
+                        SpotifyItemType::Local | SpotifyItemType::Unknown => {
+                            return Err(librespot_core::Error::unimplemented(
+                                "this type of uri is not supported",
+                            ));
+                        }
+                    })
+                })
+                .map_err(|e| MethodErr::failed(&e))?;
+
+            local_spirc
+                .load(SpircLoadCommand {
+                    context_uri,
+                    start_playing: true,
+                    shuffle,
+                    repeat: repeat.into(),
+                    playing_track_index,
+                    tracks,
+                })
+                .map_err(|e| MethodErr::failed(&e))
         });
 
         let local_state = current_state.clone();
