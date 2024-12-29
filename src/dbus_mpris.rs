@@ -238,9 +238,7 @@ impl CurrentStateInner {
                 self.audio_item = Some(audio_item);
                 insert_attr(&mut changed, "Metadata", self.to_metadata());
             }
-            PlayerEvent::Loading { track_id, .. } | PlayerEvent::Preloading { track_id } => {
-                current_track_id = Some(track_id)
-            }
+            PlayerEvent::Loading { track_id, .. } => current_track_id = Some(track_id),
             PlayerEvent::PositionCorrection {
                 track_id,
                 position_ms,
@@ -271,7 +269,8 @@ impl CurrentStateInner {
                     self.repeat.to_mpris().to_string(),
                 )
             }
-            PlayerEvent::TimeToPreloadNextTrack { .. }
+            PlayerEvent::Preloading { .. }
+            | PlayerEvent::TimeToPreloadNextTrack { .. }
             | PlayerEvent::EndOfTrack { .. }
             | PlayerEvent::Unavailable { .. }
             | PlayerEvent::PlayRequestIdChanged { .. }
@@ -296,13 +295,18 @@ impl CurrentStateInner {
     fn to_metadata(&self) -> DbusMap {
         let mut m = HashMap::new();
 
-        if let Some(audio_item) = self.audio_item.as_deref() {
-            insert_attr(
-                &mut m,
-                "mpris:trackid",
-                uri_to_object_path(audio_item.track_id.to_uri().as_deref().unwrap_or_default()),
-            );
+        insert_attr(
+            &mut m,
+            "mpris:trackid",
+            uri_to_object_path(
+                self.audio_item
+                    .as_deref()
+                    .and_then(|item| item.track_id.to_uri().ok())
+                    .as_deref(),
+            ),
+        );
 
+        if let Some(audio_item) = self.audio_item.as_deref() {
             if let Some(length) =
                 Duration::milliseconds(audio_item.duration_ms as i64).num_microseconds()
             {
@@ -808,7 +812,10 @@ fn register_controls_interface(cr: &mut Crossroads, spirc: Arc<Spirc>) {
     cr.insert(CONTROLS_PATH, &[spotifyd_ctrls_interface], ());
 }
 
-fn uri_to_object_path(uri: &str) -> dbus::Path<'static> {
+fn uri_to_object_path(uri: Option<&str>) -> dbus::Path<'static> {
+    let Some(uri) = uri else {
+        return dbus::Path::new("/org/mpris/MediaPlayer2/TrackList/NoTrack").unwrap();
+    };
     let mut path = String::with_capacity(uri.len() + 1);
     for element in uri.split(':') {
         path.push('/');
