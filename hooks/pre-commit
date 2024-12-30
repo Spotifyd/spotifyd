@@ -34,16 +34,16 @@ for path in $(git diff --name-only --cached); do
 done
 
 echo "→ Building pre-commit build artifacts..."
-cargo check --quiet --no-default-features --features "rodio_backend,dbus_keyring"
+cargo check --quiet --no-default-features --features "rodio_backend"
 if [ $? -ne 0 ]; then
     exit 1
 fi
-cargo build --quiet --no-default-features --features "rodio_backend,dbus_keyring"
+cargo build --quiet --no-default-features --features "rodio_backend"
 
 # Linting is only done with the rodio backend and the keyring feature as those should be 
 # compilable for every supported platform without external library needs. 
 echo "→ Linting Rust code..."
-cargo clippy --no-default-features --features "rodio_backend,dbus_keyring" -- -D warnings
+cargo clippy --no-default-features --features "rodio_backend" -- -D warnings
 
 echo "→ Testing Rust code..."
-cargo test --no-default-features --features "rodio_backend,dbus_keyring"
+cargo test --no-default-features --features "rodio_backend"
