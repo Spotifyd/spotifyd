@@ -1,9 +1,12 @@
 use crate::utils;
 use clap::{
     builder::{IntoResettable, PossibleValuesParser, TypedValueParser, ValueParser},
-    Args, Parser, ValueEnum,
+    Args, Parser, Subcommand, ValueEnum,
 };
-use color_eyre::Report;
+use color_eyre::{
+    eyre::{bail, Context},
+    Report,
+};
 use directories::ProjectDirs;
 use gethostname::gethostname;
 use librespot_core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig};
@@ -12,10 +15,19 @@ use librespot_playback::{
     config::{AudioFormat as LSAudioFormat, Bitrate as LSBitrate, PlayerConfig},
     dither::{mk_ditherer, DithererBuilder, TriangularDitherer},
 };
-use log::{error, info, warn};
-use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
+use log::{debug, error, info, warn};
+use serde::{
+    de::{self, Error, Unexpected},
+    Deserialize, Deserializer,
+};
 use sha1::{Digest, Sha1};
-use std::{fs, path::Path, path::PathBuf};
+use std::{
+    borrow::Cow,
+    convert::TryInto,
+    fs,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 use url::Url;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
@@ -161,28 +173,69 @@ fn possible_backends() -> Vec<&'static str> {
     audio_backend::BACKENDS.iter().map(|b| b.0).collect()
 }
 
+fn number_or_string<'de, D>(de: D) -> Result<Option<u8>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let Some(val) = Option::<toml::Value>::deserialize(de)? else {
+        return Ok(None);
+    };
+
+    let unexpected = match val {
+        toml::Value::Integer(num) => {
+            let num: u8 = num.try_into().map_err(de::Error::custom)?;
+            return Ok(Some(num));
+        }
+        toml::Value::String(num) => {
+            return u8::from_str(&num)
+                .map(Some)
+                .inspect(|_| warn!("Configuration Warning: `initial_volume` should be a number rather than a string, this will become a hard error in the future"))
+                .map_err(de::Error::custom)
+        }
+        toml::Value::Float(f) => Unexpected::Float(f),
+        toml::Value::Boolean(b) => Unexpected::Bool(b),
+        toml::Value::Datetime(_) => Unexpected::Other("datetime"),
+        toml::Value::Array(_) => Unexpected::Seq,
+        toml::Value::Table(_) => Unexpected::Map,
+    };
+    Err(de::Error::invalid_type(unexpected, &"number"))
+}
+
 #[derive(Debug, Default, Parser)]
-#[command(version, about, long_about = None)]
+#[command(version, about, long_about = None, args_conflicts_with_subcommands = true)]
 pub struct CliConfig {
     /// The path to the config file to use
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, value_name = "PATH", global = true)]
     pub config_path: Option<PathBuf>,
+
+    /// Prints more verbose output
+    #[arg(short, long, action = clap::ArgAction::Count, global = true)]
+    pub verbose: u8,
 
     /// If set, starts spotifyd without detaching
     #[arg(long)]
     pub no_daemon: bool,
-
-    /// Prints more verbose output
-    #[arg(short, long, action = clap::ArgAction::Count)]
-    pub verbose: u8,
 
     /// Path to PID file.
     #[cfg(unix)]
     #[arg(long, value_name = "PATH")]
     pub pid: Option<PathBuf>,
 
+    #[command(subcommand)]
+    pub mode: Option<ExecutionMode>,
+
     #[command(flatten)]
     pub shared_config: SharedConfigValues,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ExecutionMode {
+    #[command(visible_alias = "auth")]
+    Authenticate {
+        /// The port to use for the OAuth redirect
+        #[arg(long, default_value_t = 8000)]
+        oauth_port: u16,
+    },
 }
 
 // A struct that holds all allowed config fields.
@@ -195,7 +248,7 @@ pub struct SharedConfigValues {
     on_song_change_hook: Option<String>,
 
     /// The cache path used to store credentials and music file artifacts
-    #[arg(long, short, value_name = "PATH")]
+    #[arg(long, short, value_name = "PATH", global = true)]
     cache_path: Option<PathBuf>,
 
     /// The maximal cache size in bytes
@@ -239,6 +292,7 @@ pub struct SharedConfigValues {
 
     /// Initial volume between 0 and 100
     #[arg(long)]
+    #[serde(deserialize_with = "number_or_string")]
     initial_volume: Option<u8>,
 
     /// Enable to normalize the volume during playback
@@ -378,6 +432,56 @@ impl CliConfig {
 }
 
 impl SharedConfigValues {
+    pub fn get_cache(&self, for_oauth: bool) -> color_eyre::Result<Cache> {
+        let Some(cache_path) = self.cache_path.as_deref().map(Cow::Borrowed).or_else(|| {
+            ProjectDirs::from("", "", "spotifyd")
+                .map(|dirs| Cow::Owned(dirs.cache_dir().to_path_buf()))
+        }) else {
+            bail!("Failed to determine cache directory, please specify one manually");
+        };
+
+        if for_oauth {
+            let mut creds_path = cache_path.into_owned();
+            creds_path.push("oauth");
+            Cache::new(Some(creds_path), None, None, None)
+        } else {
+            let audio_cache = !self.no_audio_cache.unwrap_or(false);
+
+            let mut creds_path = cache_path.to_path_buf();
+            creds_path.push("zeroconf");
+            Cache::new(
+                Some(creds_path.as_path()),
+                Some(cache_path.as_ref()),
+                audio_cache.then_some(cache_path.as_ref()),
+                self.max_cache_size,
+            )
+        }
+        .wrap_err("Failed to initialize cache")
+    }
+
+    pub fn proxy_url(&self) -> Option<Url> {
+        match &self.proxy {
+            Some(s) => match Url::parse(s) {
+                Ok(url) => {
+                    if url.scheme() != "http" {
+                        error!("Only HTTP proxies are supported!");
+                        None
+                    } else {
+                        Some(url)
+                    }
+                }
+                Err(err) => {
+                    error!("Invalid proxy URL: {}", err);
+                    None
+                }
+            },
+            None => {
+                debug!("No proxy specified");
+                None
+            }
+        }
+    }
+
     pub fn merge_with(&mut self, mut other: SharedConfigValues) {
         macro_rules! merge {
             ($a:expr; and $b:expr => {$($x:ident),+}) => {
@@ -436,6 +540,7 @@ fn device_id(name: &str) -> String {
 
 pub(crate) struct SpotifydConfig {
     pub(crate) cache: Option<Cache>,
+    pub(crate) oauth_cache: Option<Cache>,
     pub(crate) backend: Option<String>,
     pub(crate) audio_device: Option<String>,
     pub(crate) audio_format: LSAudioFormat,
@@ -458,32 +563,19 @@ pub(crate) struct SpotifydConfig {
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
-    let audio_cache = !config.shared_config.no_audio_cache.unwrap_or(false);
-
-    let size_limit = config.shared_config.max_cache_size;
-    let cache = config
-        .shared_config
-        .cache_path
-        .or_else(|| {
-            ProjectDirs::from("", "", "spotifyd").map(|dirs| dirs.cache_dir().to_path_buf())
-        })
-        .or_else(|| {
-            warn!("failed to determine cache directory, please specify one manually!");
-            None
-        })
-        .map(|path| {
-            Cache::new(
-                Some(&path),
-                Some(&path),
-                audio_cache.then_some(&path),
-                size_limit,
-            )
-        })
-        .transpose()
-        .unwrap_or_else(|e| {
-            warn!("Cache couldn't be initialized: {e}");
-            None
-        });
+    let (cache, oauth_cache) = match (
+        config.shared_config.get_cache(false),
+        config.shared_config.get_cache(true),
+    ) {
+        (Ok(cache), Ok(oauth_cache)) => (Some(cache), Some(oauth_cache)),
+        (a, b) => {
+            // at least one of the results are err
+            let err = a.or(b).map(|_| ()).unwrap_err();
+            warn!("{err}");
+            (None, None)
+        }
+    };
+    let proxy_url = config.shared_config.proxy_url();
 
     let bitrate: LSBitrate = config
         .shared_config
@@ -543,21 +635,6 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         "sh".to_string()
     });
 
-    let mut proxy_url = None;
-    match config.shared_config.proxy {
-        Some(s) => match Url::parse(&s) {
-            Ok(url) => {
-                if url.scheme() != "http" {
-                    error!("Only HTTP proxies are supported!");
-                } else {
-                    proxy_url = Some(url);
-                }
-            }
-            Err(err) => error!("Invalid proxy URL: {}", err),
-        },
-        None => info!("No proxy specified"),
-    }
-
     // choose default ditherer the same way librespot does
     let ditherer: Option<DithererBuilder> = match audio_format {
         LSAudioFormat::S16 | LSAudioFormat::S24 | LSAudioFormat::S24_3 => {
@@ -580,6 +657,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
 
     SpotifydConfig {
         cache,
+        oauth_cache,
         backend: config.shared_config.backend,
         audio_device: config.shared_config.device,
         audio_format,
