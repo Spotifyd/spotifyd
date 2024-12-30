@@ -4,10 +4,8 @@ use crate::{
     config,
     main_loop::{self, CredentialsProvider},
 };
-use color_eyre::{
-    eyre::{eyre, Context},
-    Section,
-};
+use color_eyre::{eyre::eyre, Section};
+use futures::StreamExt as _;
 use librespot_playback::{
     audio_backend::{self},
     mixer::{self, Mixer, MixerConfig},
@@ -50,7 +48,6 @@ pub(crate) fn initial_state(
         }
     };
 
-    let cache = config.cache;
     let player_config = config.player_config;
     let session_config = config.session_config;
     let backend = config.backend.clone();
@@ -59,48 +56,71 @@ pub(crate) fn initial_state(
 
     let zeroconf_port = config.zeroconf_port.unwrap_or(0);
 
-    let credentials_provider =
-        if let Some(credentials) = cache.as_ref().and_then(|c| c.credentials()) {
-            CredentialsProvider::SpotifyCredentials(credentials)
-        } else if config.discovery {
-            info!("no usable credentials found, enabling discovery");
-            debug!("Using device id '{}'", session_config.device_id);
-            const RETRY_MAX: u8 = 4;
-            let mut retry_counter = 0;
-            let mut backoff = Duration::from_secs(5);
-            let discovery_stream = loop {
-                match librespot_discovery::Discovery::builder(
-                    session_config.device_id.clone(),
-                    session_config.client_id.clone(),
-                )
-                .name(config.device_name.clone())
-                .device_type(config.device_type)
-                .port(zeroconf_port)
-                .launch()
-                {
-                    Ok(discovery_stream) => break discovery_stream,
-                    Err(err) => {
-                        error!("failed to enable discovery: {err}");
-                        if retry_counter >= RETRY_MAX {
-                            return Err(err).with_context(|| {
-                                "failed to enable discovery (and no credentials provided)"
-                            });
-                        }
-                        info!("retrying discovery in {} seconds", backoff.as_secs());
-                        thread::sleep(backoff);
-                        retry_counter += 1;
-                        backoff *= 2;
-                        info!("trying to enable discovery (retry {retry_counter}/{RETRY_MAX})");
+    let creds = if let Some(creds) = config.oauth_cache.as_ref().and_then(|c| c.credentials()) {
+        info!(
+            "Login via OAuth as user {}.",
+            creds.username.as_deref().unwrap_or("unknown")
+        );
+        Some(creds)
+    } else if let Some(creds) = config.cache.as_ref().and_then(|c| c.credentials()) {
+        info!(
+            "Restoring previous login as user {}.",
+            creds.username.as_deref().unwrap_or("unknown")
+        );
+        Some(creds)
+    } else {
+        None
+    };
+
+    let discovery = if config.discovery {
+        info!("Starting zeroconf server to advertise on local network.");
+        debug!("Using device id '{}'", session_config.device_id);
+        const RETRY_MAX: u8 = 4;
+        let mut retry_counter = 0;
+        let mut backoff = Duration::from_secs(5);
+        loop {
+            match librespot_discovery::Discovery::builder(
+                session_config.device_id.clone(),
+                session_config.client_id.clone(),
+            )
+            .name(config.device_name.clone())
+            .device_type(config.device_type)
+            .port(zeroconf_port)
+            .launch()
+            {
+                Ok(discovery_stream) => break Some(discovery_stream),
+                Err(err) => {
+                    error!("failed to enable discovery: {err}");
+                    if retry_counter >= RETRY_MAX {
+                        error!("maximum amount of retries exceeded");
+                        break None;
                     }
+                    info!("retrying discovery in {} seconds", backoff.as_secs());
+                    thread::sleep(backoff);
+                    retry_counter += 1;
+                    backoff *= 2;
+                    info!("trying to enable discovery (retry {retry_counter}/{RETRY_MAX})");
                 }
-            };
-            discovery_stream.into()
-        } else {
-            return Err(eyre!(
-                "no cached credentials available and discovery disabled"
-            ))
-            .with_suggestion(|| "consider enabling discovery or authenticating via OAuth");
-        };
+            }
+        }
+    } else {
+        None
+    };
+
+    let credentials_provider = match (discovery, creds) {
+        (Some(stream), creds) => CredentialsProvider::Discovery {
+            stream: stream.peekable(),
+            last_credentials: creds,
+        },
+        (None, Some(creds)) => CredentialsProvider::CredentialsOnly(creds),
+        (None, None) => {
+            return Err(
+                eyre!("Discovery unavailable and no credentials found.").with_suggestion(|| {
+                    "Try enabling discovery or logging in first with `spotifyd authenticate`."
+                }),
+            );
+        }
+    };
 
     let backend = audio_backend::find(backend).expect("available backends should match ours");
 
@@ -108,7 +128,7 @@ pub(crate) fn initial_state(
         credentials_provider,
         mixer,
         session_config,
-        cache,
+        cache: config.cache,
         audio_device: config.audio_device,
         audio_format: config.audio_format,
         player_config,

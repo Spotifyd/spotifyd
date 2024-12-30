@@ -3232,6 +3232,7 @@ dependencies = [
  "librespot-core",
  "librespot-discovery",
  "librespot-metadata",
+ "librespot-oauth",
  "librespot-playback",
  "librespot-protocol",
  "log",
