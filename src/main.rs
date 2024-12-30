@@ -2,15 +2,14 @@ use crate::config::CliConfig;
 use clap::Parser;
 #[cfg(unix)]
 use color_eyre::eyre::eyre;
-use color_eyre::{
-    eyre::{self, Context},
-    Help, SectionExt,
-};
+use color_eyre::eyre::{self, Context};
+use config::ExecutionMode;
 #[cfg(unix)]
 use daemonize::Daemonize;
 #[cfg(unix)]
 use log::error;
 use log::{info, trace, LevelFilter};
+use oauth::run_oauth;
 #[cfg(target_os = "openbsd")]
 use pledge::pledge;
 #[cfg(windows)]
@@ -25,6 +24,7 @@ mod dbus_mpris;
 mod error;
 mod main_loop;
 mod no_mixer;
+mod oauth;
 mod process;
 mod setup;
 mod utils;
@@ -63,7 +63,7 @@ fn setup_logger(log_target: LogTarget, verbose: u8) -> eyre::Result<()> {
                 facility: syslog::Facility::LOG_DAEMON,
                 hostname: None,
                 process: "spotifyd".to_owned(),
-                pid: 0,
+                pid: std::process::id(),
             };
             logger.chain(
                 syslog::unix(log_format)
@@ -106,8 +106,15 @@ fn main() -> eyre::Result<()> {
 
     color_eyre::install().wrap_err("Couldn't initialize error reporting")?;
 
-    let mut cli_config = CliConfig::parse();
+    let cli_config = CliConfig::parse();
 
+    match cli_config.mode {
+        None => run_daemon(cli_config),
+        Some(ExecutionMode::Authenticate { oauth_port }) => run_oauth(cli_config, oauth_port),
+    }
+}
+
+fn run_daemon(mut cli_config: CliConfig) -> eyre::Result<()> {
     let is_daemon = !cli_config.no_daemon;
 
     let log_target = if is_daemon {
@@ -138,14 +145,7 @@ fn main() -> eyre::Result<()> {
 
     cli_config
         .load_config_file_values()
-        .wrap_err("could not load the config file")
-        .with_section(|| {
-            concat!(
-                "the config format should be valid TOML\n",
-                "we recently changed the config format, see https://github.com/Spotifyd/spotifyd/issues/765"
-            )
-            .header("note:")
-        })?;
+        .wrap_err("could not load the config file")?;
     trace!("{:?}", &cli_config);
 
     // Returns the old SpotifydConfig struct used within the rest of the daemon.

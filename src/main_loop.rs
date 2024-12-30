@@ -32,28 +32,35 @@ use std::sync::Arc;
 type DbusServer = Pending<()>;
 
 pub(crate) enum CredentialsProvider {
-    Discovery(Peekable<Discovery>),
-    SpotifyCredentials(Credentials),
-}
-
-impl From<Discovery> for CredentialsProvider {
-    fn from(stream: Discovery) -> Self {
-        CredentialsProvider::Discovery(stream.peekable())
-    }
+    Discovery {
+        stream: Peekable<Discovery>,
+        last_credentials: Option<Credentials>,
+    },
+    CredentialsOnly(Credentials),
 }
 
 impl CredentialsProvider {
     async fn get_credentials(&mut self) -> Credentials {
         match self {
-            CredentialsProvider::Discovery(stream) => stream.next().await.unwrap(),
-            CredentialsProvider::SpotifyCredentials(creds) => creds.clone(),
+            CredentialsProvider::Discovery {
+                stream,
+                last_credentials,
+            } => {
+                let new_creds = match last_credentials.take() {
+                    Some(creds) => stream.next().now_or_never().flatten().unwrap_or(creds),
+                    None => stream.next().await.unwrap(),
+                };
+                *last_credentials = Some(new_creds.clone());
+                new_creds
+            }
+            CredentialsProvider::CredentialsOnly(creds) => creds.clone(),
         }
     }
 
     // wait for an incoming connection if the underlying provider is a discovery stream
     async fn incoming_connection(&mut self) {
         match self {
-            CredentialsProvider::Discovery(stream) => {
+            CredentialsProvider::Discovery { stream, .. } => {
                 let peeked = Pin::new(stream).peek().await;
                 if peeked.is_none() {
                     future::pending().await
@@ -153,9 +160,6 @@ impl MainLoop {
         'mainloop: loop {
             let connection = tokio::select!(
                 _ = &mut ctrl_c => {
-                    if let CredentialsProvider::Discovery(stream) = self.credentials_provider {
-                        let _ = stream.into_inner().shutdown().await;
-                    }
                     break 'mainloop;
                 }
                 connection = self.get_connection() => {
@@ -252,6 +256,9 @@ impl MainLoop {
                     break 'mainloop;
                 }
             }
+        }
+        if let CredentialsProvider::Discovery { stream, .. } = self.credentials_provider {
+            let _ = stream.into_inner().shutdown().await;
         }
         #[cfg(feature = "dbus_mpris")]
         if let Either::Left(dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {
