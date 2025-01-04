@@ -18,7 +18,7 @@ use librespot_core::{spotify_id::SpotifyItemType, Session, SpotifyId};
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
 use librespot_protocol::spirc::TrackRef;
-use log::{error, warn};
+use log::{debug, error, warn};
 use std::convert::TryFrom;
 use std::{
     collections::HashMap,
@@ -215,6 +215,7 @@ impl CurrentStateInner {
         let mut changed = DbusMap::new();
         let mut seeked = false;
         let mut current_track_id = None;
+        debug!("handling event {event:?}");
         match event {
             PlayerEvent::VolumeChanged { volume } => {
                 self.volume = volume;
@@ -263,6 +264,7 @@ impl CurrentStateInner {
                 seeked = true;
             }
             PlayerEvent::TrackChanged { audio_item } => {
+                current_track_id = Some(audio_item.track_id);
                 self.audio_item = Some(audio_item);
                 insert_attr(&mut changed, "Metadata", self.to_metadata());
             }
@@ -802,17 +804,18 @@ fn register_player_interface(
                 Ok(playback_state.to_mpris().to_string())
             });
 
-        let local_spirc = spirc.clone();
+        // let local_spirc = spirc.clone();
         let local_state = current_state.clone();
         b.property("Shuffle")
             .emits_changed_false()
-            .get(move |_, _| Ok(local_state.read()?.shuffle))
-            .set(move |_, _, value| {
-                local_spirc
-                    .shuffle(value)
-                    .map(|_| None)
-                    .map_err(|err| dbus::MethodErr::failed(&err))
-            });
+            .get(move |_, _| Ok(local_state.read()?.shuffle));
+        // TODO: re-enable, once setting shuffle via spirc works
+        // .set(move |_, _, value| {
+        //     local_spirc
+        //         .shuffle(value)
+        //         .map(|_| None)
+        //         .map_err(|err| dbus::MethodErr::failed(&err))
+        // });
 
         b.property("Rate").emits_changed_const().get(|_, _| Ok(1.0));
         b.property("MaximumRate")
@@ -837,7 +840,7 @@ fn register_player_interface(
         let local_spirc = spirc.clone();
         let local_state = current_state.clone();
         b.property("LoopStatus")
-            .emits_changed_false()
+            .emits_changed_true()
             .get(move |_, _| {
                 let repeat = local_state.read()?.repeat;
                 Ok(repeat.to_mpris().to_string())
@@ -855,7 +858,8 @@ fn register_player_interface(
                 local_spirc
                     .repeat(new_repeat)
                     .map_err(|e| MethodErr::failed(&e))?;
-                Ok(None)
+                // TODO: remove, once librespot sends us updates here
+                Ok(Some(value))
             });
 
         let local_state = current_state.clone();
