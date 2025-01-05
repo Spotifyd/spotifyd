@@ -216,11 +216,7 @@ impl CurrentStateInner {
         let mut changed = DbusMap::new();
         let mut seeked = false;
 
-        if let PlayerEvent::PlayRequestIdChanged { play_request_id } = event {
-            self.play_request_id = Some(play_request_id);
-            return (changed, seeked);
-        }
-
+        // note that get_play_request_id is None on PlayRequestIdChanged
         if Option::zip(self.play_request_id, event.get_play_request_id())
             .is_some_and(|(cur_id, event_id)| cur_id != event_id)
         {
@@ -289,12 +285,14 @@ impl CurrentStateInner {
                     self.repeat.to_mpris().to_string(),
                 )
             }
+            PlayerEvent::PlayRequestIdChanged { play_request_id } => {
+                self.play_request_id = Some(play_request_id);
+            }
             PlayerEvent::Preloading { .. }
             | PlayerEvent::Loading { .. }
             | PlayerEvent::TimeToPreloadNextTrack { .. }
             | PlayerEvent::EndOfTrack { .. }
             | PlayerEvent::Unavailable { .. }
-            | PlayerEvent::PlayRequestIdChanged { .. }
             | PlayerEvent::AutoPlayChanged { .. }
             | PlayerEvent::FilterExplicitContentChanged { .. }
             | PlayerEvent::SessionConnected { .. }
