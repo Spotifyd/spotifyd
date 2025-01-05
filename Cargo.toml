@@ -6,36 +6,39 @@ description = "A Spotify daemon"
 repository = "https://github.com/Spotifyd/spotifyd"
 license = "GPL-3.0-only"
 version = "0.3.5"
-rust-version = "1.67"
+rust-version = "1.81"
 
 [dependencies]
-alsa = { version = "0.7", optional = true }
+alsa = { version = "0.9.1", optional = true }
 chrono = "0.4"
 dbus = { version = "0.9", optional = true }
 dbus-tokio = { version = "0.7.3", optional = true }
 dbus-crossroads = { version = "0.5.0", optional = true }
-fern = { version = "0.6.0", features = ["syslog-6"] }
+fern = { version = "0.7.0", features = ["syslog-6"] }
 futures = "0.3.15"
-gethostname = "0.4.0"
+gethostname = "0.5.0"
 hex = "0.4"
-keyring = { version = "2.0", optional = true }
+keyring = { version = "3.5", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
 libc = "0.2.82"
 log = "0.4.6"
-rspotify = { version = "0.12.0", features = ["client-ureq", "ureq-rustls-tls"], default-features = false, optional = true }
 serde = { version = "1.0.115", features = ["derive"] }
 sha-1 = "0.10"
 structopt = "0.3.17"
 tokio = {version = "1.26.0", features = ["signal", "rt-multi-thread", "process", "io-std"] }
 tokio-stream = "0.1.7"
 url = "2.2.2"
-librespot-audio = { version = "0.4", default-features = false }
-librespot-playback = { version = "0.4", default-features = false }
-librespot-core = { version = "0.4" }
-librespot-discovery = { version = "0.4" }
-librespot-connect = { version = "0.4" }
-toml = "0.7"
+librespot-audio = { version = "0.6", default-features = false }
+librespot-playback = { version = "0.6", default-features = false }
+librespot-core = "0.6"
+librespot-discovery = "0.6"
+librespot-connect = "0.6"
+librespot-metadata = "0.6"
+librespot-protocol = "0.6"
+toml = "0.8.19"
 color-eyre = "0.6"
 directories = "5.0.1"
+thiserror = "2.0"
+time = { version = "0.3.37", default-features = false, features = ["formatting"] }
 
 [target."cfg(unix)".dependencies]
 daemonize = "0.5"
@@ -48,12 +51,12 @@ whoami = "1"
 pledge = "0.4.2"
 
 [dev-dependencies]
-env_logger = "0.10"
+env_logger = "0.11"
 
 [features]
 alsa_backend = ["librespot-playback/alsa-backend", "alsa"]
 dbus_keyring = ["keyring"]
-dbus_mpris = ["dbus", "dbus-tokio", "dbus-crossroads", "rspotify"]
+dbus_mpris = ["dbus", "dbus-tokio", "dbus-crossroads"]
 pipe_backend = []
 default = ["alsa_backend", "pipe_backend"]
 portaudio_backend = ["librespot-playback/portaudio-backend"]
