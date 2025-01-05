@@ -185,6 +185,7 @@ struct CurrentStateInner {
     volume: u16,
     shuffle: bool,
     repeat: RepeatState,
+    play_request_id: Option<u64>,
 }
 
 fn insert_attr(map: &mut DbusMap, attr: impl ToString, value: impl RefArg + 'static) {
@@ -214,7 +215,18 @@ impl CurrentStateInner {
     fn handle_event(&mut self, event: PlayerEvent) -> (DbusMap, bool) {
         let mut changed = DbusMap::new();
         let mut seeked = false;
-        let mut current_track_id = None;
+
+        if let PlayerEvent::PlayRequestIdChanged { play_request_id } = event {
+            self.play_request_id = Some(play_request_id);
+            return (changed, seeked);
+        }
+
+        if Option::zip(self.play_request_id, event.get_play_request_id())
+            .is_some_and(|(cur_id, event_id)| cur_id != event_id)
+        {
+            debug!("discarding event due to play_request_id mismatch");
+            return (changed, seeked);
+        }
 
         debug!("handling event {event:?}");
         match event {
@@ -224,17 +236,15 @@ impl CurrentStateInner {
             }
             PlayerEvent::Stopped { .. } => {
                 self.status = PlaybackStatus::Stopped;
+                self.audio_item = None;
                 insert_attr(
                     &mut changed,
                     "PlaybackStatus",
                     self.status.to_mpris().to_string(),
                 );
+                insert_attr(&mut changed, "Metadata", self.to_metadata());
             }
-            PlayerEvent::Playing {
-                track_id,
-                position_ms,
-                ..
-            } => {
+            PlayerEvent::Playing { position_ms, .. } => {
                 if self.status != PlaybackStatus::Playing {
                     self.status = PlaybackStatus::Playing;
                     insert_attr(
@@ -245,13 +255,8 @@ impl CurrentStateInner {
                 }
                 self.update_position(Duration::milliseconds(position_ms as i64));
                 seeked = true;
-                current_track_id = Some(track_id);
             }
-            PlayerEvent::Paused {
-                track_id,
-                position_ms,
-                ..
-            } => {
+            PlayerEvent::Paused { position_ms, .. } => {
                 if self.status != PlaybackStatus::Paused {
                     self.status = PlaybackStatus::Paused;
                     insert_attr(
@@ -260,26 +265,15 @@ impl CurrentStateInner {
                         self.status.to_mpris().to_string(),
                     )
                 }
-                current_track_id = Some(track_id);
                 self.update_position(Duration::milliseconds(position_ms as i64));
                 seeked = true;
             }
             PlayerEvent::TrackChanged { audio_item } => {
-                current_track_id = Some(audio_item.track_id);
                 self.audio_item = Some(audio_item);
                 insert_attr(&mut changed, "Metadata", self.to_metadata());
             }
-            PlayerEvent::PositionCorrection {
-                track_id,
-                position_ms,
-                ..
-            }
-            | PlayerEvent::Seeked {
-                track_id,
-                position_ms,
-                ..
-            } => {
-                current_track_id = Some(track_id);
+            PlayerEvent::PositionCorrection { position_ms, .. }
+            | PlayerEvent::Seeked { position_ms, .. } => {
                 self.update_position(Duration::milliseconds(position_ms as i64));
                 seeked = true;
             }
@@ -306,14 +300,6 @@ impl CurrentStateInner {
             | PlayerEvent::SessionConnected { .. }
             | PlayerEvent::SessionDisconnected { .. }
             | PlayerEvent::SessionClientChanged { .. } => (),
-        }
-
-        if current_track_id
-            .zip(self.audio_item.as_ref())
-            .is_some_and(|(track_id, item)| track_id != item.track_id)
-        {
-            self.audio_item = None;
-            insert_attr(&mut changed, "Metadata", self.to_metadata());
         }
 
         (changed, seeked)
@@ -452,6 +438,7 @@ async fn create_dbus_server(
         volume: u16::MAX,
         shuffle: false,
         repeat: RepeatState::None,
+        play_request_id: None,
     }));
 
     let (quit_tx, mut quit_rx) = tokio::sync::mpsc::unbounded_channel();
