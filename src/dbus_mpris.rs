@@ -215,6 +215,7 @@ impl CurrentStateInner {
         let mut changed = DbusMap::new();
         let mut seeked = false;
         let mut current_track_id = None;
+
         debug!("handling event {event:?}");
         match event {
             PlayerEvent::VolumeChanged { volume } => {
@@ -268,7 +269,6 @@ impl CurrentStateInner {
                 self.audio_item = Some(audio_item);
                 insert_attr(&mut changed, "Metadata", self.to_metadata());
             }
-            PlayerEvent::Loading { track_id, .. } => current_track_id = Some(track_id),
             PlayerEvent::PositionCorrection {
                 track_id,
                 position_ms,
@@ -296,6 +296,7 @@ impl CurrentStateInner {
                 )
             }
             PlayerEvent::Preloading { .. }
+            | PlayerEvent::Loading { .. }
             | PlayerEvent::TimeToPreloadNextTrack { .. }
             | PlayerEvent::EndOfTrack { .. }
             | PlayerEvent::Unavailable { .. }
