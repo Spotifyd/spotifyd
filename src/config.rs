@@ -341,7 +341,7 @@ fn format_features_info() -> String {
     let backends = get_enabled_backends();
 
     let features_str = if features.is_empty() {
-        "No features enabled".to_string()
+        "none".to_string()
     } else {
         features.join(", ")
     };
