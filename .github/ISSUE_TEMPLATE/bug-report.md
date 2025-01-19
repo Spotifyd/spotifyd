@@ -33,7 +33,6 @@ assignees: ''
 <!-- if you compiled spotifyd yourself. Alsa backend enabled by default unless compiled with the `--no-default-features` flag -->
 **Compilation flags** 
 - [ ] dbus_mpris
-- [ ] dbus_keyring
 - [x] alsa_backend
 - [ ] portaudio_backend
 - [ ] pulseaudio_backend
