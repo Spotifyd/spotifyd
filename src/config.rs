@@ -177,9 +177,7 @@ fn number_or_string<'de, D>(de: D) -> Result<Option<u8>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let Some(val) = Option::<toml::Value>::deserialize(de)? else {
-        return Ok(None);
-    };
+    let val = toml::Value::deserialize(de)?;
 
     let unexpected = match val {
         toml::Value::Integer(num) => {
@@ -292,7 +290,7 @@ pub struct SharedConfigValues {
 
     /// Initial volume between 0 and 100
     #[arg(long)]
-    #[serde(deserialize_with = "number_or_string")]
+    #[serde(deserialize_with = "number_or_string", default)]
     initial_volume: Option<u8>,
 
     /// Enable to normalize the volume during playback
