@@ -12,20 +12,23 @@ use futures::{
     Future, FutureExt, StreamExt,
 };
 use librespot_connect::{config::ConnectConfig, spirc::Spirc};
-use librespot_core::{authentication::Credentials, config::DeviceType, session::Session, Error};
+use librespot_core::{
+    authentication::Credentials, cache::Cache, config::DeviceType, session::Session, Error,
+    SessionConfig,
+};
 use librespot_discovery::Discovery;
-use librespot_playback::{mixer::Mixer, player::Player};
+use librespot_playback::{
+    audio_backend::Sink,
+    config::{AudioFormat, PlayerConfig},
+    mixer::Mixer,
+    player::Player,
+};
 use log::error;
 use std::pin::Pin;
 use std::sync::Arc;
 
 #[cfg(not(feature = "dbus_mpris"))]
 type DbusServer = Pending<()>;
-
-pub struct SpotifydState {
-    pub device_name: String,
-    pub player_event_program: Option<String>,
-}
 
 pub(crate) enum CredentialsProvider {
     Discovery(Peekable<Discovery>),
@@ -61,14 +64,19 @@ impl CredentialsProvider {
 }
 
 pub(crate) struct MainLoop {
-    pub(crate) spotifyd_state: SpotifydState,
+    pub(crate) session_config: SessionConfig,
+    pub(crate) player_config: PlayerConfig,
+    pub(crate) cache: Option<Cache>,
     pub(crate) mixer: Arc<dyn Mixer>,
-    pub(crate) session: Session,
-    pub(crate) player: Arc<Player>,
+    pub(crate) backend: fn(Option<String>, AudioFormat) -> Box<dyn Sink>,
+    pub(crate) audio_device: Option<String>,
+    pub(crate) audio_format: AudioFormat,
     pub(crate) has_volume_ctrl: bool,
     pub(crate) initial_volume: Option<u16>,
     pub(crate) shell: String,
     pub(crate) device_type: DeviceType,
+    pub(crate) device_name: String,
+    pub(crate) player_event_program: Option<String>,
     #[cfg_attr(not(feature = "dbus_mpris"), allow(unused))]
     pub(crate) use_mpris: bool,
     #[cfg_attr(not(feature = "dbus_mpris"), allow(unused))]
@@ -76,25 +84,52 @@ pub(crate) struct MainLoop {
     pub(crate) credentials_provider: CredentialsProvider,
 }
 
+struct ConnectionInfo<SpircTask: Future<Output = ()>> {
+    spirc: Spirc,
+    #[cfg_attr(not(feature = "dbus_mpris"), expect(unused))]
+    session: Session,
+    player: Arc<Player>,
+    spirc_task: SpircTask,
+}
+
 impl MainLoop {
-    async fn get_connection(&mut self) -> Result<(Spirc, impl Future<Output = ()>), Error> {
+    async fn get_connection(&mut self) -> Result<ConnectionInfo<impl Future<Output = ()>>, Error> {
         let creds = self.credentials_provider.get_credentials().await;
+
+        let session = Session::new(self.session_config.clone(), self.cache.clone());
+        let player = {
+            let audio_device = self.audio_device.clone();
+            let audio_format = self.audio_format;
+            let backend = self.backend;
+            Player::new(
+                self.player_config.clone(),
+                session.clone(),
+                self.mixer.get_soft_volume(),
+                move || backend(audio_device, audio_format),
+            )
+        };
 
         // TODO: expose is_group
         Spirc::new(
             ConnectConfig {
-                name: self.spotifyd_state.device_name.clone(),
+                name: self.device_name.clone(),
                 device_type: self.device_type,
                 is_group: false,
                 initial_volume: self.initial_volume,
                 has_volume_ctrl: self.has_volume_ctrl,
             },
-            self.session.clone(),
+            session.clone(),
             creds,
-            self.player.clone(),
+            player.clone(),
             self.mixer.clone(),
         )
         .await
+        .map(|(spirc, spirc_task)| ConnectionInfo {
+            spirc,
+            session,
+            player,
+            spirc_task,
+        })
     }
 
     pub(crate) async fn run(mut self) {
@@ -107,15 +142,14 @@ impl MainLoop {
         #[cfg(feature = "dbus_mpris")]
         let mpris_event_tx = if self.use_mpris {
             let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-            *dbus_server.as_mut() =
-                Either::Left(DbusServer::new(rx, self.dbus_type, self.session.clone()));
+            *dbus_server.as_mut() = Either::Left(DbusServer::new(rx, self.dbus_type));
             Some(tx)
         } else {
             None
         };
 
         'mainloop: loop {
-            let (spirc, spirc_task) = tokio::select!(
+            let connection = tokio::select!(
                 _ = &mut ctrl_c => {
                     if let CredentialsProvider::Discovery(stream) = self.credentials_provider {
                         let _ = stream.into_inner().shutdown().await;
@@ -133,13 +167,17 @@ impl MainLoop {
                 }
             );
 
+            let spirc_task = connection.spirc_task;
             tokio::pin!(spirc_task);
 
-            let shared_spirc = Arc::new(spirc);
+            let shared_spirc = Arc::new(connection.spirc);
 
             #[cfg(feature = "dbus_mpris")]
             if let Either::Left(mut dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {
-                if let Err(err) = dbus_server.as_mut().set_spirc(shared_spirc.clone()) {
+                if let Err(err) = dbus_server
+                    .as_mut()
+                    .set_session(shared_spirc.clone(), connection.session)
+                {
                     error!("failed to configure dbus server: {err}");
                     let _ = shared_spirc.shutdown();
                     break 'mainloop;
@@ -148,7 +186,7 @@ impl MainLoop {
 
             let mut running_event_program = Box::pin(Fuse::terminated());
 
-            let mut event_channel = self.player.get_player_event_channel();
+            let mut event_channel = connection.player.get_player_event_channel();
 
             loop {
                 tokio::select!(
@@ -187,7 +225,7 @@ impl MainLoop {
                         if let Some(ref tx) = mpris_event_tx {
                             tx.send(event.clone()).unwrap();
                         }
-                        if let Some(ref cmd) = self.spotifyd_state.player_event_program {
+                        if let Some(ref cmd) = self.player_event_program {
                             match spawn_program_on_event(&self.shell, cmd, event) {
                                 Ok(child) => running_event_program = Box::pin(child.wait().fuse()),
                                 Err(e) => error!("{}", e),
@@ -207,7 +245,7 @@ impl MainLoop {
             }
             #[cfg(feature = "dbus_mpris")]
             if let Either::Left(dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {
-                if let Err(err) = dbus_server.drop_spirc() {
+                if let Err(err) = dbus_server.drop_session() {
                     error!("failed to reconfigure dbus server: {err}");
                     break 'mainloop;
                 }

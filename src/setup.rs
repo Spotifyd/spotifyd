@@ -6,13 +6,13 @@ use crate::{
 };
 #[cfg(feature = "dbus_keyring")]
 use keyring::Entry;
-use librespot_core::{authentication::Credentials, cache::Cache, config::DeviceType, Session};
+use librespot_core::{authentication::Credentials, cache::Cache, config::DeviceType};
+use librespot_playback::mixer::MixerConfig;
 use librespot_playback::{
     audio_backend::{Sink, BACKENDS},
     config::AudioFormat,
     mixer::{self, Mixer},
 };
-use librespot_playback::{mixer::MixerConfig, player::Player};
 #[allow(unused_imports)] // cfg
 use log::{debug, error, info, warn};
 use std::{str::FromStr, sync::Arc, thread, time::Duration};
@@ -121,31 +121,21 @@ pub(crate) fn initial_state(config: config::SpotifydConfig) -> main_loop::MainLo
 
     let backend = find_backend(backend.as_ref().map(String::as_ref));
 
-    let session = Session::new(session_config, cache);
-    let player = {
-        let audio_device = config.audio_device;
-        let audio_format = config.audio_format;
-        Player::new(
-            player_config,
-            session.clone(),
-            mixer.get_soft_volume(),
-            move || backend(audio_device, audio_format),
-        )
-    };
-
     main_loop::MainLoop {
         credentials_provider,
         mixer,
-        spotifyd_state: main_loop::SpotifydState {
-            device_name: config.device_name,
-            player_event_program: config.onevent,
-        },
-        session,
-        player,
+        session_config,
+        cache,
+        audio_device: config.audio_device,
+        audio_format: config.audio_format,
+        player_config,
+        backend,
         initial_volume: config.initial_volume,
         has_volume_ctrl,
         shell: config.shell,
         device_type,
+        device_name: config.device_name,
+        player_event_program: config.onevent,
         use_mpris: config.use_mpris,
         dbus_type: config.dbus_type,
     }

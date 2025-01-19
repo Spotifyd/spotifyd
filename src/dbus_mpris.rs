@@ -41,8 +41,8 @@ const MPRIS_PATH: &str = "/org/mpris/MediaPlayer2";
 const CONTROLS_PATH: &str = "/rs/spotifyd/Controls";
 
 pub enum ControlMessage {
-    SetSpirc(Arc<Spirc>),
-    DropSpirc,
+    SetSession(Arc<Spirc>, Session),
+    DropSession,
     Shutdown,
 }
 
@@ -52,28 +52,24 @@ pub(crate) struct DbusServer {
 }
 
 impl DbusServer {
-    pub fn new(
-        event_rx: UnboundedReceiver<PlayerEvent>,
-        dbus_type: DBusType,
-        session: Session,
-    ) -> DbusServer {
+    pub fn new(event_rx: UnboundedReceiver<PlayerEvent>, dbus_type: DBusType) -> DbusServer {
         let (control_tx, control_rx) = tokio::sync::mpsc::unbounded_channel();
-        let dbus_future = Box::pin(create_dbus_server(event_rx, control_rx, dbus_type, session));
+        let dbus_future = Box::pin(create_dbus_server(event_rx, control_rx, dbus_type));
         DbusServer {
             dbus_future,
             control_tx,
         }
     }
 
-    pub fn set_spirc(&self, spirc: Arc<Spirc>) -> Result<(), DbusError> {
+    pub fn set_session(&self, spirc: Arc<Spirc>, session: Session) -> Result<(), DbusError> {
         self.control_tx
-            .send(ControlMessage::SetSpirc(spirc))
+            .send(ControlMessage::SetSession(spirc, session))
             .map_err(|_| DbusError::ControlChannelBroken)
     }
 
-    pub fn drop_spirc(&self) -> Result<(), DbusError> {
+    pub fn drop_session(&self) -> Result<(), DbusError> {
         self.control_tx
-            .send(ControlMessage::DropSpirc)
+            .send(ControlMessage::DropSession)
             .map_err(|_| DbusError::ControlChannelBroken)
     }
 
@@ -403,7 +399,6 @@ async fn create_dbus_server(
     mut event_rx: UnboundedReceiver<PlayerEvent>,
     mut control_rx: UnboundedReceiver<ControlMessage>,
     dbus_type: DBusType,
-    session: Session,
 ) -> Result<(), DbusError> {
     let (resource, conn) = match dbus_type {
         DBusType::Session => connection::new_session_sync(),
@@ -456,6 +451,7 @@ async fn create_dbus_server(
     );
 
     let mut spirc: Option<Arc<Spirc>> = None;
+    let mut session: Option<Session> = None;
 
     struct ConnectionData {
         conn_id: String,
@@ -477,11 +473,10 @@ async fn create_dbus_server(
 
                 if let PlayerEvent::SessionConnected { connection_id, .. } = event {
                     let mut cr = crossroads.lock().await;
-                    let spirc = spirc.clone().unwrap();
                     let seeked_fn = register_player_interface(
                         &mut cr,
-                        spirc,
-                        session.clone(),
+                        spirc.clone().unwrap(),
+                        session.clone().unwrap(),
                         current_state.clone(),
                         quit_tx.clone(),
                     );
@@ -539,17 +534,19 @@ async fn create_dbus_server(
                     ControlMessage::Shutdown => {
                         break;
                     },
-                    ControlMessage::SetSpirc(new_spirc) => {
+                    ControlMessage::SetSession(new_spirc, new_session) => {
                         let mut cr = crossroads.lock().await;
                         register_controls_interface(&mut cr, new_spirc.clone());
                         spirc = Some(new_spirc);
+                        session = Some(new_session);
                     }
-                    ControlMessage::DropSpirc => {
+                    ControlMessage::DropSession => {
                         let mut cr = crossroads.lock().await;
                         conn.release_name(&mpris_name).await?;
                         cr.remove::<()>(&MPRIS_PATH.into());
                         cr.remove::<()>(&CONTROLS_PATH.into());
                         spirc = None;
+                        session = None;
                     }
                 }
             }
