@@ -43,9 +43,18 @@ fn setup_logger(log_target: LogTarget, verbose: bool) -> eyre::Result<()> {
 
     let mut logger = fern::Dispatch::new().level(log_level);
 
-    if cfg!(feature = "dbus_mpris") && !verbose {
-        logger = logger.level_for("rspotify_http", LevelFilter::Warn);
-    }
+    logger = if verbose {
+        logger.format(|out, message, record| {
+            out.finish(format_args!(
+                "[{} {}] {}",
+                record.level(),
+                record.target(),
+                message
+            ))
+        })
+    } else {
+        logger.level_for("symphonia_format_ogg::demuxer", LevelFilter::Warn)
+    };
 
     let logger = match log_target {
         LogTarget::Terminal => logger.chain(std::io::stdout()),
@@ -209,7 +218,7 @@ fn main() -> eyre::Result<()> {
 
     let runtime = Runtime::new().unwrap();
     runtime.block_on(async {
-        let mut initial_state = setup::initial_state(internal_config);
+        let initial_state = setup::initial_state(internal_config);
         initial_state.run().await;
     });
 
