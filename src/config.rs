@@ -173,6 +173,26 @@ fn possible_backends() -> Vec<&'static str> {
     audio_backend::BACKENDS.iter().map(|b| b.0).collect()
 }
 
+fn deserialize_backend<'de, D>(de: D) -> Result<Option<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let backend = String::deserialize(de)?;
+    let possible_backends = possible_backends();
+    if possible_backends.contains(&backend.as_str()) {
+        Ok(Some(backend))
+    } else {
+        Err(de::Error::invalid_value(
+            Unexpected::Str(&backend),
+            &format!(
+                "a valid backend (available: {})",
+                possible_backends.join(", ")
+            )
+            .as_str(),
+        ))
+    }
+}
+
 fn number_or_string<'de, D>(de: D) -> Result<Option<u8>, D::Error>
 where
     D: Deserializer<'de>,
@@ -265,6 +285,7 @@ pub struct SharedConfigValues {
 
     /// The audio backend to use
     #[arg(long, short, value_parser = possible_backends())]
+    #[serde(deserialize_with = "deserialize_backend")]
     backend: Option<String>,
 
     /// The volume controller to use
