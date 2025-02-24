@@ -420,6 +420,24 @@ impl FileConfig {
     }
 }
 
+fn get_missing_feature(path: &serde_ignored::Path<'_>) -> Option<&'static str> {
+    const DISABLED_CONFIGS: &[(&str, &[&str])] = &[
+        #[cfg(not(feature = "alsa_backend"))]
+        ("alsa_backend", &["control", "mixer"]),
+        #[cfg(not(feature = "dbus_mpris"))]
+        ("dbus_mpris", &["use_mpris", "dbus_type"]),
+    ];
+
+    if let serde_ignored::Path::Map { key, .. } = path {
+        for (feature, params) in DISABLED_CONFIGS {
+            if params.contains(&key.as_str()) {
+                return Some(*feature);
+            }
+        }
+    }
+    None
+}
+
 impl CliConfig {
     pub fn load_config_file_values(&mut self) -> Result<(), Report> {
         let config_file_path = match self.config_path.clone().or_else(get_config_file) {
@@ -439,7 +457,14 @@ impl CliConfig {
             }
         };
 
-        let config_content: FileConfig = toml::from_str(&content)?;
+        let toml_de = toml::Deserializer::new(&content);
+        let config_content: FileConfig = serde_ignored::deserialize(toml_de, |path| {
+            if let Some(feature) = get_missing_feature(&path) {
+                warn!("Warning: The config key '{path}' is ignored, because the feature '{feature}' is missing in this build");
+            } else {
+                warn!("Warning: Unknown key '{path}' in config will be ignored");
+            }
+        })?;
 
         // The call to get_merged_sections consumes the FileConfig!
         if let Some(merged_sections) = config_content.get_merged_sections() {
@@ -739,8 +764,12 @@ mod tests {
     fn test_example_config() {
         let example_config = include_str!("../contrib/spotifyd.conf");
 
-        let config: FileConfig =
-            toml::from_str(example_config).expect("Commented example config should be valid");
+        let toml_de = toml::Deserializer::new(example_config);
+
+        let config: FileConfig = serde_ignored::deserialize(toml_de, |path| {
+            panic!("Unknown key in (commented) example config: '{}'", path)
+        })
+        .expect("Commented example config should be valid");
 
         assert_eq!(
             (config.global, config.spotifyd),
@@ -755,17 +784,22 @@ mod tests {
                 line.strip_prefix("#")
                     .filter(|rest| {
                         // uncomment if the rest is a valid config line
-                        // if alsa_backend is not enabled, ignore any problematic lines
+                        // if alsa_backend is not enabled, ignore the 'backend = "alsa"' line
                         rest.starts_with(char::is_alphabetic)
-                            && (cfg!(feature = "alsa_backend") || !rest.contains("alsa"))
+                            && (cfg!(feature = "alsa_backend") || !rest.starts_with("backend"))
                     })
                     .unwrap_or(line)
             })
             .collect::<Vec<&str>>()
             .join("\n");
 
-        let config: FileConfig = toml::from_str(&uncommented_example_config)
-            .expect("Uncommented example config should be valid");
+        let toml_de = toml::Deserializer::new(&uncommented_example_config);
+        let config: FileConfig = serde_ignored::deserialize(toml_de, |path| {
+            if get_missing_feature(&path).is_none() {
+                panic!("Unknown configuration key in example config: {}", path);
+            }
+        })
+        .expect("Uncommented example config should be valid");
 
         assert!(
             config.spotifyd.is_none(),
