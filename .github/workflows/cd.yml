@@ -18,9 +18,9 @@ jobs:
           - artifact_type: 'slim'               # Slim version has no features enabled by default.
             feature: ''
           - artifact_type: 'default'
-            feature: 'dbus_keyring,dbus_mpris'  # Default version has all extra features enabled
+            feature: 'dbus_mpris'  # Default version has all extra features enabled
           - artifact_type: 'full'
-            feature: 'dbus_keyring,dbus_mpris'  # Full version has all extra features and audio backends enabled
+            feature: 'dbus_mpris'  # Full version has all extra features and audio backends enabled
           - build_target: macos
             os: macos-latest
             artifact_prefix: macos

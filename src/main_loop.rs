@@ -1,4 +1,5 @@
-use crate::config::DBusType;
+#[cfg(feature = "dbus_mpris")]
+use crate::config::{DBusType, MprisConfig};
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
 use crate::process::spawn_program_on_event;
@@ -31,28 +32,35 @@ use std::sync::Arc;
 type DbusServer = Pending<()>;
 
 pub(crate) enum CredentialsProvider {
-    Discovery(Peekable<Discovery>),
-    SpotifyCredentials(Credentials),
-}
-
-impl From<Discovery> for CredentialsProvider {
-    fn from(stream: Discovery) -> Self {
-        CredentialsProvider::Discovery(stream.peekable())
-    }
+    Discovery {
+        stream: Peekable<Discovery>,
+        last_credentials: Option<Credentials>,
+    },
+    CredentialsOnly(Credentials),
 }
 
 impl CredentialsProvider {
     async fn get_credentials(&mut self) -> Credentials {
         match self {
-            CredentialsProvider::Discovery(stream) => stream.next().await.unwrap(),
-            CredentialsProvider::SpotifyCredentials(creds) => creds.clone(),
+            CredentialsProvider::Discovery {
+                stream,
+                last_credentials,
+            } => {
+                let new_creds = match last_credentials.take() {
+                    Some(creds) => stream.next().now_or_never().flatten().unwrap_or(creds),
+                    None => stream.next().await.unwrap(),
+                };
+                *last_credentials = Some(new_creds.clone());
+                new_creds
+            }
+            CredentialsProvider::CredentialsOnly(creds) => creds.clone(),
         }
     }
 
     // wait for an incoming connection if the underlying provider is a discovery stream
     async fn incoming_connection(&mut self) {
         match self {
-            CredentialsProvider::Discovery(stream) => {
+            CredentialsProvider::Discovery { stream, .. } => {
                 let peeked = Pin::new(stream).peek().await;
                 if peeked.is_none() {
                     future::pending().await
@@ -77,11 +85,9 @@ pub(crate) struct MainLoop {
     pub(crate) device_type: DeviceType,
     pub(crate) device_name: String,
     pub(crate) player_event_program: Option<String>,
-    #[cfg_attr(not(feature = "dbus_mpris"), allow(unused))]
-    pub(crate) use_mpris: bool,
-    #[cfg_attr(not(feature = "dbus_mpris"), allow(unused))]
-    pub(crate) dbus_type: DBusType,
     pub(crate) credentials_provider: CredentialsProvider,
+    #[cfg(feature = "dbus_mpris")]
+    pub(crate) mpris_config: MprisConfig,
 }
 
 struct ConnectionInfo<SpircTask: Future<Output = ()>> {
@@ -140,9 +146,12 @@ impl MainLoop {
         }
 
         #[cfg(feature = "dbus_mpris")]
-        let mpris_event_tx = if self.use_mpris {
+        let mpris_event_tx = if self.mpris_config.use_mpris.unwrap_or(true) {
             let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-            *dbus_server.as_mut() = Either::Left(DbusServer::new(rx, self.dbus_type));
+            *dbus_server.as_mut() = Either::Left(DbusServer::new(
+                rx,
+                self.mpris_config.dbus_type.unwrap_or(DBusType::Session),
+            ));
             Some(tx)
         } else {
             None
@@ -151,9 +160,6 @@ impl MainLoop {
         'mainloop: loop {
             let connection = tokio::select!(
                 _ = &mut ctrl_c => {
-                    if let CredentialsProvider::Discovery(stream) = self.credentials_provider {
-                        let _ = stream.into_inner().shutdown().await;
-                    }
                     break 'mainloop;
                 }
                 connection = self.get_connection() => {
@@ -250,6 +256,9 @@ impl MainLoop {
                     break 'mainloop;
                 }
             }
+        }
+        if let CredentialsProvider::Discovery { stream, .. } = self.credentials_provider {
+            let _ = stream.into_inner().shutdown().await;
         }
         #[cfg(feature = "dbus_mpris")]
         if let Either::Left(dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {

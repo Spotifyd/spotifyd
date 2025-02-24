@@ -1,147 +1,51 @@
-use crate::{
-    error::{Error as CrateError, ParseError},
-    process::run_program,
-    utils,
+use crate::utils;
+use clap::{
+    builder::{IntoResettable, PossibleValuesParser, TypedValueParser, ValueParser},
+    Args, Parser, Subcommand, ValueEnum,
 };
-use color_eyre::Report;
+use color_eyre::{
+    eyre::{bail, Context},
+    Report,
+};
+use directories::ProjectDirs;
 use gethostname::gethostname;
 use librespot_core::{cache::Cache, config::DeviceType as LSDeviceType, config::SessionConfig};
 use librespot_playback::{
+    audio_backend,
     config::{AudioFormat as LSAudioFormat, Bitrate as LSBitrate, PlayerConfig},
     dither::{mk_ditherer, DithererBuilder, TriangularDitherer},
 };
-use log::{error, info, warn};
-use serde::{de::Error, de::Unexpected, Deserialize, Deserializer};
+use log::{debug, error, info, warn};
+use serde::{
+    de::{self, Error, Unexpected},
+    Deserialize, Deserializer,
+};
 use sha1::{Digest, Sha1};
-use std::{fmt, fs, path::Path, path::PathBuf, str::FromStr};
-use structopt::{clap::AppSettings, StructOpt};
+use std::{
+    borrow::Cow,
+    convert::TryInto,
+    fs,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 use url::Url;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
-#[cfg(not(any(
-    feature = "pulseaudio_backend",
-    feature = "portaudio_backend",
-    feature = "alsa_backend",
-    feature = "pipe_backend",
-    feature = "rodio_backend",
-    feature = "rodiojack_backend",
-)))]
-compile_error!("At least one of the backend features is required!");
-static BACKEND_VALUES: &[&str] = &[
-    #[cfg(feature = "alsa_backend")]
-    "alsa",
-    #[cfg(feature = "pulseaudio_backend")]
-    "pulseaudio",
-    #[cfg(feature = "portaudio_backend")]
-    "portaudio",
-    #[cfg(feature = "rodio_backend")]
-    "rodio",
-    #[cfg(feature = "pipe_backend")]
-    "pipe",
-    #[cfg(feature = "rodiojack_backend")]
-    "rodiojack",
-];
-
-/// The backend used by librespot
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
-#[serde(rename_all = "lowercase")]
-pub enum Backend {
-    Alsa,
-    PortAudio,
-    PulseAudio,
-    Rodio,
-    Pipe,
-    RodioJack,
-}
-
-fn default_backend() -> Backend {
-    Backend::from_str(BACKEND_VALUES.first().unwrap()).unwrap()
-}
-
-impl FromStr for Backend {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "alsa" => Ok(Backend::Alsa),
-            "portaudio" => Ok(Backend::PortAudio),
-            "pulseaudio" => Ok(Backend::PulseAudio),
-            "rodio" => Ok(Backend::Rodio),
-            "pipe" => Ok(Backend::Pipe),
-            "rodiojack" => Ok(Backend::RodioJack),
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl fmt::Display for Backend {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Backend::Alsa => write!(f, "alsa"),
-            Backend::PortAudio => write!(f, "portaudio"),
-            Backend::PulseAudio => write!(f, "pulseaudio"),
-            Backend::Rodio => write!(f, "rodio"),
-            Backend::Pipe => write!(f, "pipe"),
-            Backend::RodioJack => write!(f, "rodiojack"),
-        }
-    }
-}
-
-static VOLUME_CONTROLLER_VALUES: &[&str] = &[
-    "softvol",
-    #[cfg(feature = "alsa_backend")]
-    "alsa",
-    #[cfg(feature = "alsa_backend")]
-    "alsa_linear",
-    "none",
-];
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, ValueEnum)]
 #[serde(rename_all = "snake_case")]
 pub enum VolumeController {
+    #[cfg(feature = "alsa_backend")]
     Alsa,
+    #[cfg(feature = "alsa_backend")]
     AlsaLinear,
     #[serde(rename = "softvol")]
     SoftVolume,
     None,
 }
 
-impl FromStr for VolumeController {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "alsa" => Ok(VolumeController::Alsa),
-            "alsa_linear" => Ok(VolumeController::AlsaLinear),
-            "softvol" => Ok(VolumeController::SoftVolume),
-            "none" => Ok(VolumeController::None),
-            _ => unreachable!(),
-        }
-    }
-}
-
-static DEVICETYPE_VALUES: &[&str] = &[
-    "computer",
-    "tablet",
-    "smartphone",
-    "speaker",
-    "tv",
-    "avr",
-    "stb",
-    "audiodongle",
-    "gameconsole",
-    "castaudio",
-    "castvideo",
-    "automobile",
-    "smartwatch",
-    "chromebook",
-    "carthing",
-    "homething",
-];
-
 // Spotify's device type (copied from it's config.rs)
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, ValueEnum)]
 #[serde(rename_all = "snake_case")]
 pub enum DeviceType {
     Unknown,
@@ -168,34 +72,8 @@ pub enum DeviceType {
     HomeThing,
 }
 
-impl From<LSDeviceType> for DeviceType {
-    fn from(item: LSDeviceType) -> Self {
-        match item {
-            LSDeviceType::Unknown => DeviceType::Unknown,
-            LSDeviceType::Computer => DeviceType::Computer,
-            LSDeviceType::Tablet => DeviceType::Tablet,
-            LSDeviceType::Smartphone => DeviceType::Smartphone,
-            LSDeviceType::Speaker => DeviceType::Speaker,
-            LSDeviceType::Tv => DeviceType::Tv,
-            LSDeviceType::Avr => DeviceType::Avr,
-            LSDeviceType::Stb => DeviceType::Stb,
-            LSDeviceType::AudioDongle => DeviceType::AudioDongle,
-            LSDeviceType::GameConsole => DeviceType::GameConsole,
-            LSDeviceType::CastAudio => DeviceType::CastAudio,
-            LSDeviceType::CastVideo => DeviceType::CastVideo,
-            LSDeviceType::Automobile => DeviceType::Automobile,
-            LSDeviceType::Smartwatch => DeviceType::Smartwatch,
-            LSDeviceType::Chromebook => DeviceType::Chromebook,
-            LSDeviceType::UnknownSpotify => DeviceType::UnknownSpotify,
-            LSDeviceType::CarThing => DeviceType::CarThing,
-            LSDeviceType::Observer => DeviceType::Observer,
-            LSDeviceType::HomeThing => DeviceType::HomeThing,
-        }
-    }
-}
-
-impl From<&DeviceType> for LSDeviceType {
-    fn from(item: &DeviceType) -> Self {
+impl From<DeviceType> for LSDeviceType {
+    fn from(item: DeviceType) -> Self {
         match item {
             DeviceType::Unknown => LSDeviceType::Unknown,
             DeviceType::Computer => LSDeviceType::Computer,
@@ -220,26 +98,18 @@ impl From<&DeviceType> for LSDeviceType {
     }
 }
 
-impl FromStr for DeviceType {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let dt = LSDeviceType::from_str(s).unwrap();
-        Ok(dt.into())
-    }
+fn bitrate_parser() -> impl IntoResettable<ValueParser> {
+    let possible_values: PossibleValuesParser = ["96", "160", "320"].into();
+    possible_values.map(|val| match val.as_str() {
+        "96" => Bitrate::Bitrate96,
+        "160" => Bitrate::Bitrate160,
+        "320" => Bitrate::Bitrate320,
+        _ => unreachable!(),
+    })
 }
-
-impl fmt::Display for DeviceType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let dt: LSDeviceType = self.into();
-        write!(f, "{dt}")
-    }
-}
-
-static BITRATE_VALUES: &[&str] = &["96", "160", "320"];
 
 /// Spotify's audio bitrate
-#[derive(Clone, Copy, Debug, PartialEq, Eq, StructOpt)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Bitrate {
     Bitrate96,
     Bitrate160,
@@ -261,19 +131,6 @@ impl<'de> Deserialize<'de> for Bitrate {
     }
 }
 
-impl FromStr for Bitrate {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "96" => Ok(Bitrate::Bitrate96),
-            "160" => Ok(Bitrate::Bitrate160),
-            "320" => Ok(Bitrate::Bitrate320),
-            _ => unreachable!(),
-        }
-    }
-}
-
 impl From<Bitrate> for LSBitrate {
     fn from(bitrate: Bitrate) -> Self {
         match bitrate {
@@ -284,74 +141,20 @@ impl From<Bitrate> for LSBitrate {
     }
 }
 
-#[cfg(feature = "dbus_mpris")]
-static DBUSTYPE_VALUES: &[&str] = &["session", "system"];
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, ValueEnum)]
 #[serde(rename_all = "snake_case")]
 pub enum DBusType {
     Session,
     System,
 }
 
-impl FromStr for DBusType {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "session" => Ok(DBusType::Session),
-            "system" => Ok(DBusType::System),
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl fmt::Display for DBusType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            DBusType::Session => write!(f, "session"),
-            DBusType::System => write!(f, "system"),
-        }
-    }
-}
-
-/// LibreSpot supported audio formats
-static AUDIO_FORMAT_VALUES: &[&str] = &["F32", "S32", "S24", "S24_3", "S16"];
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, StructOpt)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, ValueEnum)]
 pub enum AudioFormat {
     F32,
     S32,
     S24,
     S24_3,
     S16,
-}
-
-impl FromStr for AudioFormat {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "F32" => Ok(AudioFormat::F32),
-            "S32" => Ok(AudioFormat::S32),
-            "S24" => Ok(AudioFormat::S24),
-            "S24_3" => Ok(AudioFormat::S24_3),
-            "S16" => Ok(AudioFormat::S16),
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl fmt::Display for AudioFormat {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            AudioFormat::F32 => write!(f, "F32"),
-            AudioFormat::S32 => write!(f, "S32"),
-            AudioFormat::S24 => write!(f, "S24"),
-            AudioFormat::S24_3 => write!(f, "S24_3"),
-            AudioFormat::S16 => write!(f, "S16"),
-        }
-    }
 }
 
 impl From<AudioFormat> for LSAudioFormat {
@@ -366,177 +169,237 @@ impl From<AudioFormat> for LSAudioFormat {
     }
 }
 
-#[derive(Debug, Default, StructOpt)]
-#[structopt(
-    about = "A Spotify daemon",
-    author,
-    name = "spotifyd",
-    setting(AppSettings::ColoredHelp)
-)]
+fn possible_backends() -> Vec<&'static str> {
+    audio_backend::BACKENDS.iter().map(|b| b.0).collect()
+}
+
+fn deserialize_backend<'de, D>(de: D) -> Result<Option<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let backend = String::deserialize(de)?;
+    let possible_backends = possible_backends();
+    if possible_backends.contains(&backend.as_str()) {
+        Ok(Some(backend))
+    } else {
+        Err(de::Error::invalid_value(
+            Unexpected::Str(&backend),
+            &format!(
+                "a valid backend (available: {})",
+                possible_backends.join(", ")
+            )
+            .as_str(),
+        ))
+    }
+}
+
+fn number_or_string<'de, D>(de: D) -> Result<Option<u8>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let val = toml::Value::deserialize(de)?;
+
+    let unexpected = match val {
+        toml::Value::Integer(num) => {
+            let num: u8 = num.try_into().map_err(de::Error::custom)?;
+            return Ok(Some(num));
+        }
+        toml::Value::String(num) => {
+            return u8::from_str(&num)
+                .map(Some)
+                .inspect(|_| warn!("Configuration Warning: `initial_volume` should be a number rather than a string, this will become a hard error in the future"))
+                .map_err(de::Error::custom)
+        }
+        toml::Value::Float(f) => Unexpected::Float(f),
+        toml::Value::Boolean(b) => Unexpected::Bool(b),
+        toml::Value::Datetime(_) => Unexpected::Other("datetime"),
+        toml::Value::Array(_) => Unexpected::Seq,
+        toml::Value::Table(_) => Unexpected::Map,
+    };
+    Err(de::Error::invalid_type(unexpected, &"number"))
+}
+
+#[derive(Debug, Default, Parser)]
+#[command(version, about, long_about = None, args_conflicts_with_subcommands = true)]
 pub struct CliConfig {
     /// The path to the config file to use
-    #[structopt(long, value_name = "string")]
+    #[arg(long, value_name = "PATH", global = true)]
     pub config_path: Option<PathBuf>,
 
+    /// Prints more verbose output
+    #[arg(short, long, action = clap::ArgAction::Count, global = true)]
+    pub verbose: u8,
+
     /// If set, starts spotifyd without detaching
-    #[structopt(long)]
+    #[arg(long)]
     pub no_daemon: bool,
 
-    /// Prints more verbose output
-    #[structopt(long)]
-    pub verbose: bool,
-
     /// Path to PID file.
-    #[structopt(long)]
+    #[cfg(unix)]
+    #[arg(long, value_name = "PATH")]
     pub pid: Option<PathBuf>,
 
-    #[structopt(flatten)]
+    #[command(subcommand)]
+    pub mode: Option<ExecutionMode>,
+
+    #[command(flatten)]
     pub shared_config: SharedConfigValues,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ExecutionMode {
+    #[command(visible_alias = "auth")]
+    Authenticate {
+        /// The port to use for the OAuth redirect
+        #[arg(long, default_value_t = 8000)]
+        oauth_port: u16,
+    },
 }
 
 // A struct that holds all allowed config fields.
 // The actual config file is made up of two sections, spotifyd and global.
-#[derive(Clone, Default, Deserialize, PartialEq, StructOpt)]
+#[derive(Clone, Default, Debug, Deserialize, PartialEq, Args)]
 pub struct SharedConfigValues {
-    /// The Spotify account user name
-    #[structopt(conflicts_with = "username_cmd", long, short, value_name = "string")]
-    username: Option<String>,
-
-    /// A command that can be used to retrieve the Spotify account username
-    #[structopt(
-        conflicts_with = "username",
-        long,
-        short = "U",
-        value_name = "string",
-        visible_alias = "username_cmd"
-    )]
-    username_cmd: Option<String>,
-
-    /// The Spotify account password
-    #[structopt(conflicts_with = "password_cmd", long, short, value_name = "string")]
-    password: Option<String>,
-
-    /// Enables keyring password access
-    #[cfg_attr(
-        feature = "dbus_keyring",
-        structopt(long),
-        serde(alias = "use-keyring", default)
-    )]
-    #[cfg_attr(not(feature = "dbus_keyring"), structopt(skip), serde(skip))]
-    use_keyring: bool,
-
-    /// Enables the MPRIS interface
-    #[cfg_attr(
-        feature = "dbus_mpris",
-        structopt(long),
-        serde(alias = "use-mpris", default)
-    )]
-    #[cfg_attr(not(feature = "dbus_mpris"), structopt(skip), serde(skip))]
-    use_mpris: Option<bool>,
-
-    /// The Bus-type to use for the MPRIS interface
-    #[cfg_attr(
-        feature = "dbus_mpris",
-        structopt(long, possible_values = &DBUSTYPE_VALUES, value_name = "string")
-    )]
-    #[cfg_attr(not(feature = "dbus_mpris"), structopt(skip), serde(skip))]
-    dbus_type: Option<DBusType>,
-
-    /// A command that can be used to retrieve the Spotify account password
-    #[structopt(
-        conflicts_with = "password",
-        long,
-        short = "P",
-        value_name = "string",
-        visible_alias = "password_cmd"
-    )]
-    password_cmd: Option<String>,
-
-    /// Whether the credentials should be debugged.
-    #[structopt(long)]
-    #[serde(skip)]
-    debug_credentials: bool,
-
     /// A script that gets evaluated in the user's shell when the song changes
-    #[structopt(visible_alias = "onevent", long, value_name = "string")]
+    #[arg(visible_alias = "onevent", long, value_name = "CMD")]
     #[serde(alias = "onevent")]
     on_song_change_hook: Option<String>,
 
     /// The cache path used to store credentials and music file artifacts
-    #[structopt(long, parse(from_os_str), short, value_name = "string")]
+    #[arg(long, short, value_name = "PATH", global = true)]
     cache_path: Option<PathBuf>,
 
     /// The maximal cache size in bytes
-    #[structopt(long)]
+    #[arg(long, value_name = "BYTES")]
     max_cache_size: Option<u64>,
 
     /// Disable the use of audio cache
-    #[structopt(long)]
-    #[serde(default)]
-    no_audio_cache: bool,
+    #[arg(
+        long,
+        default_missing_value("true"),
+        require_equals = true,
+        num_args(0..=1),
+        value_name = "BOOL"
+    )]
+    no_audio_cache: Option<bool>,
 
     /// The audio backend to use
-    #[structopt(long, short, possible_values = &BACKEND_VALUES, value_name = "string")]
-    backend: Option<Backend>,
+    #[arg(long, short, value_parser = possible_backends())]
+    #[serde(deserialize_with = "deserialize_backend")]
+    backend: Option<String>,
 
     /// The volume controller to use
-    #[structopt(long, short, possible_values = &VOLUME_CONTROLLER_VALUES, visible_alias = "volume-control")]
+    #[arg(value_enum, long, visible_alias = "volume-control")]
     #[serde(alias = "volume-control")]
     volume_controller: Option<VolumeController>,
 
-    /// The audio device (or file handle if using pipe backend)
-    #[structopt(long, value_name = "string")]
+    /// The audio device (or pipe file)
+    #[arg(long)]
     device: Option<String>,
 
-    /// The control device
-    #[structopt(long, value_name = "string")]
-    control: Option<String>,
-
-    /// The mixer to use
-    #[structopt(long, value_name = "string")]
-    mixer: Option<String>,
-
     /// The device name displayed in Spotify
-    #[structopt(long, short, value_name = "string")]
+    #[arg(long, short)]
     device_name: Option<String>,
 
     /// The bitrate of the streamed audio data
-    #[structopt(long, short = "B", possible_values = &BITRATE_VALUES, value_name = "number")]
+    #[arg(long, short = 'B', value_parser = bitrate_parser())]
     bitrate: Option<Bitrate>,
 
     /// The audio format of the streamed audio data
-    #[structopt(long, possible_values = &AUDIO_FORMAT_VALUES, value_name = "string")]
+    #[arg(value_enum, long)]
     audio_format: Option<AudioFormat>,
 
     /// Initial volume between 0 and 100
-    #[structopt(long, value_name = "initial_volume")]
-    initial_volume: Option<String>,
+    #[arg(long)]
+    #[serde(deserialize_with = "number_or_string", default)]
+    initial_volume: Option<u8>,
 
     /// Enable to normalize the volume during playback
-    #[structopt(long)]
-    #[serde(default)]
-    volume_normalisation: bool,
+    #[arg(
+        long,
+        default_missing_value("true"),
+        require_equals = true,
+        num_args(0..=1),
+        value_name = "BOOL"
+    )]
+    volume_normalisation: Option<bool>,
 
     /// A custom pregain applied before sending the audio to the output device
-    #[structopt(long, value_name = "number")]
+    #[arg(long)]
     normalisation_pregain: Option<f64>,
 
+    #[arg(
+        long,
+        default_missing_value("true"),
+        require_equals = true,
+        num_args(0..=1),
+        value_name = "BOOL"
+    )]
+    disable_discovery: Option<bool>,
+
     /// The port used for the Spotify Connect discovery
-    #[structopt(long, value_name = "number")]
+    #[arg(long)]
     zeroconf_port: Option<u16>,
 
     /// The proxy used to connect to spotify's servers
-    #[structopt(long, value_name = "string")]
+    #[arg(long, value_name = "URL")]
     proxy: Option<String>,
 
     /// The device type shown to clients
-    #[structopt(long, possible_values = &DEVICETYPE_VALUES, value_name = "string")]
+    #[arg(value_enum, long)]
     device_type: Option<DeviceType>,
 
     /// Start playing similar songs after your music has ended
-    #[structopt(long)]
+    #[arg(
+        long,
+        default_missing_value("true"),
+        require_equals = true,
+        num_args(0..=1),
+        value_name = "BOOL"
+    )]
     #[serde(default)]
-    autoplay: bool,
+    autoplay: Option<bool>,
+
+    #[cfg(feature = "alsa_backend")]
+    #[command(flatten)]
+    #[serde(flatten)]
+    alsa_config: AlsaConfig,
+
+    #[cfg(feature = "dbus_mpris")]
+    #[command(flatten)]
+    #[serde(flatten)]
+    mpris_config: MprisConfig,
+}
+
+#[cfg(feature = "dbus_mpris")]
+#[derive(Debug, Default, Clone, Deserialize, Args, PartialEq, Eq)]
+pub struct MprisConfig {
+    /// Enables the MPRIS interface
+    #[arg(
+        long,
+        default_missing_value("true"),
+        require_equals = true,
+        num_args(0..=1),
+        value_name = "BOOL"
+    )]
+    #[serde(alias = "use-mpris")]
+    pub(crate) use_mpris: Option<bool>,
+
+    /// The Bus-type to use for the MPRIS interface
+    #[arg(value_enum, long)]
+    pub(crate) dbus_type: Option<DBusType>,
+}
+
+#[cfg(feature = "alsa_backend")]
+#[derive(Debug, Default, Clone, Deserialize, Args, PartialEq, Eq)]
+pub struct AlsaConfig {
+    /// The control device
+    #[arg(long)]
+    pub(crate) control: Option<String>,
+
+    /// The mixer to use
+    #[arg(long)]
+    pub(crate) mixer: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -547,84 +410,13 @@ pub struct FileConfig {
 
 impl FileConfig {
     pub fn get_merged_sections(self) -> Option<SharedConfigValues> {
-        let global_config_section = self.global;
-        let spotifyd_config_section = self.spotifyd;
-
-        let merged_config: Option<SharedConfigValues>;
-        // First merge the two sections together. The spotifyd has priority over global
-        // section.
-        if let Some(mut spotifyd_section) = spotifyd_config_section {
-            // spotifyd section exists. Try to merge it with global section.
-            #[allow(clippy::branches_sharing_code)]
-            if let Some(global_section) = global_config_section {
-                spotifyd_section.merge_with(global_section);
-                merged_config = Some(spotifyd_section);
-            } else {
-                // There is no global section. Just use the spotifyd section.
-                merged_config = Some(spotifyd_section);
+        match (self.global, self.spotifyd) {
+            (Some(global), Some(mut spotifyd)) => {
+                spotifyd.merge_with(global);
+                Some(spotifyd)
             }
-        } else {
-            // No spotifyd config available. Check for global and use that, if both are
-            // none, use none.
-            merged_config = global_config_section;
+            (global, spotifyd) => global.or(spotifyd),
         }
-
-        merged_config
-    }
-}
-
-impl fmt::Debug for SharedConfigValues {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let placeholder = "taken out for privacy";
-
-        macro_rules! extract_credential {
-            ( $e:expr ) => {
-                match $e {
-                    Some(s) => match self.debug_credentials {
-                        true => Some(s.as_str()),
-                        false => Some(placeholder),
-                    },
-                    None => None,
-                }
-            };
-        }
-
-        let password_value = extract_credential!(&self.password);
-
-        let password_cmd_value = extract_credential!(&self.password_cmd);
-
-        let username_value = extract_credential!(&self.username);
-
-        let username_cmd_value = extract_credential!(&self.username_cmd);
-
-        f.debug_struct("SharedConfigValues")
-            .field("username", &username_value)
-            .field("username_cmd", &username_cmd_value)
-            .field("password", &password_value)
-            .field("password_cmd", &password_cmd_value)
-            .field("use_keyring", &self.use_keyring)
-            .field("use_mpris", &self.use_mpris)
-            .field("dbus_type", &self.dbus_type)
-            .field("on_song_change_hook", &self.on_song_change_hook)
-            .field("cache_path", &self.cache_path)
-            .field("no-audio-cache", &self.no_audio_cache)
-            .field("backend", &self.backend)
-            .field("volume_controller", &self.volume_controller)
-            .field("device", &self.device)
-            .field("control", &self.control)
-            .field("mixer", &self.mixer)
-            .field("device_name", &self.device_name)
-            .field("bitrate", &self.bitrate)
-            .field("audio_format", &self.audio_format)
-            .field("initial_volume", &self.initial_volume)
-            .field("volume_normalisation", &self.volume_normalisation)
-            .field("normalisation_pregain", &self.normalisation_pregain)
-            .field("zeroconf_port", &self.zeroconf_port)
-            .field("proxy", &self.proxy)
-            .field("device_type", &self.device_type)
-            .field("autoplay", &self.autoplay)
-            .field("max_cache_size", &self.max_cache_size)
-            .finish()
     }
 }
 
@@ -659,52 +451,96 @@ impl CliConfig {
 }
 
 impl SharedConfigValues {
-    pub fn merge_with(&mut self, other: SharedConfigValues) {
+    pub fn get_cache(&self, for_oauth: bool) -> color_eyre::Result<Cache> {
+        let Some(cache_path) = self.cache_path.as_deref().map(Cow::Borrowed).or_else(|| {
+            ProjectDirs::from("", "", "spotifyd")
+                .map(|dirs| Cow::Owned(dirs.cache_dir().to_path_buf()))
+        }) else {
+            bail!("Failed to determine cache directory, please specify one manually");
+        };
+
+        if for_oauth {
+            let mut creds_path = cache_path.into_owned();
+            creds_path.push("oauth");
+            Cache::new(Some(creds_path), None, None, None)
+        } else {
+            let audio_cache = !self.no_audio_cache.unwrap_or(false);
+
+            let mut creds_path = cache_path.to_path_buf();
+            creds_path.push("zeroconf");
+            Cache::new(
+                Some(creds_path.as_path()),
+                Some(cache_path.as_ref()),
+                audio_cache.then_some(cache_path.as_ref()),
+                self.max_cache_size,
+            )
+        }
+        .wrap_err("Failed to initialize cache")
+    }
+
+    pub fn proxy_url(&self) -> Option<Url> {
+        match &self.proxy {
+            Some(s) => match Url::parse(s) {
+                Ok(url) => {
+                    if url.scheme() != "http" {
+                        error!("Only HTTP proxies are supported!");
+                        None
+                    } else {
+                        Some(url)
+                    }
+                }
+                Err(err) => {
+                    error!("Invalid proxy URL: {}", err);
+                    None
+                }
+            },
+            None => {
+                debug!("No proxy specified");
+                None
+            }
+        }
+    }
+
+    pub fn merge_with(&mut self, mut other: SharedConfigValues) {
         macro_rules! merge {
-            ($($x:ident),+) => {
-                $(self.$x = self.$x.clone().or_else(|| other.$x.clone());)+
+            ($a:expr; and $b:expr => {$($x:ident),+}) => {
+                $($a.$x = $a.$x.take().or_else(|| $b.$x.take());)+
             }
         }
 
         // Handles Option<T> merging.
-        merge!(
+        merge!(self; and other => {
             backend,
-            username,
-            username_cmd,
-            password,
-            password_cmd,
+            volume_normalisation,
             normalisation_pregain,
             bitrate,
             initial_volume,
             device_name,
-            mixer,
-            control,
             device,
             volume_controller,
             cache_path,
+            no_audio_cache,
             on_song_change_hook,
+            disable_discovery,
             zeroconf_port,
             proxy,
             device_type,
-            use_mpris,
             max_cache_size,
-            dbus_type,
-            audio_format
-        );
+            audio_format,
+            autoplay
+        });
 
-        // Handles boolean merging.
-        self.use_keyring |= other.use_keyring;
-        self.volume_normalisation |= other.volume_normalisation;
-        self.no_audio_cache |= other.no_audio_cache;
-        self.autoplay |= other.autoplay;
+        #[cfg(feature = "dbus_mpris")]
+        merge!(self.mpris_config; and other.mpris_config => {use_mpris, dbus_type});
+        #[cfg(feature = "alsa_backend")]
+        merge!(self.alsa_config; and other.alsa_config => {mixer, control});
     }
 }
 
 pub(crate) fn get_config_file() -> Option<PathBuf> {
     let etc_conf = format!("/etc/{}", CONFIG_FILE_NAME);
-    let dirs = directories::BaseDirs::new()?;
+    let dirs = directories::ProjectDirs::from("", "", "spotifyd")?;
     let mut path = dirs.config_dir().to_path_buf();
-    path.push("spotifyd");
     path.push(CONFIG_FILE_NAME);
 
     if path.exists() {
@@ -722,54 +558,43 @@ fn device_id(name: &str) -> String {
 }
 
 pub(crate) struct SpotifydConfig {
-    pub(crate) username: Option<String>,
-    pub(crate) password: Option<String>,
-    #[allow(unused)]
-    pub(crate) use_keyring: bool,
-    pub(crate) use_mpris: bool,
-    pub(crate) dbus_type: DBusType,
     pub(crate) cache: Option<Cache>,
+    pub(crate) oauth_cache: Option<Cache>,
     pub(crate) backend: Option<String>,
     pub(crate) audio_device: Option<String>,
     pub(crate) audio_format: LSAudioFormat,
-    #[allow(unused)]
-    pub(crate) control_device: Option<String>,
-    #[allow(unused)]
-    pub(crate) mixer: Option<String>,
-    #[allow(unused)]
     pub(crate) volume_controller: VolumeController,
     pub(crate) initial_volume: Option<u16>,
     pub(crate) device_name: String,
     pub(crate) player_config: PlayerConfig,
     pub(crate) session_config: SessionConfig,
     pub(crate) onevent: Option<String>,
-    #[allow(unused)]
+    #[cfg(unix)]
     pub(crate) pid: Option<String>,
     pub(crate) shell: String,
+    pub(crate) discovery: bool,
     pub(crate) zeroconf_port: Option<u16>,
-    pub(crate) device_type: String,
+    pub(crate) device_type: LSDeviceType,
+    #[cfg(feature = "dbus_mpris")]
+    pub(crate) mpris: MprisConfig,
+    #[cfg(feature = "alsa_backend")]
+    pub(crate) alsa_config: AlsaConfig,
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
-    let audio_cache = !config.shared_config.no_audio_cache;
-
-    let size_limit = config.shared_config.max_cache_size;
-    let cache = config
-        .shared_config
-        .cache_path
-        .map(|path| {
-            Cache::new(
-                Some(&path),
-                Some(&path),
-                audio_cache.then_some(&path),
-                size_limit,
-            )
-        })
-        .transpose()
-        .unwrap_or_else(|e| {
-            warn!("Cache couldn't be initialized: {e}");
-            None
-        });
+    let (cache, oauth_cache) = match (
+        config.shared_config.get_cache(false),
+        config.shared_config.get_cache(true),
+    ) {
+        (Ok(cache), Ok(oauth_cache)) => (Some(cache), Some(oauth_cache)),
+        (a, b) => {
+            // at least one of the results are err
+            let err = a.or(b).map(|_| ()).unwrap_err();
+            warn!("{err}");
+            (None, None)
+        }
+    };
+    let proxy_url = config.shared_config.proxy_url();
 
     let bitrate: LSBitrate = config
         .shared_config
@@ -783,12 +608,6 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .unwrap_or(AudioFormat::S16)
         .into();
 
-    let backend = config
-        .shared_config
-        .backend
-        .unwrap_or_else(default_backend)
-        .to_string();
-
     let volume_controller = config
         .shared_config
         .volume_controller
@@ -797,14 +616,15 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     let initial_volume: Option<u16> = config
         .shared_config
         .initial_volume
-        .and_then(|input| match input.parse::<i16>() {
-            Ok(v) if (0..=100).contains(&v) => Some(v),
-            _ => {
-                warn!("Could not parse initial_volume (must be in the range 0-100)");
-                None
+        .filter(|val| {
+            if (0..=100).contains(val) {
+                true
+            } else {
+                warn!("initial_volume must be in range 0..100");
+                false
             }
         })
-        .map(|volume| (volume as i32 * 0xFFFF / 100) as u16);
+        .map(|volume| (volume as i32 * (u16::MAX as i32) / 100) as u16);
 
     let device_name = config
         .shared_config
@@ -816,15 +636,13 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
 
     let normalisation_pregain = config.shared_config.normalisation_pregain.unwrap_or(0.0);
 
-    let dbus_type = config.shared_config.dbus_type.unwrap_or(DBusType::Session);
-    let autoplay = config.shared_config.autoplay;
-
     let device_type = config
         .shared_config
         .device_type
         .unwrap_or(DeviceType::Speaker)
-        .to_string();
+        .into();
 
+    #[cfg(unix)]
     let pid = config.pid.map(|f| {
         f.into_os_string()
             .into_string()
@@ -835,45 +653,6 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         info!("Unable to identify shell. Defaulting to \"sh\".");
         "sh".to_string()
     });
-
-    let mut username = config.shared_config.username;
-    if username.is_none() {
-        info!("No username specified. Checking username_cmd");
-        match config.shared_config.username_cmd {
-            Some(ref cmd) => match run_program(&shell, cmd) {
-                Ok(s) => username = Some(s.trim().to_string()),
-                Err(e) => error!("{}", CrateError::subprocess_with_err(&shell, cmd, e)),
-            },
-            None => info!("No username_cmd specified"),
-        }
-    }
-
-    let mut password = config.shared_config.password;
-    if password.is_none() {
-        info!("No password specified. Checking password_cmd");
-
-        match config.shared_config.password_cmd {
-            Some(ref cmd) => match run_program(&shell, cmd) {
-                Ok(s) => password = Some(s.trim().to_string()),
-                Err(e) => error!("{}", CrateError::subprocess_with_err(&shell, cmd, e)),
-            },
-            None => info!("No password_cmd specified"),
-        }
-    }
-    let mut proxy_url = None;
-    match config.shared_config.proxy {
-        Some(s) => match Url::parse(&s) {
-            Ok(url) => {
-                if url.scheme() != "http" {
-                    error!("Only HTTP proxies are supported!");
-                } else {
-                    proxy_url = Some(url);
-                }
-            }
-            Err(err) => error!("Invalid proxy URL: {}", err),
-        },
-        None => info!("No proxy specified"),
-    }
 
     // choose default ditherer the same way librespot does
     let ditherer: Option<DithererBuilder> = match audio_format {
@@ -888,7 +667,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     //  should consider adding them to Spotifyd's config system.
     let pc = PlayerConfig {
         bitrate,
-        normalisation: config.shared_config.volume_normalisation,
+        normalisation: config.shared_config.volume_normalisation.unwrap_or(false),
         normalisation_pregain_db: normalisation_pregain,
         gapless: true,
         ditherer,
@@ -896,33 +675,33 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
     };
 
     SpotifydConfig {
-        username,
-        password,
-        use_keyring: config.shared_config.use_keyring,
-        use_mpris: config.shared_config.use_mpris.unwrap_or(true),
-        dbus_type,
         cache,
-        backend: Some(backend),
+        oauth_cache,
+        backend: config.shared_config.backend,
         audio_device: config.shared_config.device,
         audio_format,
-        control_device: config.shared_config.control,
-        mixer: config.shared_config.mixer,
         volume_controller,
         initial_volume,
         device_name,
         player_config: pc,
         session_config: SessionConfig {
-            autoplay: Some(autoplay),
+            autoplay: config.shared_config.autoplay,
             device_id,
             proxy: proxy_url,
             ap_port: Some(443),
             ..Default::default()
         },
         onevent: config.shared_config.on_song_change_hook,
-        pid,
         shell,
+        discovery: !config.shared_config.disable_discovery.unwrap_or(false),
         zeroconf_port: config.shared_config.zeroconf_port,
         device_type,
+        #[cfg(unix)]
+        pid,
+        #[cfg(feature = "dbus_mpris")]
+        mpris: config.shared_config.mpris_config,
+        #[cfg(feature = "alsa_backend")]
+        alsa_config: config.shared_config.alsa_config,
     }
 }
 
@@ -933,12 +712,12 @@ mod tests {
     #[test]
     fn test_section_merging() {
         let mut spotifyd_section = SharedConfigValues {
-            password: Some("123456".to_string()),
+            device_type: Some(DeviceType::Computer),
             ..Default::default()
         };
 
         let global_section = SharedConfigValues {
-            username: Some("testUserName".to_string()),
+            device_name: Some("spotifyd-test".to_string()),
             ..Default::default()
         };
 
@@ -952,15 +731,7 @@ mod tests {
         let merged_config = file_config.get_merged_sections().unwrap();
 
         // Add the new field to spotifyd section.
-        spotifyd_section.username = Some("testUserName".to_string());
+        spotifyd_section.device_name = Some("spotifyd-test".to_string());
         assert_eq!(merged_config, spotifyd_section);
-    }
-    #[test]
-    fn test_default_backend() {
-        let spotifyd_config = get_internal_config(CliConfig::default());
-        assert_eq!(
-            spotifyd_config.backend.unwrap(),
-            default_backend().to_string()
-        );
     }
 }
