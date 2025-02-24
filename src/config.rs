@@ -285,7 +285,7 @@ pub struct SharedConfigValues {
 
     /// The audio backend to use
     #[arg(long, short, value_parser = possible_backends())]
-    #[serde(deserialize_with = "deserialize_backend")]
+    #[serde(deserialize_with = "deserialize_backend", default)]
     backend: Option<String>,
 
     /// The volume controller to use
@@ -733,5 +733,49 @@ mod tests {
         // Add the new field to spotifyd section.
         spotifyd_section.device_name = Some("spotifyd-test".to_string());
         assert_eq!(merged_config, spotifyd_section);
+    }
+
+    #[test]
+    fn test_example_config() {
+        let example_config = include_str!("../contrib/spotifyd.conf");
+
+        let config: FileConfig =
+            toml::from_str(example_config).expect("Commented example config should be valid");
+
+        assert_eq!(
+            (config.global, config.spotifyd),
+            (Some(SharedConfigValues::default()), None),
+            "example config should not do anything by default, but contain the global section"
+        );
+
+        let uncommented_example_config = example_config
+            .lines()
+            .map(|line| {
+                // uncomment any line starting with #[a-zA-Z]
+                line.strip_prefix("#")
+                    .filter(|rest| {
+                        // uncomment if the rest is a valid config line
+                        // if alsa_backend is not enabled, ignore any problematic lines
+                        rest.starts_with(char::is_alphabetic)
+                            && (cfg!(feature = "alsa_backend") || !rest.contains("alsa"))
+                    })
+                    .unwrap_or(line)
+            })
+            .collect::<Vec<&str>>()
+            .join("\n");
+
+        let config: FileConfig = toml::from_str(&uncommented_example_config)
+            .expect("Uncommented example config should be valid");
+
+        assert!(
+            config.spotifyd.is_none(),
+            "example config should not have a spotifyd section"
+        );
+        assert!(
+            config
+                .global
+                .is_some_and(|global| global != SharedConfigValues::default()),
+            "uncommented example config should contain some values"
+        );
     }
 }
