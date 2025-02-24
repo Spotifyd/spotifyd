@@ -116,27 +116,3 @@ else
   echo "No active spotifyd playback."
 fi
 ```
-
-## Troubleshooting
-
-### "Failed to initialize DBus connection" on a headless system
-
-Where no graphical session is available, the system bus can be used by setting the `dbus_type` configuration option to `system`.
-
-### "Failed to register dbus player name" using the system bus
-
-`Spotifyd` may not have permission to register the D-Bus service due to D-Bus security policies. It should be granted permission to own any service with the prefix "org.mpris.MediaPlayer2.spotifyd".
-
-For example, this statement can be added to the default policy in `/usr/share/dbus-1/system.conf`.
-
-```xml
-<allow own_prefix="org.mpris.MediaPlayer2.spotifyd"/>
-```
-
-It may also be necessary to add a statement to allow clients to send messages.
-
-```xml
-<allow send_destination_prefix="org.mpris.MediaPlayer2.spotifyd"/>
-```
-
-Make sure to reload the D-Bus configuration after making changes. For example `sudo systemctl reload dbus`.
