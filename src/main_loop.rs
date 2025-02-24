@@ -156,9 +156,9 @@ impl MainLoop {
                     }
                     break 'mainloop;
                 }
-                spirc = self.get_connection() => {
-                    match spirc {
-                        Ok(spirc) => spirc,
+                connection = self.get_connection() => {
+                    match connection {
+                        Ok(connection) => connection,
                         Err(err) => {
                             error!("failed to connect to spotify: {}", err);
                             break 'mainloop;
