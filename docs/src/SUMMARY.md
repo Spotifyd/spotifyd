@@ -3,8 +3,10 @@
 [Introduction](./Introduction.md)
 
 - [Installation](./installation/README.md)
+  - [Running as a service](./installation/service.md)
   - [Installing on RaspberryPi OS 64-bit](./installation/raspberrypi64.md)
   - [Building from source](./installation/source.md)
+  - [Cross-Compile using Docker](./installation/cross-compile-using-docker.md)
 - [Configuration](./configuration/README.md)
   - [Authentication](./configuration/auth.md)
   - [Audio](./configuration/audio.md)
@@ -14,5 +16,5 @@
   - [Running as launchd service](./advanced/launchd.md)
   - [Using D-Bus to control `spotifyd`](./advanced/dbus.md)
   - [MPRIS on headless systems](./advanced/mpris.md)
-  - [Extending spotifyd with hooks]()
-- [Troubleshooting]()
+  - [Extending spotifyd with hooks](./advanced/hooks.md)
+- [Troubleshooting](./troubleshooting.md)

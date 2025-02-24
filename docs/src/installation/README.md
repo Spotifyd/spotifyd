@@ -18,6 +18,14 @@ If you're a homebrew user, installing `spotifyd` is as easy as running
 brew install spotifyd
 ```
 
+## FreeBSD
+
+On FreeBSD, a package is available and can be installed with `pkg install spotifyd`.
+
+## OpenBSD
+
+On OpenBSD, a package is available and can be installed with `pkg_add spotifyd`.
+
 ## Installing from releases
 
 If none of the above methods work for you, you can also use our provided binaries.

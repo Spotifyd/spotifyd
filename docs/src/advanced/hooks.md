@@ -1,5 +1,13 @@
 # User supplied Scripts
 
+If you want to create custom behaviour around `spotifyd`, one option is to look into the [D-Bus functionality](./dbus.md). But on headless systems or smaller projects, we also offer a hook API. On certain events, a hook can be executed with event details given as environment variables.
+
+To point `spotifyd` to such a script, use the `--onevent /path/to/script` cli arg / `on_song_change_hook = "/path/to/script"` configuration value.
+
+In order to learn about the available events and the available details, you can either create simple scripts which log the given environment variables or look at the output of `spotifyd`, which logs whenever the script is executed.
+
+The following scripts are intended to serve as inspiration for your own scripts. If you have written own scripts which you think might be useful to others, please create a PR adding them here!
+
 ## Dunst Notifications (Using Spotify API)
 
 This script will show a dunst notification when you play/change/stop Spotify (and when the music change). It is using spotify APIs to get music details.
@@ -48,19 +56,5 @@ This script will show a dunst notification when you play/change/stop Spotify (an
     fi
     ```
 
-* Make this script executable (```chmod +x ntification_script.sh```)
-* Add the line ```onevent = "bash /home/YOU_USER/bin/spotifyNotifications.sh"``` to your ```spotifyd.conf```
-
-## Dunst Notifications (Using Playerctl metadata)
-
-This script is a modification of the script supplied above, however instead of calling the Spotify API for track information, the metadata of the current track is used instead, leading to a more performant script.
-
-### Dependencies
-
-* [Playerctl](https://github.com/altdesktop/playerctl)
-
-### How to Use:
-
-* Download this [gist](https://gist.github.com/ohhskar/efe71e82337ed54b9aa704d3df28d2ae)
-* Make the script executable (```chmod +x notifications.sh```)
-* Add the line ```onevent = "/path/to/file/spotifyNotifications.sh"``` to your ```spotifyd.conf```
+* Make this script executable (`chmod +x notification_script.sh`)
+* Add the line `onevent = "bash /home/YOU_USER/bin/spotifyNotifications.sh"` to your `spotifyd.conf`
