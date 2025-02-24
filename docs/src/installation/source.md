@@ -72,11 +72,10 @@ flags that are set by default in `Cargo.toml`.
 | `rodio_backend` | Rust-native implementation of audio backends on all platforms. Does not need any external packages to be installed. |
 | `portaudio_backend` | Audio backend that can be used on non-Linux systems. |
 | `rodiojack_backend` | Support for the Jack backend. |
-| `dbus_keyring` | Provides password authentication over the system's keyring (supports all platforms) |
 | `dbus_mpris`   | Provides multimedia key support (Linux and BSD only)                                |
 
 To customize your build, pass a subset of the features listed above to any of the `cargo` commands above via `--features <feature1>,<feature2>,...`. Disable the default feature `alsa_backend` with `--no-default-features`. So an example command could look like the following:
 
 ```
-cargo install spotifyd --locked --no-default-features --features rodio_backend,dbus_keyring,dbus_mpris
+cargo install spotifyd --locked --no-default-features --features rodio_backend,dbus_mpris
 ```

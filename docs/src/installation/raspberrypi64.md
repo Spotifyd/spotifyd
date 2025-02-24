@@ -3,8 +3,7 @@
 Unfortunately, we do not yet provide 64-bit binaries for ARM.
 Trying to run them will result in `cannot execute: required file not found`.  
 
-To run spotifyd on a 64-bit Raspberry Pi OS, you have two possiblities. Build the 64-bit binary by yourself or add the 32-bit architecture as  
-an additional architecture to your 64-bit Raspberry Pi OS.
+To run spotifyd on a 64-bit Raspberry Pi OS, you have two possiblities. Build the 64-bit binary by yourself or add the 32-bit architecture as an additional architecture to your 64-bit Raspberry Pi OS.
 
 ## Option 1: Building yourself
 

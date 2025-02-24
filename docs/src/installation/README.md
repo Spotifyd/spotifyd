@@ -27,9 +27,9 @@ and the platform architecture that they were built for. You can find the latest 
 
 **Feature Sets:**
 
-- `full`: **all audio backends**, **keyring** and **MPRIS** support
-- `default`: **one audio backend** (depending on your platform: PulseAudio, PortAudio, ALSA), **keyring** and **MPRIS** support
-- `slim`: **one audio backend** (depending on your platform), **no keyring** and **no MPRIS** support (good for headless systems)
+- `full`: **all audio backends** and **MPRIS** support
+- `default`: **one audio backend** (depending on your platform: PulseAudio, PortAudio, ALSA) and **MPRIS** support
+- `slim`: **one audio backend** (depending on your platform) and **no MPRIS** support (good for headless systems)
 
 If you're unsure which version to choose, just go for `default` on desktop systems and `slim` on headless systems.
 
@@ -47,8 +47,15 @@ If you're on macOS, download one of the `spotifyd-macos-{full,default,slim}.tar.
 You should now extract the downloaded archive, make the `spotifyd` file executable and copy it to a sensible location. This can be done using the following commands:
 
 ```console
-tar xzf spotifyd-*.tar.gz
-
+$ tar xzf spotifyd-*.tar.gz # extract
+$ cd spotifyd-*/
+$ chmod +x spotifyd # make binary executable
+$ # move to correct location, e.g. on Linux:
+$ # for a user-wide installation (make sure that your $PATH includes ~/.local/bin)
+$ mv spotifyd ~/.local/bin/spotifyd
+$ # for a system-wide installation
+$ sudo chown root:root spotifyd
+$ sudo mv spotifyd /usr/local/bin/spotifyd
 ```
 
 ## Running
