@@ -1,6 +1,6 @@
-# Running spotifyd as a service on macOS
+# Running as launchd service
 
-On macOS the system wide and per-user daemon/agent manager is known as `launchd`. Interfacing with `launchd` is performed through `launchctl`.
+On macOS, the system wide and per-user daemon/agent manager is known as `launchd`. Interfacing with `launchd` is performed through `launchctl`.
 
 In order to use `spotifyd` as a service on macOS one must specify a `.plist` that represents the service, and place it in `/Library/LaunchDaemons`.
 

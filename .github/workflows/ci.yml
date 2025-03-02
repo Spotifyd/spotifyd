@@ -6,6 +6,7 @@ on:
       - '**.rs'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      - 'contrib/spotifyd.conf'
 
 jobs:
   codestyle:
@@ -50,7 +51,7 @@ jobs:
           command: clippy
           args: --all-targets --all-features -- -D warnings
 
-  check:
+  test:
     needs: [lint]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -83,5 +84,5 @@ jobs:
       - name: Checking Rust code
         uses: actions-rs/cargo@v1
         with:
-          command: check
+          command: test
           args: --locked --no-default-features --features ${{ matrix.features }}
