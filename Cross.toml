@@ -1,0 +1,16 @@
+[build]
+pre-build = [
+  "dpkg --add-architecture $CROSS_DEB_ARCH",
+  "apt-get update",
+  # alsa_backend,rodio_backend and base requirements
+  "apt-get install -y libasound2-dev:$CROSS_DEB_ARCH libssl-dev:$CROSS_DEB_ARCH libclang-10-dev clang-10",
+  # dbus_mpris
+  "apt-get install -y libdbus-1-dev:$CROSS_DEB_ARCH",
+  # pulseaudio_backend
+  "apt-get install -y libpulse-dev:$CROSS_DEB_ARCH",
+  # portaudio_backend
+  "apt-get install -y portaudio19-dev:$CROSS_DEB_ARCH",
+]
+
+[target.armv7-unknown-linux-gnueabihf]
+image = ":edge" # needed, since dbus and pulse dependencies on older ubuntu versions are messy
