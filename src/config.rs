@@ -207,7 +207,7 @@ where
         toml::Value::String(num) => {
             return u8::from_str(&num)
                 .map(Some)
-                .inspect(|_| warn!("Configuration Warning: `initial_volume` should be a number rather than a string, this will become a hard error in the future"))
+                .inspect(|_| warn!("`initial_volume` should be a number rather than a string, this will become a hard error in the future"))
                 .map_err(de::Error::custom)
         }
         toml::Value::Float(f) => Unexpected::Float(f),
@@ -484,14 +484,14 @@ impl CliConfig {
             if let Some(problem) = get_known_config_problem(&path) {
                 match problem {
                     KnownConfigProblem::MissingFeature(feature) => {
-                        warn!("Warning: The config key '{path}' is ignored, because the feature '{feature}' is missing in this build");
+                        warn!("The config key '{path}' is ignored, because the feature '{feature}' is missing in this build");
                     }
                     KnownConfigProblem::UsernamePassword => {
-                        warn!("Warning: Authentication via Username and Password is no longer supported by Spotify, use ```spotifyd authenticate` instead");
+                        warn!("The config key '{path}' is ignored, because authentication with username and password is no longer supported by Spotify. Please use `spotifyd authenticate` instead");
                     }
                 }
             } else {
-                warn!("Warning: Unknown key '{path}' in config will be ignored");
+                warn!("Unknown key '{path}' in config will be ignored");
             }
         })?;
 

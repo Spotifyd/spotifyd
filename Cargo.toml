@@ -14,7 +14,7 @@ chrono = "0.4"
 dbus = { version = "0.9", optional = true }
 dbus-tokio = { version = "0.7.3", optional = true }
 dbus-crossroads = { version = "0.5.0", optional = true }
-fern = { version = "0.7.0", features = ["syslog-6"] }
+fern = { version = "0.7.0", features = ["syslog-6", "colored"] }
 futures = "0.3.15"
 gethostname = "0.5.0"
 hex = "0.4"
