@@ -9,15 +9,24 @@ on:
 
 jobs:
   build:
-    name: Building ${{matrix.runs_on}}-${{ matrix.arch }} (${{ matrix.artifact_type }})
-    runs-on: ${{ matrix.runs_on }}-latest
+    name: Building ${{matrix.os}}-${{ matrix.arch }} (${{ matrix.artifact_type }})
+    runs-on: ${{ matrix.runs_on }}
     strategy:
       matrix:
-        runs_on: [macos, ubuntu]
+        os: [macos, linux]
         arch: [x86_64, aarch64, armv7]
         rust: [stable]
         artifact_type: ['slim', 'default', 'full']  # The build strategy will build all types for each OS specified
         include:
+          # Runner configuration
+          - os: macos
+            arch: x86_64
+            runs_on: macos-13
+          - os: macos
+            arch: aarch64
+            runs_on: macos-latest
+          - os: linux
+            runs_on: ubuntu-latest
           # DBus configuration
           - artifact_type: slim
             dbus: ''
@@ -26,37 +35,35 @@ jobs:
           - artifact_type: full
             dbus: dbus_mpris
           # Cross Compilation Targets
-          - runs_on: ubuntu
+          - os: linux
             arch: aarch64
             target: aarch64-unknown-linux-gnu
-          - runs_on: ubuntu
+          - os: linux
             arch: armv7
             target: armv7-unknown-linux-gnueabihf
           # Audio backend configuration: Linux
-          - runs_on: ubuntu
+          - os: linux
             artifact_type: slim
             audio_backends: alsa_backend
-          - runs_on: ubuntu
+          - os: linux
             artifact_type: default
             audio_backends: alsa_backend,pulseaudio_backend,rodio_backend
-          - runs_on: ubuntu
+          - os: linux
             artifact_type: full
             all_features: true
           # Audio backend configuration: macOS
-          - runs_on: macos
+          - os: macos
             audio_backends: portaudio_backend,rodio_backend
         exclude:
-          - runs_on: macos
+          - os: macos
             artifact_type: 'full'
-          - runs_on: macos
+          - os: macos
             arch: armv7
-          - runs_on: macos
-            arch: aarch64
     steps:
       - name: Checking out sources
         uses: actions/checkout@v4
       - name: Installing needed macOS dependencies
-        if: startsWith(matrix.runs_on, 'macos')
+        if: matrix.os == 'macos'
         run: brew install dbus portaudio
       - name: Installing needed Ubuntu dependencies
         if: startsWith(matrix.runs_on, 'ubuntu') && matrix.target == ''
@@ -72,16 +79,13 @@ jobs:
           sudo apt-get install -y portaudio19-dev
       - name: Determine cargo args
         run: |
-          if [ "${{ matrix.target }}" ]; then
-            target="--target ${{ matrix.target }}"
-          fi
           if [ "${{ matrix.all_features }}" = "true" ]; then
             features="--all-features"
           else
             features="--no-default-features --features ${{ matrix.dbus }},${{ matrix.audio_backends }}"
           fi
-          echo CARGO_ARGS="--locked --release $target $features" | tee -a "$GITHUB_ENV"
-      - name: Build (native)
+          echo CARGO_ARGS="--locked --release $features" | tee -a "$GITHUB_ENV"
+      - name: Build (using cargo)
         if: matrix.target == ''
         run: |
            cargo +${{ matrix.rust }} build $CARGO_ARGS
@@ -97,7 +101,7 @@ jobs:
       - name: Uploading artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: spotifyd-${{ matrix.runs_on == 'ubuntu' && 'linux' || 'macos' }}-${{ matrix.arch }}-${{ matrix.artifact_type }}
+          name: spotifyd-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.artifact_type }}
           path: target/${{ matrix.target }}/release/spotifyd
   release: # only runs when a version tag is pushed
     if: startsWith(github.ref, 'refs/tags/v')
