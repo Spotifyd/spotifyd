@@ -4,9 +4,8 @@
 
 - [Installation](./installation/README.md)
   - [Running as a service](./installation/service.md)
-  - [Installing on RaspberryPi OS 64-bit](./installation/raspberrypi64.md)
   - [Building from source](./installation/source.md)
-  - [Cross-Compile using Docker](./installation/cross-compile-using-docker.md)
+  - [Cross-Compilation](./installation/cross-compilation.md)
 - [Configuration](./configuration/README.md)
   - [Authentication](./configuration/auth.md)
   - [Audio](./configuration/audio.md)
