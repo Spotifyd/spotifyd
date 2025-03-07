@@ -1,7 +1,7 @@
 # Installation
 
 Getting `spotifyd` on your system should be as easy as downloading a binary in most cases.
-If you'd like to learn how to compile `spotifyd` yourself, head over to [building from source](./source.md). And if you're running a 64-bit RaspbianOS system, have a look [here](./raspbian64.md).
+If you'd like to learn how to compile `spotifyd` yourself, head over to [building from source](./source.md).
 
 ## Linux
 
@@ -36,7 +36,7 @@ and the platform architecture that they were built for. You can find the latest 
 **Feature Sets:**
 
 - `full`: **all audio backends** and **MPRIS** support
-- `default`: **one audio backend** (depending on your platform: PulseAudio, PortAudio, ALSA) and **MPRIS** support
+- `default`: **some audio backends** (depending on your platform: PulseAudio, PortAudio, ALSA) and **MPRIS** support
 - `slim`: **one audio backend** (depending on your platform) and **no MPRIS** support (good for headless systems)
 
 If you're unsure which version to choose, just go for `default` on desktop systems and `slim` on headless systems.
@@ -45,10 +45,10 @@ If you're unsure which version to choose, just go for `default` on desktop syste
 
 If you're on Linux, check your platform architecture with `uname -m`:
 
-- `x86_64`: Download one of the `spotifyd-linux-{full,default,slim}.tar.gz` packages.
-- `armhf`, `armv7`: Download one of the `spotifyd-linux-armhf-{full,default,slim}.tar.gz` packages.
-- `armv6`: Download the `spotifyd-linux-armv6-slim.tar.gz` package.
-- `aarch64`: Head over to the [RaspberryPi OS 64-bit installation guide](./raspberrypi64.md).
+- `x86_64`: Download one of the `spotifyd-linux-x86_64-{full,default,slim}.tar.gz` packages.
+- `armhf`, `armv7`: Download one of the `spotifyd-linux-armv7-{full,default,slim}.tar.gz` packages.
+- `aarch64`: Download one of the `spotifyd-linux-aarch64-{full,default,slim}.tar.gz`
+- `armv6`: Unfortunately, we no longer support this architecture. If you still need this to work, please open an issue or join the [community matrix channel](https://matrix.to/#/#spotifyd:matrix.org) and we'll try to find a solution.
 
 If you're on macOS, download one of the `spotifyd-macos-{full,default,slim}.tar.gz` packages.
 

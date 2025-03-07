@@ -6,18 +6,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+- username and password authentaction have been removed and are replaced by OAuth ([#1321])
+  Look at the [docs](https://docs.spotifyd.rs) for setup instructions.
+
 ### Added
 - retry enabling discovery several times before exiting ([#1228])
+- development artifacts are now available ([#1332])
+- prebuilt binaries are available for `aarch64` (both Linux and macOS) ([#1332])
+- Windows and Android are now supported ([#1219], [#1314])
+- expose pipe and subprocess backends ([#1284])
+- new device type options are available ([#1316])
+- OAuth login is now supported ([#1321])
+- a warning is emitted on unsupported configuration values ([#1327])
 
 ### Changed
+- the docs have been overhauled to reflect the current state of the project and simplify onboarding ([#1327])
+- `librespot` dependency has been updated to 0.6 ([#1317])
 - Credential caching has been re-enabled. ([#1214])
 
 ### Fixed
 - alsa mixer: volume calculation has been fixed ([#1229])
 
+### Removed
+- `armv6` binaries are no longer available by default ([#1332])
+  If you still need them, please join our matrix channel (https://matrix.to/#/#spotifyd:matrix.org) and tell us!
+
 [#1214]: https://github.com/Spotifyd/spotifyd/pull/1214
 [#1229]: https://github.com/Spotifyd/spotifyd/pull/1229
 [#1228]: https://github.com/Spotifyd/spotifyd/pull/1228
+[#1284]: https://github.com/Spotifyd/spotifyd/pull/1284
+[#1219]: https://github.com/Spotifyd/spotifyd/pull/1219
+[#1314]: https://github.com/Spotifyd/spotifyd/pull/1314
+[#1316]: https://github.com/Spotifyd/spotifyd/pull/1316
+[#1317]: https://github.com/Spotifyd/spotifyd/pull/1317
+[#1321]: https://github.com/Spotifyd/spotifyd/pull/1321
+[#1327]: https://github.com/Spotifyd/spotifyd/pull/1327
+[#1332]: https://github.com/Spotifyd/spotifyd/pull/1332
 
 ## [0.3.5]
 

@@ -6,6 +6,7 @@ use color_eyre::eyre::{self, Context};
 use config::ExecutionMode;
 #[cfg(unix)]
 use daemonize::Daemonize;
+use fern::colors::ColoredLevelConfig;
 #[cfg(unix)]
 use log::error;
 use log::{info, trace, LevelFilter};
@@ -40,23 +41,32 @@ fn setup_logger(log_target: LogTarget, verbose: u8) -> eyre::Result<()> {
         1 => LevelFilter::Debug,
         2.. => LevelFilter::Trace,
     };
+
     let mut logger = fern::Dispatch::new().level(log_level);
 
-    logger = if verbose > 0 {
-        logger.format(|out, message, record| {
-            out.finish(format_args!(
-                "[{} {}] {}",
-                record.level(),
-                record.target(),
-                message
-            ))
-        })
-    } else {
-        logger.level_for("symphonia_format_ogg::demuxer", LevelFilter::Warn)
-    };
+    if verbose == 0 {
+        logger = logger.level_for("symphonia_format_ogg::demuxer", LevelFilter::Warn);
+    }
 
     let logger = match log_target {
-        LogTarget::Terminal => logger.chain(std::io::stdout()),
+        LogTarget::Terminal => {
+            let colors = ColoredLevelConfig::new();
+            logger
+                .format(move |out, message, record| {
+                    let target = if verbose > 0 {
+                        &format!(" {}", record.target())
+                    } else {
+                        ""
+                    };
+                    out.finish(format_args!(
+                        "[{}{}] {}",
+                        colors.color(record.level()),
+                        target,
+                        message
+                    ))
+                })
+                .chain(std::io::stdout())
+        }
         #[cfg(unix)]
         LogTarget::Syslog => {
             let log_format = syslog::Formatter3164 {

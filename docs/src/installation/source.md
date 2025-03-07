@@ -1,5 +1,7 @@
 # Building from source
 
+The guide below assumes that you're building `spotifyd` on the system that you want to run it on. If you'd instead prefer to cross-compile, head over to [this section](./cross-compilation.md).
+
 You can also compile `spotifyd` yourself, allowing you to tailor it perfectly to your needs or get the latest fixes. `spotifyd` is written in Rust. You can download the toolchain (compiler and package manager) over at [rustup.rs](https://rustup.rs). Follow their instructions to get started.
 
 > __Note:__ Please make sure that you compile the package using the most recent `stable` version of Rust available through `rustup`. Some distro versions are quite outdated and might result in compilation errors.
