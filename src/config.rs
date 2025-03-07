@@ -420,18 +420,40 @@ impl FileConfig {
     }
 }
 
-fn get_missing_feature(path: &serde_ignored::Path<'_>) -> Option<&'static str> {
-    const DISABLED_CONFIGS: &[(&str, &[&str])] = &[
+#[derive(Copy, Clone)]
+enum KnownConfigProblem {
+    MissingFeature(&'static str),
+    UsernamePassword,
+}
+
+fn get_known_config_problem(path: &serde_ignored::Path<'_>) -> Option<KnownConfigProblem> {
+    const DISABLED_CONFIGS: &[(KnownConfigProblem, &[&str])] = &[
         #[cfg(not(feature = "alsa_backend"))]
-        ("alsa_backend", &["control", "mixer"]),
+        (
+            KnownConfigProblem::MissingFeature("alsa_backend"),
+            &["control", "mixer"],
+        ),
         #[cfg(not(feature = "dbus_mpris"))]
-        ("dbus_mpris", &["use_mpris", "dbus_type"]),
+        (
+            KnownConfigProblem::MissingFeature("dbus_mpris"),
+            &["use_mpris", "dbus_type"],
+        ),
+        (
+            KnownConfigProblem::UsernamePassword,
+            &[
+                "username",
+                "password",
+                "username_cmd",
+                "password_cmd",
+                "use_keyring",
+            ],
+        ),
     ];
 
     if let serde_ignored::Path::Map { key, .. } = path {
-        for (feature, params) in DISABLED_CONFIGS {
+        for (problem, params) in DISABLED_CONFIGS {
             if params.contains(&key.as_str()) {
-                return Some(*feature);
+                return Some(*problem);
             }
         }
     }
@@ -459,8 +481,15 @@ impl CliConfig {
 
         let toml_de = toml::Deserializer::new(&content);
         let config_content: FileConfig = serde_ignored::deserialize(toml_de, |path| {
-            if let Some(feature) = get_missing_feature(&path) {
-                warn!("Warning: The config key '{path}' is ignored, because the feature '{feature}' is missing in this build");
+            if let Some(problem) = get_known_config_problem(&path) {
+                match problem {
+                    KnownConfigProblem::MissingFeature(feature) => {
+                        warn!("Warning: The config key '{path}' is ignored, because the feature '{feature}' is missing in this build");
+                    }
+                    KnownConfigProblem::UsernamePassword => {
+                        warn!("Warning: Authentication via Username and Password is no longer supported by Spotify, use ```spotifyd authenticate` instead");
+                    }
+                }
             } else {
                 warn!("Warning: Unknown key '{path}' in config will be ignored");
             }
@@ -795,7 +824,10 @@ mod tests {
 
         let toml_de = toml::Deserializer::new(&uncommented_example_config);
         let config: FileConfig = serde_ignored::deserialize(toml_de, |path| {
-            if get_missing_feature(&path).is_none() {
+            if !matches!(
+                get_known_config_problem(&path),
+                Some(KnownConfigProblem::MissingFeature(_))
+            ) {
                 panic!("Unknown configuration key in example config: {}", path);
             }
         })
