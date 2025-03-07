@@ -50,7 +50,7 @@ jobs:
             audio_backends: alsa_backend,pulseaudio_backend,rodio_backend
           - os: linux
             artifact_type: full
-            all_features: true
+            audio_backends: alsa_backend,pulseaudio_backend,rodio_backend,rodiojack_backend
           # Audio backend configuration: macOS
           - os: macos
             audio_backends: portaudio_backend,rodio_backend
@@ -79,11 +79,7 @@ jobs:
           sudo apt-get install -y portaudio19-dev
       - name: Determine cargo args
         run: |
-          if [ "${{ matrix.all_features }}" = "true" ]; then
-            features="--all-features"
-          else
-            features="--no-default-features --features ${{ matrix.dbus }},${{ matrix.audio_backends }}"
-          fi
+          features="--no-default-features --features ${{ matrix.dbus }},${{ matrix.audio_backends }}"
           echo CARGO_ARGS="--locked --release $features" | tee -a "$GITHUB_ENV"
       - name: Build (using cargo)
         if: matrix.target == ''

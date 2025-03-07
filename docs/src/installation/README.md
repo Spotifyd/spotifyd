@@ -36,7 +36,7 @@ and the platform architecture that they were built for. You can find the latest 
 **Feature Sets:**
 
 - `full`: **all audio backends** and **MPRIS** support
-- `default`: **one audio backend** (depending on your platform: PulseAudio, PortAudio, ALSA) and **MPRIS** support
+- `default`: **some audio backends** (depending on your platform: PulseAudio, PortAudio, ALSA) and **MPRIS** support
 - `slim`: **one audio backend** (depending on your platform) and **no MPRIS** support (good for headless systems)
 
 If you're unsure which version to choose, just go for `default` on desktop systems and `slim` on headless systems.
