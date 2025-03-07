@@ -422,6 +422,10 @@ impl FileConfig {
 
 #[derive(Copy, Clone)]
 enum KnownConfigProblem {
+    #[cfg_attr(
+        all(feature = "alsa_backend", feature = "dbus_mpris"),
+        expect(dead_code)
+    )]
     MissingFeature(&'static str),
     UsernamePassword,
 }
