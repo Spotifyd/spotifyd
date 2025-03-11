@@ -18,6 +18,8 @@ You can also compile `spotifyd` yourself, allowing you to tailor it perfectly to
 | Arch            | base-devel alsa-lib libogg libpulse dbus             |
 | macOS           | dbus pkg-config portaudio                            |
 
+If you're building on a non-standard target, for example the RaspberryPi, you might need an additional `libclang-dev` and `cmake` package for one of our dependencies. Details can be found on [this page](https://aws.github.io/aws-lc-rs/requirements/linux.html).
+
 ## Installing with cargo
 
 To build and install the latest version of `spotifyd`, you can use the package manager for rust. The base command is the following
