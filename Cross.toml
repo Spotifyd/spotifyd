@@ -2,8 +2,10 @@
 pre-build = [
   "dpkg --add-architecture $CROSS_DEB_ARCH",
   "apt-get update",
+  # bindgen requirements
+  "apt-get install -y libclang-dev cmake",
   # alsa_backend,rodio_backend and base requirements
-  "apt-get install -y libasound2-dev:$CROSS_DEB_ARCH libssl-dev:$CROSS_DEB_ARCH libclang-10-dev clang-10",
+  "apt-get install -y libasound2-dev:$CROSS_DEB_ARCH libssl-dev:$CROSS_DEB_ARCH",
   # dbus_mpris
   "apt-get install -y libdbus-1-dev:$CROSS_DEB_ARCH",
   # pulseaudio_backend
