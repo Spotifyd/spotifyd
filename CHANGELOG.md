@@ -8,8 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - revert default features to `alsa_backend` ([#1337])
+- do not require `bindgen` dependencies on supported systems ([#1340])
 
 [#1337]: https://github.com/Spotifyd/spotifyd/pull/1337
+[#1340]: https://github.com/Spotifyd/spotifyd/pull/1340
 
 ## [0.4.0]
 
