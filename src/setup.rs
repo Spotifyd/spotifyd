@@ -3,6 +3,7 @@ use crate::alsa_mixer;
 use crate::{
     config,
     main_loop::{self, CredentialsProvider},
+    utils::Backoff,
 };
 use color_eyre::{eyre::eyre, Section};
 use futures::StreamExt as _;
@@ -11,7 +12,7 @@ use librespot_playback::{
     mixer::{self, Mixer, MixerConfig},
 };
 use log::{debug, error, info};
-use std::{sync::Arc, thread, time::Duration};
+use std::{sync::Arc, thread};
 
 pub(crate) fn initial_state(
     config: config::SpotifydConfig,
@@ -75,9 +76,7 @@ pub(crate) fn initial_state(
     let discovery = if config.discovery {
         info!("Starting zeroconf server to advertise on local network.");
         debug!("Using device id '{}'", session_config.device_id);
-        const RETRY_MAX: u8 = 4;
-        let mut retry_counter = 0;
-        let mut backoff = Duration::from_secs(5);
+        let mut retry_backoff = Backoff::default();
         loop {
             match librespot_discovery::Discovery::builder(
                 session_config.device_id.clone(),
@@ -91,15 +90,17 @@ pub(crate) fn initial_state(
                 Ok(discovery_stream) => break Some(discovery_stream),
                 Err(err) => {
                     error!("failed to enable discovery: {err}");
-                    if retry_counter >= RETRY_MAX {
+                    let Ok(backoff) = retry_backoff.next_backoff() else {
                         error!("maximum amount of retries exceeded");
                         break None;
-                    }
+                    };
                     info!("retrying discovery in {} seconds", backoff.as_secs());
                     thread::sleep(backoff);
-                    retry_counter += 1;
-                    backoff *= 2;
-                    info!("trying to enable discovery (retry {retry_counter}/{RETRY_MAX})");
+                    info!(
+                        "trying to enable discovery (retry {}/{})",
+                        retry_backoff.retries(),
+                        retry_backoff.max_retries()
+                    );
                 }
             }
         }

@@ -7,8 +7,6 @@ use config::ExecutionMode;
 #[cfg(unix)]
 use daemonize::Daemonize;
 use fern::colors::ColoredLevelConfig;
-#[cfg(unix)]
-use log::error;
 use log::{info, trace, LevelFilter};
 use oauth::run_oauth;
 #[cfg(target_os = "openbsd")]
@@ -172,7 +170,7 @@ fn run_daemon(mut cli_config: CliConfig) -> eyre::Result<()> {
             }
             match daemonize.start() {
                 Ok(_) => info!("Detached from shell, now running in background."),
-                Err(e) => error!("Something went wrong while daemonizing: {}", e),
+                Err(e) => return Err(e).wrap_err("something went wrong while daemonizing"),
             };
         }
         #[cfg(target_os = "windows")]
@@ -228,7 +226,6 @@ fn run_daemon(mut cli_config: CliConfig) -> eyre::Result<()> {
     let runtime = Runtime::new().unwrap();
     runtime.block_on(async {
         let initial_state = setup::initial_state(internal_config)?;
-        initial_state.run().await;
-        Ok(())
+        initial_state.run().await
     })
 }

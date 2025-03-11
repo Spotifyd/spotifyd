@@ -1,5 +1,5 @@
 use log::trace;
-use std::env;
+use std::{env, time::Duration};
 
 #[cfg(any(
     target_os = "freebsd",
@@ -80,6 +80,51 @@ pub(crate) fn get_shell() -> Option<String> {
     trace!("Found user shell: {:?}", &shell);
 
     shell
+}
+
+/// Implements basic exponential backoff.
+/// The used base is 2.
+pub(crate) struct Backoff {
+    retry_counter: u8,
+    max_retries: u8,
+    initial_backoff: Duration,
+}
+
+impl Backoff {
+    pub(crate) fn new(max_retries: u8, initial_backoff: Duration) -> Self {
+        Self {
+            retry_counter: 0,
+            max_retries,
+            initial_backoff,
+        }
+    }
+
+    /// Get the next backoff duration.
+    ///
+    /// Increases the retry counter and returns the next required backoff duration,
+    /// if available.
+    pub(crate) fn next_backoff(&mut self) -> Result<Duration, ()> {
+        if self.retry_counter >= self.max_retries {
+            return Err(());
+        }
+        let backoff_duration = self.initial_backoff * 2u32.pow(self.retry_counter as u32);
+        self.retry_counter += 1;
+        Ok(backoff_duration)
+    }
+
+    pub(crate) fn retries(&self) -> u8 {
+        self.retry_counter
+    }
+
+    pub(crate) fn max_retries(&self) -> u8 {
+        self.max_retries
+    }
+}
+
+impl Default for Backoff {
+    fn default() -> Self {
+        Self::new(4, Duration::from_secs(5))
+    }
 }
 
 #[cfg(test)]

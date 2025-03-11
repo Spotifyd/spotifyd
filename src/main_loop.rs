@@ -3,6 +3,8 @@ use crate::config::{DBusType, MprisConfig};
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
 use crate::process::spawn_program_on_event;
+use crate::utils::Backoff;
+use color_eyre::eyre::{self, Context};
 use futures::future::Either;
 #[cfg(not(feature = "dbus_mpris"))]
 use futures::future::Pending;
@@ -24,7 +26,7 @@ use librespot_playback::{
     mixer::Mixer,
     player::Player,
 };
-use log::error;
+use log::{error, info};
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -102,43 +104,63 @@ impl MainLoop {
     async fn get_connection(&mut self) -> Result<ConnectionInfo<impl Future<Output = ()>>, Error> {
         let creds = self.credentials_provider.get_credentials().await;
 
-        let session = Session::new(self.session_config.clone(), self.cache.clone());
-        let player = {
-            let audio_device = self.audio_device.clone();
-            let audio_format = self.audio_format;
-            let backend = self.backend;
-            Player::new(
-                self.player_config.clone(),
-                session.clone(),
-                self.mixer.get_soft_volume(),
-                move || backend(audio_device, audio_format),
-            )
-        };
+        let mut connection_backoff = Backoff::default();
+        loop {
+            let session = Session::new(self.session_config.clone(), self.cache.clone());
+            let player = {
+                let audio_device = self.audio_device.clone();
+                let audio_format = self.audio_format;
+                let backend = self.backend;
+                Player::new(
+                    self.player_config.clone(),
+                    session.clone(),
+                    self.mixer.get_soft_volume(),
+                    move || backend(audio_device, audio_format),
+                )
+            };
 
-        // TODO: expose is_group
-        Spirc::new(
-            ConnectConfig {
-                name: self.device_name.clone(),
-                device_type: self.device_type,
-                is_group: false,
-                initial_volume: self.initial_volume,
-                has_volume_ctrl: self.has_volume_ctrl,
-            },
-            session.clone(),
-            creds,
-            player.clone(),
-            self.mixer.clone(),
-        )
-        .await
-        .map(|(spirc, spirc_task)| ConnectionInfo {
-            spirc,
-            session,
-            player,
-            spirc_task,
-        })
+            // TODO: expose is_group
+            match Spirc::new(
+                ConnectConfig {
+                    name: self.device_name.clone(),
+                    device_type: self.device_type,
+                    is_group: false,
+                    initial_volume: self.initial_volume,
+                    has_volume_ctrl: self.has_volume_ctrl,
+                },
+                session.clone(),
+                creds.clone(),
+                player.clone(),
+                self.mixer.clone(),
+            )
+            .await
+            {
+                Ok((spirc, spirc_task)) => {
+                    break Ok(ConnectionInfo {
+                        spirc,
+                        session,
+                        player,
+                        spirc_task,
+                    })
+                }
+                Err(err) => {
+                    let Ok(backoff) = connection_backoff.next_backoff() else {
+                        break Err(err);
+                    };
+                    error!("connection to spotify failed: {err}");
+                    info!(
+                        "retrying connection in {} seconds (retry {}/{})",
+                        backoff.as_secs(),
+                        connection_backoff.retries(),
+                        connection_backoff.max_retries()
+                    );
+                    tokio::time::sleep(backoff).await;
+                }
+            }
+        }
     }
 
-    pub(crate) async fn run(mut self) {
+    pub(crate) async fn run(mut self) -> eyre::Result<()> {
         tokio::pin! {
             let ctrl_c = tokio::signal::ctrl_c();
             // we don't necessarily have a dbus server
@@ -157,18 +179,15 @@ impl MainLoop {
             None
         };
 
-        'mainloop: loop {
+        let mainloop_result: eyre::Result<()> = 'mainloop: loop {
             let connection = tokio::select!(
                 _ = &mut ctrl_c => {
-                    break 'mainloop;
+                    break 'mainloop Ok(());
                 }
                 connection = self.get_connection() => {
                     match connection {
                         Ok(connection) => connection,
-                        Err(err) => {
-                            error!("failed to connect to spotify: {}", err);
-                            break 'mainloop;
-                        }
+                        Err(err) => break 'mainloop Err(err).wrap_err("failed to connect to spotify"),
                     }
                 }
             );
@@ -184,9 +203,8 @@ impl MainLoop {
                     .as_mut()
                     .set_session(shared_spirc.clone(), connection.session)
                 {
-                    error!("failed to configure dbus server: {err}");
                     let _ = shared_spirc.shutdown();
-                    break 'mainloop;
+                    break 'mainloop Err(err).wrap_err("failed to configure dbus server");
                 }
             }
 
@@ -204,7 +222,7 @@ impl MainLoop {
                     // the program should shut down
                     _ = &mut ctrl_c => {
                         let _ = shared_spirc.shutdown();
-                        break 'mainloop;
+                        break 'mainloop Ok(());
                     }
                     // spirc was shut down by some external factor
                     _ = &mut spirc_task => {
@@ -214,12 +232,9 @@ impl MainLoop {
                     result = &mut dbus_server => {
                         #[cfg(feature = "dbus_mpris")]
                         {
-                            if let Err(err) = result {
-                                error!("DBus terminated unexpectedly: {err}");
-                            }
                             let _ = shared_spirc.shutdown();
                             *dbus_server.as_mut() = Either::Right(future::pending());
-                            break 'mainloop;
+                            break 'mainloop result.wrap_err("DBus terminated unexpectedly");
                         }
                         #[cfg(not(feature = "dbus_mpris"))]
                         result // unused variable
@@ -252,11 +267,11 @@ impl MainLoop {
             #[cfg(feature = "dbus_mpris")]
             if let Either::Left(dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {
                 if let Err(err) = dbus_server.drop_session() {
-                    error!("failed to reconfigure dbus server: {err}");
-                    break 'mainloop;
+                    break 'mainloop Err(err).wrap_err("failed to reconfigure DBus server");
                 }
             }
-        }
+        };
+
         if let CredentialsProvider::Discovery { stream, .. } = self.credentials_provider {
             let _ = stream.into_inner().shutdown().await;
         }
@@ -264,9 +279,15 @@ impl MainLoop {
         if let Either::Left(dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {
             if dbus_server.shutdown() {
                 if let Err(err) = dbus_server.await {
-                    error!("failed to shutdown the dbus server: {err}");
+                    let err = Err(err).wrap_err("failed to shutdown DBus server");
+                    if mainloop_result.is_ok() {
+                        return err;
+                    } else {
+                        error!("additional error while shutting down: {err:?}");
+                    }
                 }
             }
         }
+        mainloop_result
     }
 }
