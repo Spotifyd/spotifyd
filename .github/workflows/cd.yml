@@ -69,10 +69,13 @@ jobs:
         if: startsWith(matrix.runs_on, 'ubuntu') && matrix.target == ''
         run: |
           sudo apt-get update
+          # WORKAROUND: fix aws-lc-sys compiler bug failure
+          sudo apt-get remove -y gcc-9
+          sudo apt-get install -y gcc-10
+          echo "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=gcc-10" >> "$GITHUB_ENV"
+          echo "CC=gcc-10" >> "$GITHUB_ENV"
           # alsa_backend,rodio_backend and base deps
           sudo apt-get install -y libasound2-dev libssl-dev
-          # potentially install bindgen dependencies
-          sudo apt-get install -y libclang-dev cmake
           # dbus_mpris
           sudo apt-get install -y libdbus-1-dev
           # pulseaudio_backend
