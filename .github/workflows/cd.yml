@@ -24,9 +24,9 @@ jobs:
             runs_on: macos-13
           - os: macos
             arch: aarch64
-            runs_on: macos-latest
+            runs_on: macos-14
           - os: linux
-            runs_on: ubuntu-latest
+            runs_on: ubuntu-20.04
           # DBus configuration
           - artifact_type: slim
             dbus: ''
