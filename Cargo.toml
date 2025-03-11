@@ -6,6 +6,7 @@ description = "A Spotify daemon"
 repository = "https://github.com/Spotifyd/spotifyd"
 license = "GPL-3.0-only"
 version = "0.4.0"
+resolver = "2"
 rust-version = "1.82"
 
 [dependencies]
@@ -51,7 +52,7 @@ whoami = "1"
 [target."cfg(target_os = \"openbsd\")".dependencies]
 pledge = "0.4.2"
 
-[target.armv7-unknown-linux-gnueabihf.dependencies]
+[target."cfg(not(any(target_arch = \"aarch64\", target_arch = \"x86_64\")))".dependencies]
 aws-lc-rs = { version = "1.12.5", features = ["bindgen"] }
 
 [dev-dependencies]

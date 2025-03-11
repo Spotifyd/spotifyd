@@ -70,7 +70,9 @@ jobs:
         run: |
           sudo apt-get update
           # alsa_backend,rodio_backend and base deps
-          sudo apt-get install -y libasound2-dev libssl-dev libclang-dev clang
+          sudo apt-get install -y libasound2-dev libssl-dev
+          # potentially install bindgen dependencies
+          sudo apt-get install -y libclang-dev cmake
           # dbus_mpris
           sudo apt-get install -y libdbus-1-dev
           # pulseaudio_backend
