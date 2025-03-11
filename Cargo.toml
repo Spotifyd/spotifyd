@@ -52,7 +52,7 @@ whoami = "1"
 pledge = "0.4.2"
 
 [target.armv7-unknown-linux-gnueabihf.dependencies]
-aws-lc-rs = { version = "*", features = ["bindgen"] }
+aws-lc-rs = { version = "1.12.5", features = ["bindgen"] }
 
 [dev-dependencies]
 env_logger = "0.11"
@@ -60,7 +60,7 @@ env_logger = "0.11"
 [features]
 alsa_backend = ["librespot-playback/alsa-backend", "dep:alsa"]
 dbus_mpris = ["dep:dbus", "dep:dbus-tokio", "dep:dbus-crossroads"]
-default = ["rodio_backend"]
+default = ["alsa_backend"]
 portaudio_backend = ["librespot-playback/portaudio-backend"]
 pulseaudio_backend = ["librespot-playback/pulseaudio-backend"]
 rodio_backend = ["librespot-playback/rodio-backend"]
