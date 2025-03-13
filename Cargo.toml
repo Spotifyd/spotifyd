@@ -53,7 +53,7 @@ whoami = "1"
 pledge = "0.4.2"
 
 [target.'cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))'.dependencies]
-aws-lc-rs = { version = "1.12.5", features = ["bindgen"] }
+aws-lc-rs = { version = "1.12.6", features = ["bindgen"] }
 
 [dev-dependencies]
 env_logger = "0.11"
