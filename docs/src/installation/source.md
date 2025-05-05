@@ -65,6 +65,24 @@ Note, that when building a Debian package, the `--release` is passed to the
 build command already and you do not need to specify it yourself.  See for the
 flags that are set by default in `Cargo.toml`.
 
+## Building an RPM package
+
+You can use the `cargo-generate-rpm` crate in order to build an RPM package from source.
+Install it by:
+
+```console
+cargo install cargo-generate-rpm
+```
+
+Then you can build and install the RPM package with:
+
+```console
+cargo build --release
+strip -s target/release/spotifyd
+cargo generate-rpm
+sudo rpm -Uvh target/generate-rpm/spotifyd-[VERSION].[ARCH].rpm
+```
+
 ## Feature Flags
 
 `spotifyd` is split into a base package plus additional features that can be toggled on or off during compilation. Those can be split into two groups: The audio backend features that are responsible for playing back the music and additional functionality features, which enhance your experience using `spotifyd`.

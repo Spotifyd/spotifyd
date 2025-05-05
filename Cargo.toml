@@ -76,5 +76,12 @@ assets = [
     ["contrib/spotifyd.service", "etc/systemd/user/", "644"],
 ]
 
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/spotifyd", dest = "/usr/bin/spotifyd", mode = "755" },
+    { source = "README.md", dest = "/usr/share/doc/spotifyd/README", mode = "644" },
+    { source = "contrib/spotifyd.service", dest = "/etc/systemd/user/spotifyd.service", mode = "644" },
+]
+
 [profile.release]
 lto = true
