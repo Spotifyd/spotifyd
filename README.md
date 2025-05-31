@@ -14,11 +14,6 @@ Spotifyd streams music just like the official client, but is more lightweight an
 
 __To read about how to install and configure Spotifyd, take a look at our [wiki][wiki]!__
 
-## Common issues
-
-- Spotifyd will not work without Spotify Premium
-- The device name cannot contain spaces
-
 ## Contributing
 
 We always appreciate help during the development of `spotifyd`! If you are new to programming, open source or Rust in general, take a look at issues tagged with [`good first issue`][good-first-issues]. These normally are easy to resolve and don't take much time to implement.
