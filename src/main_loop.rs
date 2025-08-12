@@ -125,7 +125,7 @@ impl MainLoop {
                     name: self.device_name.clone(),
                     device_type: self.device_type,
                     is_group: false,
-                    initial_volume: self.initial_volume.unwrap_or(0),
+                    initial_volume: self.initial_volume.unwrap_or(50),
                     disable_volume: !self.has_volume_ctrl,
                     volume_steps: 64,
                 },
