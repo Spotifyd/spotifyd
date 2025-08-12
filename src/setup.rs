@@ -44,7 +44,7 @@ pub(crate) fn initial_state(
             }
             _ => {
                 info!("Using software volume controller.");
-                Arc::new(mixer::softmixer::SoftMixer::open(MixerConfig::default()))
+                Arc::new(mixer::softmixer::SoftMixer::open(MixerConfig::default())?)
             }
         }
     };

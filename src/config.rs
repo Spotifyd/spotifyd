@@ -69,7 +69,6 @@ pub enum DeviceType {
     UnknownSpotify,
     CarThing,
     Observer,
-    HomeThing,
 }
 
 impl From<DeviceType> for LSDeviceType {
@@ -93,7 +92,6 @@ impl From<DeviceType> for LSDeviceType {
             DeviceType::UnknownSpotify => LSDeviceType::UnknownSpotify,
             DeviceType::CarThing => LSDeviceType::CarThing,
             DeviceType::Observer => LSDeviceType::Observer,
-            DeviceType::HomeThing => LSDeviceType::HomeThing,
         }
     }
 }
