@@ -1898,7 +1898,7 @@ dependencies = [
 [[package]]
 name = "librespot-audio"
 version = "0.6.0-dev"
-source = "git+https://github.com/librespot-org/librespot.git?branch=dev#ba3d501b08345aadf207d09b3a0713853228ba64"
+source = "git+https://github.com/librespot-org/librespot.git?rev=ba3d501#ba3d501b08345aadf207d09b3a0713853228ba64"
 dependencies = [
  "aes",
  "bytes",
@@ -1918,7 +1918,7 @@ dependencies = [
 [[package]]
 name = "librespot-connect"
 version = "0.6.0-dev"
-source = "git+https://github.com/librespot-org/librespot.git?branch=dev#ba3d501b08345aadf207d09b3a0713853228ba64"
+source = "git+https://github.com/librespot-org/librespot.git?rev=ba3d501#ba3d501b08345aadf207d09b3a0713853228ba64"
 dependencies = [
  "futures-util",
  "librespot-core",
@@ -1937,7 +1937,7 @@ dependencies = [
 [[package]]
 name = "librespot-core"
 version = "0.6.0-dev"
-source = "git+https://github.com/librespot-org/librespot.git?branch=dev#ba3d501b08345aadf207d09b3a0713853228ba64"
+source = "git+https://github.com/librespot-org/librespot.git?rev=ba3d501#ba3d501b08345aadf207d09b3a0713853228ba64"
 dependencies = [
  "aes",
  "base64 0.22.1",
@@ -1994,7 +1994,7 @@ dependencies = [
 [[package]]
 name = "librespot-discovery"
 version = "0.6.0-dev"
-source = "git+https://github.com/librespot-org/librespot.git?branch=dev#ba3d501b08345aadf207d09b3a0713853228ba64"
+source = "git+https://github.com/librespot-org/librespot.git?rev=ba3d501#ba3d501b08345aadf207d09b3a0713853228ba64"
 dependencies = [
  "aes",
  "base64 0.22.1",
@@ -2021,7 +2021,7 @@ dependencies = [
 [[package]]
 name = "librespot-metadata"
 version = "0.6.0-dev"
-source = "git+https://github.com/librespot-org/librespot.git?branch=dev#ba3d501b08345aadf207d09b3a0713853228ba64"
+source = "git+https://github.com/librespot-org/librespot.git?rev=ba3d501#ba3d501b08345aadf207d09b3a0713853228ba64"
 dependencies = [
  "async-trait",
  "bytes",
@@ -2038,7 +2038,7 @@ dependencies = [
 [[package]]
 name = "librespot-oauth"
 version = "0.6.0-dev"
-source = "git+https://github.com/librespot-org/librespot.git?branch=dev#ba3d501b08345aadf207d09b3a0713853228ba64"
+source = "git+https://github.com/librespot-org/librespot.git?rev=ba3d501#ba3d501b08345aadf207d09b3a0713853228ba64"
 dependencies = [
  "log",
  "oauth2",
@@ -2050,7 +2050,7 @@ dependencies = [
 [[package]]
 name = "librespot-playback"
 version = "0.6.0-dev"
-source = "git+https://github.com/librespot-org/librespot.git?branch=dev#ba3d501b08345aadf207d09b3a0713853228ba64"
+source = "git+https://github.com/librespot-org/librespot.git?rev=ba3d501#ba3d501b08345aadf207d09b3a0713853228ba64"
 dependencies = [
  "alsa",
  "cpal",
@@ -2077,7 +2077,7 @@ dependencies = [
 [[package]]
 name = "librespot-protocol"
 version = "0.6.0-dev"
-source = "git+https://github.com/librespot-org/librespot.git?branch=dev#ba3d501b08345aadf207d09b3a0713853228ba64"
+source = "git+https://github.com/librespot-org/librespot.git?rev=ba3d501#ba3d501b08345aadf207d09b3a0713853228ba64"
 dependencies = [
  "protobuf",
  "protobuf-codegen",

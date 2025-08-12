@@ -26,14 +26,14 @@ sha-1 = "0.10"
 tokio = {version = "1.26.0", features = ["signal", "rt-multi-thread", "process", "io-std"] }
 tokio-stream = "0.1.7"
 url = "2.2.2"
-librespot-audio = { git = 'https://github.com/librespot-org/librespot.git', branch = 'dev', default-features = false }
-librespot-playback = { git = 'https://github.com/librespot-org/librespot.git', branch = 'dev', default-features = false }
-librespot-core = { git = 'https://github.com/librespot-org/librespot.git', branch = 'dev' }
-librespot-discovery = { git = 'https://github.com/librespot-org/librespot.git', branch = 'dev' }
-librespot-connect = { git = 'https://github.com/librespot-org/librespot.git', branch = 'dev' }
-librespot-metadata = { git = 'https://github.com/librespot-org/librespot.git', branch = 'dev' }
-librespot-protocol = { git = 'https://github.com/librespot-org/librespot.git', branch = 'dev' }
-librespot-oauth = { git = 'https://github.com/librespot-org/librespot.git', branch = 'dev' }
+librespot-audio = { git = 'https://github.com/librespot-org/librespot.git', rev = 'ba3d501', default-features = false }
+librespot-playback = { git = 'https://github.com/librespot-org/librespot.git', rev = 'ba3d501', default-features = false }
+librespot-core = { git = 'https://github.com/librespot-org/librespot.git', rev = 'ba3d501' }
+librespot-discovery = { git = 'https://github.com/librespot-org/librespot.git', rev = 'ba3d501' }
+librespot-connect = { git = 'https://github.com/librespot-org/librespot.git', rev = 'ba3d501' }
+librespot-metadata = { git = 'https://github.com/librespot-org/librespot.git', rev = 'ba3d501' }
+librespot-protocol = { git = 'https://github.com/librespot-org/librespot.git', rev = 'ba3d501' }
+librespot-oauth = { git = 'https://github.com/librespot-org/librespot.git', rev = 'ba3d501' }
 toml = "0.8.19"
 color-eyre = "0.6"
 directories = "6.0.0"
