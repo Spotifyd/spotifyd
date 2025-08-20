@@ -13,12 +13,13 @@ use futures::{
     task::{Context, Poll},
     Future,
 };
-use librespot_connect::spirc::{Spirc, SpircLoadCommand};
-use librespot_core::{spotify_id::SpotifyItemType, Session, SpotifyId};
+use librespot_connect::{
+    LoadContextOptions, LoadRequest, LoadRequestOptions, Options, PlayingTrack, Spirc,
+};
+use librespot_core::{session::Session, spotify_id::SpotifyItemType, SpotifyId};
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
-use librespot_protocol::spirc::TrackRef;
-use log::{debug, error, warn};
+use log::{debug, warn};
 use std::convert::TryFrom;
 use std::{
     collections::HashMap,
@@ -27,12 +28,9 @@ use std::{
 };
 use thiserror::Error;
 use time::format_description::well_known::Iso8601;
-use tokio::{
-    runtime::Handle,
-    sync::{
-        mpsc::{UnboundedReceiver, UnboundedSender},
-        Mutex,
-    },
+use tokio::sync::{
+    mpsc::{UnboundedReceiver, UnboundedSender},
+    Mutex,
 };
 
 type DbusMap = HashMap<String, Variant<Box<dyn RefArg>>>;
@@ -269,12 +267,16 @@ impl CurrentStateInner {
                 self.update_position(Duration::milliseconds(position_ms as i64));
                 seeked = true;
             }
+            PlayerEvent::PositionChanged { position_ms, .. } => {
+                // Update internal position; no Seeked signal for periodic updates
+                self.update_position(Duration::milliseconds(position_ms as i64));
+            }
             PlayerEvent::ShuffleChanged { shuffle } => {
                 self.shuffle = shuffle;
                 insert_attr(&mut changed, "Shuffle", self.shuffle);
             }
-            PlayerEvent::RepeatChanged { repeat } => {
-                self.repeat = repeat.into();
+            PlayerEvent::RepeatChanged { context, .. } => {
+                self.repeat = context.into();
                 insert_attr(
                     &mut changed,
                     "LoopStatus",
@@ -472,18 +474,20 @@ async fn create_dbus_server(
                 let event = event.expect("event channel was unexpectedly closed");
 
                 if let PlayerEvent::SessionConnected { connection_id, .. } = event {
-                    let mut cr = crossroads.lock().await;
-                    let seeked_fn = register_player_interface(
-                        &mut cr,
-                        spirc.clone().unwrap(),
-                        session.clone().unwrap(),
-                        current_state.clone(),
-                        quit_tx.clone(),
-                    );
                     if cur_conn.is_none() {
+                        let mut cr = crossroads.lock().await;
+                        let seeked_fn = register_player_interface(
+                            &mut cr,
+                            spirc.clone().unwrap(),
+                            session.clone().unwrap(),
+                            current_state.clone(),
+                            quit_tx.clone(),
+                        );
                         conn.request_name(&mpris_name, true, true, true).await?;
+                        cur_conn = Some(ConnectionData { conn_id: connection_id, seeked_fn });
+                    } else if let Some(cur) = cur_conn.as_mut() {
+                        cur.conn_id = connection_id;
                     }
-                    cur_conn = Some(ConnectionData { conn_id: connection_id, seeked_fn });
                 } else if let PlayerEvent::SessionDisconnected { connection_id, .. } = event {
                     // if this message isn't outdated yet, we vanish from the bus
                     if cur_conn.as_ref().is_some_and(|d| d.conn_id == connection_id) {
@@ -537,6 +541,18 @@ async fn create_dbus_server(
                     ControlMessage::SetSession(new_spirc, new_session) => {
                         let mut cr = crossroads.lock().await;
                         register_controls_interface(&mut cr, new_spirc.clone());
+                        // If MPRIS is not yet registered, register it now so tools like playerctl can discover us
+                        if cur_conn.is_none() {
+                            let seeked_fn = register_player_interface(
+                                &mut cr,
+                                new_spirc.clone(),
+                                new_session.clone(),
+                                current_state.clone(),
+                                quit_tx.clone(),
+                            );
+                            conn.request_name(&mpris_name, true, true, true).await?;
+                            cur_conn = Some(ConnectionData { conn_id: String::new(), seeked_fn });
+                        }
                         spirc = Some(new_spirc);
                         session = Some(new_session);
                     }
@@ -547,6 +563,7 @@ async fn create_dbus_server(
                         cr.remove::<()>(&CONTROLS_PATH.into());
                         spirc = None;
                         session = None;
+                        cur_conn = None;
                     }
                 }
             }
@@ -562,7 +579,7 @@ type SeekedSignal = Box<dyn Fn(&dbus::Path, &(i64,)) -> dbus::Message + Send + S
 fn register_player_interface(
     cr: &mut Crossroads,
     spirc: Arc<Spirc>,
-    session: Session,
+    _session: Session,
     current_state: Arc<CurrentState>,
     quit_tx: tokio::sync::mpsc::UnboundedSender<()>,
 ) -> SeekedSignal {
@@ -640,7 +657,10 @@ fn register_player_interface(
         });
         let local_spirc = spirc.clone();
         b.method("Stop", (), (), move |_, _, (): ()| {
-            local_spirc.disconnect().map_err(|e| MethodErr::failed(&e))
+            // Pause playback when disconnecting from Spotify Connect
+            local_spirc
+                .disconnect(true)
+                .map_err(|e| MethodErr::failed(&e))
         });
 
         let local_spirc = spirc.clone();
@@ -708,75 +728,36 @@ fn register_player_interface(
                 shuffle, repeat, ..
             } = *local_state.read()?;
 
-            fn id_to_trackref(id: &SpotifyId) -> TrackRef {
-                let mut trackref = TrackRef::new();
-                if let Ok(uri) = id.to_uri() {
-                    trackref.set_uri(uri);
-                } else {
-                    trackref.set_gid(id.to_raw().to_vec());
+            // Build LoadRequestOptions based on current state
+            let mut request_options = LoadRequestOptions::default();
+            request_options.start_playing = true;
+            request_options.seek_to = 0;
+            request_options.context_options = Some(LoadContextOptions::Options(Options {
+                shuffle,
+                repeat: bool::from(repeat),
+                repeat_track: false,
+            }));
+
+            // Choose whether to start a context or play specific tracks
+            let request = match id.item_type {
+                SpotifyItemType::Album
+                | SpotifyItemType::Artist
+                | SpotifyItemType::Playlist
+                | SpotifyItemType::Show => {
+                    // Start the given context and play from the beginning
+                    request_options.playing_track = Some(PlayingTrack::Index(0));
+                    LoadRequest::from_context_uri(uri, request_options)
                 }
-                trackref
-            }
+                SpotifyItemType::Track | SpotifyItemType::Episode => {
+                    // Play the single item directly
+                    LoadRequest::from_tracks(vec![uri], request_options)
+                }
+                SpotifyItemType::Local | SpotifyItemType::Unknown => {
+                    return Err(dbus::MethodErr::failed("this type of uri is not supported"));
+                }
+            };
 
-            let session = session.clone();
-
-            let (playing_track_index, context_uri, tracks) = Handle::current()
-                .block_on(async move {
-                    use librespot_metadata::*;
-                    Ok::<_, librespot_core::Error>(match id.item_type {
-                        SpotifyItemType::Album => {
-                            let album = Album::get(&session, &id).await?;
-                            (0, uri, album.tracks().map(id_to_trackref).collect())
-                        }
-                        SpotifyItemType::Artist => {
-                            let artist = Artist::get(&session, &id).await?;
-                            (
-                                0,
-                                uri,
-                                artist
-                                    .top_tracks
-                                    .for_country(&session.country())
-                                    .iter()
-                                    .map(id_to_trackref)
-                                    .collect(),
-                            )
-                        }
-                        SpotifyItemType::Playlist => {
-                            let playlist = Playlist::get(&session, &id).await?;
-                            (0, uri, playlist.tracks().map(id_to_trackref).collect())
-                        }
-                        SpotifyItemType::Track => {
-                            let track = Track::get(&session, &id).await?;
-                            (
-                                track.number as u32,
-                                track.album.id.to_uri()?,
-                                vec![id_to_trackref(&track.id)],
-                            )
-                        }
-                        SpotifyItemType::Episode => (0, uri, vec![id_to_trackref(&id)]),
-                        SpotifyItemType::Show => {
-                            let show = Show::get(&session, &id).await?;
-                            (0, uri, show.episodes.iter().map(id_to_trackref).collect())
-                        }
-                        SpotifyItemType::Local | SpotifyItemType::Unknown => {
-                            return Err(librespot_core::Error::unimplemented(
-                                "this type of uri is not supported",
-                            ));
-                        }
-                    })
-                })
-                .map_err(|e| MethodErr::failed(&e))?;
-
-            local_spirc
-                .load(SpircLoadCommand {
-                    context_uri,
-                    start_playing: true,
-                    shuffle,
-                    repeat: repeat.into(),
-                    playing_track_index,
-                    tracks,
-                })
-                .map_err(|e| MethodErr::failed(&e))
+            local_spirc.load(request).map_err(|e| MethodErr::failed(&e))
         });
 
         let local_state = current_state.clone();
@@ -829,9 +810,10 @@ fn register_player_interface(
                 Ok(repeat.to_mpris().to_string())
             })
             .set(move |_, _, value| {
-                let new_repeat = match value.as_str() {
+                let context = match value.as_str() {
                     "None" => false,
                     "Playlist" => true,
+                    // We don't support Track via MPRIS yet
                     mode => {
                         return Err(dbus::MethodErr::failed(&format!(
                             "unsupported repeat mode: {mode}"
@@ -839,7 +821,7 @@ fn register_player_interface(
                     }
                 };
                 local_spirc
-                    .repeat(new_repeat)
+                    .repeat(context)
                     .map_err(|e| MethodErr::failed(&e))?;
                 // TODO: remove, once librespot sends us updates here
                 Ok(Some(value))

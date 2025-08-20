@@ -181,8 +181,13 @@ pub(crate) fn spawn_program_on_event(
         }
         PlayerEvent::RepeatChanged { context, track } => {
             env.insert("PLAYER_EVENT", "repeat_changed".to_string());
-            env.insert("REPEAT", format!("{:?}", context));
-            env.insert("REPEAT_TRACK", format!("{:?}", track));
+            let val = match (context, track) {
+                (_, true) => "track",
+                (true, false) => "all",
+                (false, false) => "none",
+            }
+            .to_string();
+            env.insert("REPEAT", val);
         }
         PlayerEvent::AutoPlayChanged { auto_play } => {
             env.insert("PLAYER_EVENT", "autoplay_changed".to_string());
@@ -192,7 +197,7 @@ pub(crate) fn spawn_program_on_event(
             env.insert("PLAYER_EVENT", "filterexplicit_changed".to_string());
             env.insert("FILTEREXPLICIT", filter.to_string());
         }
-        PlayerEvent::PositionChanged { .. } => todo!(),
+        PlayerEvent::PositionChanged { .. } => unreachable!("this event is not enabled"),
     }
     spawn_program(shell, cmd, env)
 }

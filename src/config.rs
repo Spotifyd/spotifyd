@@ -594,7 +594,7 @@ impl SharedConfigValues {
 }
 
 pub(crate) fn get_config_file() -> Option<PathBuf> {
-    let etc_conf = format!("/etc/{}", CONFIG_FILE_NAME);
+    let etc_conf = format!("/etc/{CONFIG_FILE_NAME}");
     let dirs = directories::ProjectDirs::from("", "", "spotifyd")?;
     let mut path = dirs.config_dir().to_path_buf();
     path.push(CONFIG_FILE_NAME);

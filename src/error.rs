@@ -89,17 +89,13 @@ impl Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ErrorKind::Subprocess { cmd, msg, shell } => match msg {
-                Message::None => write!(f, "Failed to execute {:?} using {:?}.", cmd, shell),
-                Message::Error(ref e) => write!(
-                    f,
-                    "Failed to execute {:?} using {:?}. Error: {}",
-                    cmd, shell, e
-                ),
-                Message::String(ref s) => write!(
-                    f,
-                    "Failed to execute {:?} using {:?}. Error: {}",
-                    cmd, shell, s
-                ),
+                Message::None => write!(f, "Failed to execute {cmd:?} using {shell:?}."),
+                Message::Error(ref e) => {
+                    write!(f, "Failed to execute {cmd:?} using {shell:?}. Error: {e}")
+                }
+                Message::String(ref s) => {
+                    write!(f, "Failed to execute {cmd:?} using {shell:?}. Error: {s}")
+                }
             },
             ErrorKind::NormalisationPregainInvalid => write!(
                 f,
