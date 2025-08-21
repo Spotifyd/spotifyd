@@ -218,6 +218,8 @@ impl MainLoop {
                     // a new session has been started via the discovery stream
                     _ = self.credentials_provider.incoming_connection() => {
                         let _ = shared_spirc.shutdown();
+                        // Ensure the current spirc task finishes cleanly before switching sessions
+                        let _ = (&mut spirc_task).await;
                         break;
                     }
                     // the program should shut down
