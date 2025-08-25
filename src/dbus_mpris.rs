@@ -13,11 +13,10 @@ use futures::{
     task::{Context, Poll},
     Future,
 };
-use librespot_connect::spirc::{Spirc, SpircLoadCommand};
+use librespot_connect::{LoadRequest, LoadRequestOptions, Spirc};
 use librespot_core::{spotify_id::SpotifyItemType, Session, SpotifyId};
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
-use librespot_protocol::spirc::TrackRef;
 use log::{debug, error, warn};
 use std::convert::TryFrom;
 use std::{
@@ -223,77 +222,78 @@ impl CurrentStateInner {
         debug!("handling event {event:?}");
         match event {
             PlayerEvent::VolumeChanged { volume } => {
-                self.volume = volume;
-                insert_attr(&mut changed, "Volume", self.mpris_volume());
-            }
+                        self.volume = volume;
+                        insert_attr(&mut changed, "Volume", self.mpris_volume());
+                    }
             PlayerEvent::Stopped { .. } => {
-                self.status = PlaybackStatus::Stopped;
-                self.audio_item = None;
-                insert_attr(
-                    &mut changed,
-                    "PlaybackStatus",
-                    self.status.to_mpris().to_string(),
-                );
-                insert_attr(&mut changed, "Metadata", self.to_metadata());
-            }
+                        self.status = PlaybackStatus::Stopped;
+                        self.audio_item = None;
+                        insert_attr(
+                            &mut changed,
+                            "PlaybackStatus",
+                            self.status.to_mpris().to_string(),
+                        );
+                        insert_attr(&mut changed, "Metadata", self.to_metadata());
+                    }
             PlayerEvent::Playing { position_ms, .. } => {
-                if self.status != PlaybackStatus::Playing {
-                    self.status = PlaybackStatus::Playing;
-                    insert_attr(
-                        &mut changed,
-                        "PlaybackStatus",
-                        self.status.to_mpris().to_string(),
-                    );
-                }
-                self.update_position(Duration::milliseconds(position_ms as i64));
-                seeked = true;
-            }
+                        if self.status != PlaybackStatus::Playing {
+                            self.status = PlaybackStatus::Playing;
+                            insert_attr(
+                                &mut changed,
+                                "PlaybackStatus",
+                                self.status.to_mpris().to_string(),
+                            );
+                        }
+                        self.update_position(Duration::milliseconds(position_ms as i64));
+                        seeked = true;
+                    }
             PlayerEvent::Paused { position_ms, .. } => {
-                if self.status != PlaybackStatus::Paused {
-                    self.status = PlaybackStatus::Paused;
-                    insert_attr(
-                        &mut changed,
-                        "PlaybackStatus",
-                        self.status.to_mpris().to_string(),
-                    )
-                }
-                self.update_position(Duration::milliseconds(position_ms as i64));
-                seeked = true;
-            }
+                        if self.status != PlaybackStatus::Paused {
+                            self.status = PlaybackStatus::Paused;
+                            insert_attr(
+                                &mut changed,
+                                "PlaybackStatus",
+                                self.status.to_mpris().to_string(),
+                            )
+                        }
+                        self.update_position(Duration::milliseconds(position_ms as i64));
+                        seeked = true;
+                    }
             PlayerEvent::TrackChanged { audio_item } => {
-                self.audio_item = Some(audio_item);
-                insert_attr(&mut changed, "Metadata", self.to_metadata());
-            }
+                        self.audio_item = Some(audio_item);
+                        insert_attr(&mut changed, "Metadata", self.to_metadata());
+                    }
             PlayerEvent::PositionCorrection { position_ms, .. }
-            | PlayerEvent::Seeked { position_ms, .. } => {
-                self.update_position(Duration::milliseconds(position_ms as i64));
-                seeked = true;
-            }
+                    | PlayerEvent::Seeked { position_ms, .. } => {
+                        self.update_position(Duration::milliseconds(position_ms as i64));
+                        seeked = true;
+                    }
             PlayerEvent::ShuffleChanged { shuffle } => {
-                self.shuffle = shuffle;
-                insert_attr(&mut changed, "Shuffle", self.shuffle);
-            }
-            PlayerEvent::RepeatChanged { repeat } => {
-                self.repeat = repeat.into();
-                insert_attr(
-                    &mut changed,
-                    "LoopStatus",
-                    self.repeat.to_mpris().to_string(),
-                )
-            }
+                        self.shuffle = shuffle;
+                        insert_attr(&mut changed, "Shuffle", self.shuffle);
+                    }
+            PlayerEvent::RepeatChanged { context: _, track  } => {
+                        self.repeat = track.into();
+                        insert_attr(
+                            &mut changed,
+                            "LoopStatus",
+                            self.repeat.to_mpris().to_string(),
+                        )
+                    }
             PlayerEvent::PlayRequestIdChanged { play_request_id } => {
-                self.play_request_id = Some(play_request_id);
-            }
+                        self.play_request_id = Some(play_request_id);
+                    }
             PlayerEvent::Preloading { .. }
-            | PlayerEvent::Loading { .. }
-            | PlayerEvent::TimeToPreloadNextTrack { .. }
-            | PlayerEvent::EndOfTrack { .. }
-            | PlayerEvent::Unavailable { .. }
-            | PlayerEvent::AutoPlayChanged { .. }
-            | PlayerEvent::FilterExplicitContentChanged { .. }
-            | PlayerEvent::SessionConnected { .. }
-            | PlayerEvent::SessionDisconnected { .. }
-            | PlayerEvent::SessionClientChanged { .. } => (),
+                    | PlayerEvent::Loading { .. }
+                    | PlayerEvent::TimeToPreloadNextTrack { .. }
+                    | PlayerEvent::EndOfTrack { .. }
+                    | PlayerEvent::Unavailable { .. }
+                    | PlayerEvent::AutoPlayChanged { .. }
+                    | PlayerEvent::FilterExplicitContentChanged { .. }
+                    | PlayerEvent::SessionConnected { .. }
+                    | PlayerEvent::SessionDisconnected { .. }
+                    | PlayerEvent::SessionClientChanged { .. } => (),
+                    | PlayerEvent::PositionChanged { .. } => (),
         }
 
         (changed, seeked)
@@ -632,15 +632,17 @@ fn register_player_interface(
         });
         let local_spirc = spirc.clone();
         b.method("PlayPause", (), (), move |_, _, (): ()| {
+            warn!("PlayPause method called via mpris");
             local_spirc.play_pause().map_err(|e| MethodErr::failed(&e))
         });
         let local_spirc = spirc.clone();
         b.method("Play", (), (), move |_, _, (): ()| {
+            warn!("Play method called via mpris");            
             local_spirc.play().map_err(|e| MethodErr::failed(&e))
         });
         let local_spirc = spirc.clone();
         b.method("Stop", (), (), move |_, _, (): ()| {
-            local_spirc.disconnect().map_err(|e| MethodErr::failed(&e))
+            local_spirc.disconnect(false).map_err(|e| MethodErr::failed(&e))
         });
 
         let local_spirc = spirc.clone();
@@ -705,58 +707,37 @@ fn register_player_interface(
         b.method("OpenUri", ("uri",), (), move |_, _, (uri,): (String,)| {
             let id = SpotifyId::from_uri(&uri).map_err(|e| MethodErr::invalid_arg(&e))?;
             let CurrentStateInner {
-                shuffle, repeat, ..
+                shuffle, ..
             } = *local_state.read()?;
-
-            fn id_to_trackref(id: &SpotifyId) -> TrackRef {
-                let mut trackref = TrackRef::new();
-                if let Ok(uri) = id.to_uri() {
-                    trackref.set_uri(uri);
-                } else {
-                    trackref.set_gid(id.to_raw().to_vec());
-                }
-                trackref
-            }
 
             let session = session.clone();
 
-            let (playing_track_index, context_uri, tracks) = Handle::current()
+            let (playing_track_index, context_uri) = Handle::current()
                 .block_on(async move {
                     use librespot_metadata::*;
                     Ok::<_, librespot_core::Error>(match id.item_type {
                         SpotifyItemType::Album => {
-                            let album = Album::get(&session, &id).await?;
-                            (0, uri, album.tracks().map(id_to_trackref).collect())
+                            (0, uri)
                         }
                         SpotifyItemType::Artist => {
-                            let artist = Artist::get(&session, &id).await?;
                             (
                                 0,
                                 uri,
-                                artist
-                                    .top_tracks
-                                    .for_country(&session.country())
-                                    .iter()
-                                    .map(id_to_trackref)
-                                    .collect(),
                             )
                         }
                         SpotifyItemType::Playlist => {
-                            let playlist = Playlist::get(&session, &id).await?;
-                            (0, uri, playlist.tracks().map(id_to_trackref).collect())
+                            (0, uri)
                         }
                         SpotifyItemType::Track => {
                             let track = Track::get(&session, &id).await?;
                             (
                                 track.number as u32,
                                 track.album.id.to_uri()?,
-                                vec![id_to_trackref(&track.id)],
                             )
                         }
-                        SpotifyItemType::Episode => (0, uri, vec![id_to_trackref(&id)]),
+                        SpotifyItemType::Episode => (0, uri),
                         SpotifyItemType::Show => {
-                            let show = Show::get(&session, &id).await?;
-                            (0, uri, show.episodes.iter().map(id_to_trackref).collect())
+                            (0, uri)
                         }
                         SpotifyItemType::Local | SpotifyItemType::Unknown => {
                             return Err(librespot_core::Error::unimplemented(
@@ -767,15 +748,14 @@ fn register_player_interface(
                 })
                 .map_err(|e| MethodErr::failed(&e))?;
 
-            local_spirc
-                .load(SpircLoadCommand {
-                    context_uri,
-                    start_playing: true,
-                    shuffle,
-                    repeat: repeat.into(),
-                    playing_track_index,
-                    tracks,
-                })
+            warn!("loading context_uri {context_uri} with playing_track_index {playing_track_index}");
+
+                local_spirc.load(LoadRequest::from_context_uri(context_uri, LoadRequestOptions{
+                    start_playing: true, 
+                    seek_to: 0, 
+                    context_options: Some(librespot_connect::LoadContextOptions::Options(librespot_connect::Options { shuffle, repeat: false, repeat_track: false })),
+                    playing_track: Some(librespot_connect::PlayingTrack::Index(playing_track_index))
+                }))
                 .map_err(|e| MethodErr::failed(&e))
         });
 

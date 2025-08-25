@@ -26,14 +26,14 @@ sha-1 = "0.10"
 tokio = {version = "1.26.0", features = ["signal", "rt-multi-thread", "process", "io-std"] }
 tokio-stream = "0.1.7"
 url = "2.2.2"
-librespot-audio = { version = "0.6", default-features = false }
-librespot-playback = { version = "0.6", default-features = false }
-librespot-core = "0.6"
-librespot-discovery = "0.6"
-librespot-connect = "0.6"
-librespot-metadata = "0.6"
-librespot-protocol = "0.6"
-librespot-oauth = "0.6"
+librespot-audio = { version = "0.7", default-features = false }
+librespot-playback = { version = "0.7", default-features = false }
+librespot-core = "0.7"
+librespot-discovery = "0.7"
+librespot-connect = "0.7"
+librespot-metadata = "0.7"
+librespot-protocol = "0.7"
+librespot-oauth = "0.7"
 toml = "0.8.19"
 color-eyre = "0.6"
 directories = "6.0.0"
@@ -61,7 +61,7 @@ env_logger = "0.11"
 [features]
 alsa_backend = ["librespot-playback/alsa-backend", "dep:alsa"]
 dbus_mpris = ["dep:dbus", "dep:dbus-tokio", "dep:dbus-crossroads"]
-default = ["alsa_backend"]
+default = ["alsa_backend", "pulseaudio_backend", "dbus_mpris"]
 portaudio_backend = ["librespot-playback/portaudio-backend"]
 pulseaudio_backend = ["librespot-playback/pulseaudio-backend"]
 rodio_backend = ["librespot-playback/rodio-backend"]

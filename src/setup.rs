@@ -44,7 +44,8 @@ pub(crate) fn initial_state(
             }
             _ => {
                 info!("Using software volume controller.");
-                Arc::new(mixer::softmixer::SoftMixer::open(MixerConfig::default()))
+                let soft_mixer = mixer::softmixer::SoftMixer::open(MixerConfig::default()).expect("softmixer should initialize");
+                Arc::new(soft_mixer)
             }
         }
     };
@@ -52,8 +53,6 @@ pub(crate) fn initial_state(
     let player_config = config.player_config;
     let session_config = config.session_config;
     let backend = config.backend.clone();
-
-    let has_volume_ctrl = !matches!(config.volume_controller, config::VolumeController::None);
 
     let zeroconf_port = config.zeroconf_port.unwrap_or(0);
 
@@ -135,7 +134,7 @@ pub(crate) fn initial_state(
         player_config,
         backend,
         initial_volume: config.initial_volume,
-        has_volume_ctrl,
+        disable_volume: false,
         shell: config.shell,
         device_type: config.device_type,
         device_name: config.device_name,
