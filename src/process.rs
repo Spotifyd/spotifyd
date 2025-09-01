@@ -50,152 +50,153 @@ pub(crate) fn spawn_program_on_event(
     let mut env = HashMap::new();
     match event {
         PlayerEvent::TrackChanged { audio_item } => {
-            env.insert("PLAYER_EVENT", "change".to_string());
-            audio_item_to_env(audio_item, &mut env);
-        }
-        PlayerEvent::Playing {
-            track_id,
-            play_request_id,
-            position_ms,
-        } => {
-            env.insert("PLAYER_EVENT", "start".to_string());
-            env.insert("TRACK_ID", track_id.to_base62().unwrap());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-            env.insert("POSITION_MS", position_ms.to_string());
-        }
-        PlayerEvent::Stopped {
-            track_id,
-            play_request_id,
-        } => {
-            env.insert("PLAYER_EVENT", "stop".to_string());
-            env.insert("TRACK_ID", track_id.to_base62().unwrap());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-        }
-        PlayerEvent::Loading {
-            track_id,
-            play_request_id,
-            position_ms,
-        } => {
-            env.insert("PLAYER_EVENT", "load".to_string());
-            env.insert("TRACK_ID", track_id.to_base62().unwrap());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-            env.insert("POSITION_MS", position_ms.to_string());
-        }
-        PlayerEvent::Paused {
-            track_id,
-            play_request_id,
-            position_ms,
-        } => {
-            env.insert("PLAYER_EVENT", "pause".to_string());
-            env.insert("TRACK_ID", track_id.to_base62().unwrap());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-            env.insert("POSITION_MS", position_ms.to_string());
-        }
-        PlayerEvent::TimeToPreloadNextTrack {
-            track_id,
-            play_request_id,
-        } => {
-            env.insert("PLAYER_EVENT", "preload".to_string());
-            env.insert("TRACK_ID", track_id.to_base62().unwrap());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-        }
-        PlayerEvent::EndOfTrack {
-            track_id,
-            play_request_id,
-        } => {
-            env.insert("PLAYER_EVENT", "endoftrack".to_string());
-            env.insert("TRACK_ID", track_id.to_base62().unwrap());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-        }
-        PlayerEvent::VolumeChanged { volume } => {
-            env.insert("PLAYER_EVENT", "volumeset".to_string());
-            env.insert("VOLUME", volume.to_string());
-        }
-        PlayerEvent::Unavailable {
-            play_request_id,
-            track_id,
-        } => {
-            env.insert("PLAYER_EVENT", "unavailable".to_string());
-            env.insert("TRACK_ID", track_id.to_base62().unwrap());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-        }
-        PlayerEvent::Preloading { track_id } => {
-            env.insert("PLAYER_EVENT", "preloading".to_string());
-            env.insert("TRACK_ID", track_id.to_base62().unwrap());
-        }
-        PlayerEvent::PositionCorrection {
-            play_request_id,
-            track_id,
-            position_ms,
-        } => {
-            env.insert("PLAYER_EVENT", "positioncorrection".to_string());
-            env.insert("TRACK_ID", track_id.to_base62().unwrap());
-            env.insert("POSITION_MS", position_ms.to_string());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-        }
-        PlayerEvent::Seeked {
-            play_request_id,
-            track_id,
-            position_ms,
-        } => {
-            env.insert("PLAYER_EVENT", "seeked".to_string());
-            env.insert("TRACK_ID", track_id.to_base62().unwrap());
-            env.insert("POSITION_MS", position_ms.to_string());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-        }
-        PlayerEvent::PlayRequestIdChanged { play_request_id } => {
-            env.insert("PLAYER_EVENT", "playrequestid_changed".to_string());
-            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
-        }
-        PlayerEvent::SessionConnected {
-            connection_id,
-            user_name,
-        } => {
-            env.insert("PLAYER_EVENT", "sessionconnected".to_string());
-            env.insert("USERNAME", user_name);
-            env.insert("CONNECTION_ID", connection_id);
-        }
-        PlayerEvent::SessionDisconnected {
-            connection_id,
-            user_name,
-        } => {
-            env.insert("PLAYER_EVENT", "sessiondisconnected".to_string());
-            env.insert("USERNAME", user_name);
-            env.insert("CONNECTION_ID", connection_id);
-        }
-        PlayerEvent::SessionClientChanged {
-            client_id,
-            client_name,
-            client_brand_name,
-            client_model_name,
-        } => {
-            env.insert("PLAYER_EVENT", "clientchanged".to_string());
-            env.insert("CLIENT_ID", client_id);
-            env.insert("CLIENT_NAME", client_name);
-            env.insert("CLIENT_BRAND", client_brand_name);
-            env.insert("CLIENT_MODEL", client_model_name);
-        }
-        PlayerEvent::ShuffleChanged { shuffle } => {
-            env.insert("PLAYER_EVENT", "shuffle_changed".to_string());
-            env.insert("SHUFFLE", shuffle.to_string());
-        }
-        PlayerEvent::RepeatChanged { repeat } => {
-            env.insert("PLAYER_EVENT", "repeat_changed".to_string());
-            let val = match repeat {
-                true => "all",
-                false => "none",
+                        env.insert("PLAYER_EVENT", "change".to_string());
+                        audio_item_to_env(audio_item, &mut env);
             }
-            .to_string();
-            env.insert("REPEAT", val);
-        }
+        PlayerEvent::Playing {
+                track_id,
+                play_request_id,
+                position_ms,
+            } => {
+                env.insert("PLAYER_EVENT", "start".to_string());
+                env.insert("TRACK_ID", track_id.to_base62().unwrap());
+                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+                env.insert("POSITION_MS", position_ms.to_string());
+            }
+        PlayerEvent::Stopped {
+                track_id,
+                play_request_id,
+            } => {
+                env.insert("PLAYER_EVENT", "stop".to_string());
+                env.insert("TRACK_ID", track_id.to_base62().unwrap());
+                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+            }
+        PlayerEvent::Loading {
+                track_id,
+                play_request_id,
+                position_ms,
+            } => {
+                env.insert("PLAYER_EVENT", "load".to_string());
+                env.insert("TRACK_ID", track_id.to_base62().unwrap());
+                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+                env.insert("POSITION_MS", position_ms.to_string());
+            }
+        PlayerEvent::Paused {
+                track_id,
+                play_request_id,
+                position_ms,
+            } => {
+                env.insert("PLAYER_EVENT", "pause".to_string());
+                env.insert("TRACK_ID", track_id.to_base62().unwrap());
+                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+                env.insert("POSITION_MS", position_ms.to_string());
+            }
+        PlayerEvent::TimeToPreloadNextTrack {
+                track_id,
+                play_request_id,
+            } => {
+                env.insert("PLAYER_EVENT", "preload".to_string());
+                env.insert("TRACK_ID", track_id.to_base62().unwrap());
+                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+            }
+        PlayerEvent::EndOfTrack {
+                track_id,
+                play_request_id,
+            } => {
+                env.insert("PLAYER_EVENT", "endoftrack".to_string());
+                env.insert("TRACK_ID", track_id.to_base62().unwrap());
+                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+            }
+        PlayerEvent::VolumeChanged { volume } => {
+                env.insert("PLAYER_EVENT", "volumeset".to_string());
+                env.insert("VOLUME", volume.to_string());
+            }
+        PlayerEvent::Unavailable {
+                play_request_id,
+                track_id,
+            } => {
+                env.insert("PLAYER_EVENT", "unavailable".to_string());
+                env.insert("TRACK_ID", track_id.to_base62().unwrap());
+                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+            }
+        PlayerEvent::Preloading { track_id } => {
+                env.insert("PLAYER_EVENT", "preloading".to_string());
+                env.insert("TRACK_ID", track_id.to_base62().unwrap());
+            }
+        PlayerEvent::PositionCorrection {
+                play_request_id,
+                track_id,
+                position_ms,
+            } => {
+                env.insert("PLAYER_EVENT", "positioncorrection".to_string());
+                env.insert("TRACK_ID", track_id.to_base62().unwrap());
+                env.insert("POSITION_MS", position_ms.to_string());
+                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+            }
+        PlayerEvent::Seeked {
+                play_request_id,
+                track_id,
+                position_ms,
+            } => {
+                env.insert("PLAYER_EVENT", "seeked".to_string());
+                env.insert("TRACK_ID", track_id.to_base62().unwrap());
+                env.insert("POSITION_MS", position_ms.to_string());
+                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+            }
+        PlayerEvent::PlayRequestIdChanged { play_request_id } => {
+                env.insert("PLAYER_EVENT", "playrequestid_changed".to_string());
+                env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
+            }
+        PlayerEvent::SessionConnected {
+                connection_id,
+                user_name,
+            } => {
+                env.insert("PLAYER_EVENT", "sessionconnected".to_string());
+                env.insert("USERNAME", user_name);
+                env.insert("CONNECTION_ID", connection_id);
+            }
+        PlayerEvent::SessionDisconnected {
+                connection_id,
+                user_name,
+            } => {
+                env.insert("PLAYER_EVENT", "sessiondisconnected".to_string());
+                env.insert("USERNAME", user_name);
+                env.insert("CONNECTION_ID", connection_id);
+            }
+        PlayerEvent::SessionClientChanged {
+                client_id,
+                client_name,
+                client_brand_name,
+                client_model_name,
+            } => {
+                env.insert("PLAYER_EVENT", "clientchanged".to_string());
+                env.insert("CLIENT_ID", client_id);
+                env.insert("CLIENT_NAME", client_name);
+                env.insert("CLIENT_BRAND", client_brand_name);
+                env.insert("CLIENT_MODEL", client_model_name);
+            }
+        PlayerEvent::ShuffleChanged { shuffle } => {
+                env.insert("PLAYER_EVENT", "shuffle_changed".to_string());
+                env.insert("SHUFFLE", shuffle.to_string());
+            }
+        PlayerEvent::RepeatChanged { context: _, track } => {
+                env.insert("PLAYER_EVENT", "repeat_changed".to_string());
+                let val = match track {
+                    true => "all",
+                    false => "none",
+                }
+                .to_string();
+                env.insert("REPEAT", val);
+            }
         PlayerEvent::AutoPlayChanged { auto_play } => {
-            env.insert("PLAYER_EVENT", "autoplay_changed".to_string());
-            env.insert("AUTOPLAY", auto_play.to_string());
-        }
+                env.insert("PLAYER_EVENT", "autoplay_changed".to_string());
+                env.insert("AUTOPLAY", auto_play.to_string());
+            }
         PlayerEvent::FilterExplicitContentChanged { filter } => {
-            env.insert("PLAYER_EVENT", "filterexplicit_changed".to_string());
-            env.insert("FILTEREXPLICIT", filter.to_string());
-        }
+                env.insert("PLAYER_EVENT", "filterexplicit_changed".to_string());
+                env.insert("FILTEREXPLICIT", filter.to_string());
+            }
+        PlayerEvent::PositionChanged { play_request_id: _, track_id: _, position_ms: _ } => todo!(),
     }
     spawn_program(shell, cmd, env)
 }
