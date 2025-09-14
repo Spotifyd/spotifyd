@@ -94,7 +94,7 @@ jobs:
         if: matrix.target != ''
         uses: houseabsolute/actions-rust-cross@v1
         with:
-          cross-version: 36c0d78 # currently needed (check again if cross version > 0.2.5)
+          cross-version: baf457e # currently needed (check again if cross version > 0.2.5)
           command: build
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
