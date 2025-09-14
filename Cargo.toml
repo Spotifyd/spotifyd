@@ -1,13 +1,13 @@
 [package]
 authors = ["Simon Persson <simon@flaskpost.org>", "Sven Lechner <sven.lechner@rwth-aachen.de>", "eladyn <eladyn@protonmail.com>"]
-edition = "2018"
+edition = "2024"
 name = "spotifyd"
 description = "A Spotify daemon"
 repository = "https://github.com/Spotifyd/spotifyd"
 license = "GPL-3.0-only"
 version = "0.4.1"
 resolver = "2"
-rust-version = "1.82"
+rust-version = "1.85"
 
 [dependencies]
 alsa = { version = "0.9.1", optional = true }

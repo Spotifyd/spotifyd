@@ -7,7 +7,7 @@ use config::ExecutionMode;
 #[cfg(unix)]
 use daemonize::Daemonize;
 use fern::colors::ColoredLevelConfig;
-use log::{info, trace, LevelFilter};
+use log::{LevelFilter, info, trace};
 use oauth::run_oauth;
 #[cfg(target_os = "openbsd")]
 use pledge::pledge;
@@ -176,7 +176,7 @@ fn run_daemon(mut cli_config: CliConfig) -> eyre::Result<()> {
         #[cfg(target_os = "windows")]
         {
             use std::os::windows::process::CommandExt;
-            use std::process::{exit, Command};
+            use std::process::{Command, exit};
 
             let mut args = std::env::args().collect::<Vec<_>>();
             args.remove(0);

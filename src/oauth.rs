@@ -1,13 +1,13 @@
 use color_eyre::{
-    eyre::{self, Context as _},
     Section as _,
+    eyre::{self, Context as _},
 };
 use librespot_core::SessionConfig;
-use librespot_core::{authentication::Credentials, Session};
+use librespot_core::{Session, authentication::Credentials};
 use log::info;
 use tokio::runtime::Runtime;
 
-use crate::{config::CliConfig, setup_logger, LogTarget};
+use crate::{LogTarget, config::CliConfig, setup_logger};
 
 pub(crate) fn run_oauth(mut cli_config: CliConfig, oauth_port: u16) -> eyre::Result<()> {
     setup_logger(LogTarget::Terminal, cli_config.verbose)?;

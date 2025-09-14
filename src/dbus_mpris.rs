@@ -1,20 +1,20 @@
 use crate::config::DBusType;
-use chrono::{prelude::*, Duration};
+use chrono::{Duration, prelude::*};
 use dbus::{
+    MethodErr,
     arg::{RefArg, Variant},
     channel::{MatchingReceiver, Sender},
     message::{MatchRule, SignalArgs},
     nonblock::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged,
-    MethodErr,
 };
 use dbus_crossroads::{Crossroads, IfaceToken};
 use dbus_tokio::connection::{self, IOResourceError};
 use futures::{
-    task::{Context, Poll},
     Future,
+    task::{Context, Poll},
 };
 use librespot_connect::spirc::{Spirc, SpircLoadCommand};
-use librespot_core::{spotify_id::SpotifyItemType, Session, SpotifyId};
+use librespot_core::{Session, SpotifyId, spotify_id::SpotifyItemType};
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
 use librespot_protocol::spirc::TrackRef;
@@ -30,8 +30,8 @@ use time::format_description::well_known::Iso8601;
 use tokio::{
     runtime::Handle,
     sync::{
-        mpsc::{UnboundedReceiver, UnboundedSender},
         Mutex,
+        mpsc::{UnboundedReceiver, UnboundedSender},
     },
 };
 
@@ -386,11 +386,13 @@ impl CurrentState {
         Self(RwLock::new(inner))
     }
 
-    fn read(&self) -> Result<std::sync::RwLockReadGuard<CurrentStateInner>, StatePoisonError> {
+    fn read(&self) -> Result<std::sync::RwLockReadGuard<'_, CurrentStateInner>, StatePoisonError> {
         self.0.read().map_err(|_| StatePoisonError)
     }
 
-    fn write(&self) -> Result<std::sync::RwLockWriteGuard<CurrentStateInner>, StatePoisonError> {
+    fn write(
+        &self,
+    ) -> Result<std::sync::RwLockWriteGuard<'_, CurrentStateInner>, StatePoisonError> {
         self.0.write().map_err(|_| StatePoisonError)
     }
 }
@@ -835,7 +837,7 @@ fn register_player_interface(
                     mode => {
                         return Err(dbus::MethodErr::failed(&format!(
                             "unsupported repeat mode: {mode}"
-                        )))
+                        )));
                     }
                 };
                 local_spirc

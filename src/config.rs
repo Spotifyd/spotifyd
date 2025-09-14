@@ -1,11 +1,11 @@
 use crate::utils;
 use clap::{
-    builder::{IntoResettable, PossibleValuesParser, TypedValueParser, ValueParser},
     Args, Parser, Subcommand, ValueEnum,
+    builder::{IntoResettable, PossibleValuesParser, TypedValueParser, ValueParser},
 };
 use color_eyre::{
-    eyre::{bail, Context},
     Report,
+    eyre::{Context, bail},
 };
 use directories::ProjectDirs;
 use gethostname::gethostname;
@@ -13,12 +13,12 @@ use librespot_core::{cache::Cache, config::DeviceType as LSDeviceType, config::S
 use librespot_playback::{
     audio_backend,
     config::{AudioFormat as LSAudioFormat, Bitrate as LSBitrate, PlayerConfig},
-    dither::{mk_ditherer, DithererBuilder, TriangularDitherer},
+    dither::{DithererBuilder, TriangularDitherer, mk_ditherer},
 };
 use log::{debug, error, info, warn};
 use serde::{
-    de::{self, Error, Unexpected},
     Deserialize, Deserializer,
+    de::{self, Error, Unexpected},
 };
 use sha1::{Digest, Sha1};
 use std::{
@@ -488,10 +488,14 @@ impl CliConfig {
             if let Some(problem) = get_known_config_problem(&path) {
                 match problem {
                     KnownConfigProblem::MissingFeature(feature) => {
-                        warn!("The config key '{path}' is ignored, because the feature '{feature}' is missing in this build");
+                        warn!(
+                            "The config key '{path}' is ignored, because the feature '{feature}' is missing in this build"
+                        );
                     }
                     KnownConfigProblem::UsernamePassword => {
-                        warn!("The config key '{path}' is ignored, because authentication with username and password is no longer supported by Spotify. Please use `spotifyd authenticate` instead");
+                        warn!(
+                            "The config key '{path}' is ignored, because authentication with username and password is no longer supported by Spotify. Please use `spotifyd authenticate` instead"
+                        );
                     }
                 }
             } else {
