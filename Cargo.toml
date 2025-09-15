@@ -68,7 +68,7 @@ rodio_backend = ["librespot-playback/rodio-backend"]
 rodiojack_backend = ["librespot-playback/rodiojack-backend"]
 
 [package.metadata.deb]
-depends = "$auto, systemd, pulseaudio"
+depends = "$auto"
 features = ["pulseaudio_backend", "dbus_mpris"]
 assets = [
     ["target/release/spotifyd", "usr/bin/", "755"],
