@@ -23,7 +23,7 @@ libc = "0.2.82"
 log = "0.4.6"
 serde = { version = "1.0.115", features = ["derive"] }
 sha-1 = "0.10"
-tokio = {version = "1.26.0", features = ["signal", "rt-multi-thread", "process", "io-std"] }
+tokio = {version = "1.44.2", features = ["signal", "rt-multi-thread", "process", "io-std"] }
 tokio-stream = "0.1.7"
 url = "2.2.2"
 librespot-audio = { version = "0.6", default-features = false }
