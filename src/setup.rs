@@ -5,7 +5,7 @@ use crate::{
     main_loop::{self, CredentialsProvider},
     utils::Backoff,
 };
-use color_eyre::{eyre::eyre, Section};
+use color_eyre::{Section, eyre::eyre};
 use futures::StreamExt as _;
 use librespot_playback::{
     audio_backend::{self},
@@ -44,7 +44,8 @@ pub(crate) fn initial_state(
             }
             _ => {
                 info!("Using software volume controller.");
-                let soft_mixer = mixer::softmixer::SoftMixer::open(MixerConfig::default()).expect("softmixer should initialize");
+                let soft_mixer = mixer::softmixer::SoftMixer::open(MixerConfig::default())
+                    .expect("softmixer should initialize");
                 Arc::new(soft_mixer)
             }
         }
@@ -115,9 +116,9 @@ pub(crate) fn initial_state(
         (None, Some(creds)) => CredentialsProvider::CredentialsOnly(creds),
         (None, None) => {
             return Err(
-                eyre!("Discovery unavailable and no credentials found.").with_suggestion(|| {
-                    "Try enabling discovery or logging in first with `spotifyd authenticate`."
-                }),
+                eyre!("Discovery unavailable and no credentials found.").with_suggestion(
+                    || "Try enabling discovery or logging in first with `spotifyd authenticate`.",
+                ),
             );
         }
     };

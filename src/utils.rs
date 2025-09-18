@@ -139,7 +139,10 @@ mod tests {
     fn test_envvar_discovery() {
         init_logger();
 
-        env::set_var("SHELL", "fantasy_shell");
+        // SAFETY: this is part of the single-threaded tests
+        unsafe {
+            env::set_var("SHELL", "fantasy_shell");
+        }
 
         let shell = get_shell().unwrap();
         assert_eq!(shell, "fantasy_shell");

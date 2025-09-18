@@ -9,15 +9,14 @@ use futures::future::Either;
 #[cfg(not(feature = "dbus_mpris"))]
 use futures::future::Pending;
 use futures::{
-    self,
+    self, Future, FutureExt, StreamExt,
     future::{self, Fuse, FusedFuture},
     stream::Peekable,
-    Future, FutureExt, StreamExt,
 };
 use librespot_connect::{ConnectConfig, Spirc};
 use librespot_core::{
-    authentication::Credentials, cache::Cache, config::DeviceType, session::Session, Error,
-    SessionConfig,
+    Error, SessionConfig, authentication::Credentials, cache::Cache, config::DeviceType,
+    session::Session,
 };
 use librespot_discovery::Discovery;
 use librespot_playback::{
@@ -101,7 +100,9 @@ struct ConnectionInfo<SpircTask: Future<Output = ()>> {
 }
 
 impl MainLoop {
-    async fn get_connection(&mut self) -> Result<ConnectionInfo<impl Future<Output = ()>>, Error> {
+    async fn get_connection(
+        &mut self,
+    ) -> Result<ConnectionInfo<impl Future<Output = ()> + use<>>, Error> {
         let creds = self.credentials_provider.get_credentials().await;
 
         let mut connection_backoff = Backoff::default();
@@ -142,7 +143,7 @@ impl MainLoop {
                         session,
                         player,
                         spirc_task,
-                    })
+                    });
                 }
                 Err(err) => {
                     let Ok(backoff) = connection_backoff.next_backoff() else {
