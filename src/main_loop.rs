@@ -205,6 +205,7 @@ impl MainLoop {
                     .set_session(shared_spirc.clone(), connection.session)
                 {
                     let _ = shared_spirc.shutdown();
+                    let _ = (&mut spirc_task).await;
                     break 'mainloop Err(err).wrap_err("failed to configure dbus server");
                 }
             }
@@ -218,11 +219,13 @@ impl MainLoop {
                     // a new session has been started via the discovery stream
                     _ = self.credentials_provider.incoming_connection() => {
                         let _ = shared_spirc.shutdown();
+                        let _ = (&mut spirc_task).await;
                         break;
                     }
                     // the program should shut down
                     _ = &mut ctrl_c => {
                         let _ = shared_spirc.shutdown();
+                        let _ = (&mut spirc_task).await;
                         break 'mainloop Ok(());
                     }
                     // spirc was shut down by some external factor
@@ -234,6 +237,7 @@ impl MainLoop {
                         #[cfg(feature = "dbus_mpris")]
                         {
                             let _ = shared_spirc.shutdown();
+                            let _ = (&mut spirc_task).await;
                             *dbus_server.as_mut() = Either::Right(future::pending());
                             break 'mainloop result.wrap_err("DBus terminated unexpectedly");
                         }
