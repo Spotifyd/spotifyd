@@ -17,7 +17,6 @@ use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, Spi
 use librespot_core::{Session, SpotifyId, spotify_id::SpotifyItemType};
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
-use log::{debug, error, info, warn};
 use std::convert::TryFrom;
 use std::{
     collections::HashMap,

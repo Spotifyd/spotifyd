@@ -61,7 +61,7 @@ env_logger = "0.11"
 [features]
 alsa_backend = ["librespot-playback/alsa-backend", "dep:alsa"]
 dbus_mpris = ["dep:dbus", "dep:dbus-tokio", "dep:dbus-crossroads"]
-default = ["alsa_backend"] 
+default = ["alsa_backend"]
 portaudio_backend = ["librespot-playback/portaudio-backend"]
 pulseaudio_backend = ["librespot-playback/pulseaudio-backend"]
 rodio_backend = ["librespot-playback/rodio-backend"]
