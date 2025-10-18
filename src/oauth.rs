@@ -4,6 +4,7 @@ use color_eyre::{
 };
 use librespot_core::SessionConfig;
 use librespot_core::{Session, authentication::Credentials};
+use librespot_oauth::OAuthClientBuilder;
 use log::info;
 use tokio::runtime::Runtime;
 
@@ -55,12 +56,17 @@ pub(crate) fn run_oauth(mut cli_config: CliConfig, oauth_port: u16) -> eyre::Res
         ..Default::default()
     };
 
-    let token = librespot_oauth::get_access_token(
+    let oauth_client = OAuthClientBuilder::new(
         &session_config.client_id,
         &format!("http://127.0.0.1:{oauth_port}/login"),
         OAUTH_SCOPES.to_vec(),
     )
-    .wrap_err("token retrieval failed")?;
+    .build()
+    .wrap_err("client creation failed")?;
+
+    let token = oauth_client
+        .get_access_token()
+        .wrap_err("token retrival failed")?;
 
     let creds = Credentials::with_access_token(token.access_token);
 

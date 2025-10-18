@@ -2,6 +2,7 @@ use crate::error::Error;
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
 use log::info;
+
 use std::{collections::HashMap, process::Stdio};
 use tokio::{
     io::{self, AsyncWriteExt},
@@ -179,10 +180,13 @@ pub(crate) fn spawn_program_on_event(
             env.insert("PLAYER_EVENT", "shuffle_changed".to_string());
             env.insert("SHUFFLE", shuffle.to_string());
         }
-        PlayerEvent::RepeatChanged { repeat } => {
+        PlayerEvent::RepeatChanged { context, track } => {
             env.insert("PLAYER_EVENT", "repeat_changed".to_string());
-            let val = match repeat {
-                true => "all",
+            let val = match context {
+                true => match track {
+                    true => "track",
+                    false => "all",
+                },
                 false => "none",
             }
             .to_string();
@@ -195,6 +199,16 @@ pub(crate) fn spawn_program_on_event(
         PlayerEvent::FilterExplicitContentChanged { filter } => {
             env.insert("PLAYER_EVENT", "filterexplicit_changed".to_string());
             env.insert("FILTEREXPLICIT", filter.to_string());
+        }
+        PlayerEvent::PositionChanged {
+            play_request_id,
+            position_ms,
+            track_id,
+        } => {
+            env.insert("PLAYER_EVENT", "position_changed".to_string());
+            env.insert("TRACK_ID", track_id.to_base62().unwrap());
+            env.insert("POSITION_MS", position_ms.to_string());
+            env.insert("PLAY_REQUEST_ID", play_request_id.to_string());
         }
     }
     spawn_program(shell, cmd, env)

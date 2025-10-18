@@ -69,7 +69,6 @@ pub enum DeviceType {
     UnknownSpotify,
     CarThing,
     Observer,
-    HomeThing,
 }
 
 impl From<DeviceType> for LSDeviceType {
@@ -93,7 +92,6 @@ impl From<DeviceType> for LSDeviceType {
             DeviceType::UnknownSpotify => LSDeviceType::UnknownSpotify,
             DeviceType::CarThing => LSDeviceType::CarThing,
             DeviceType::Observer => LSDeviceType::Observer,
-            DeviceType::HomeThing => LSDeviceType::HomeThing,
         }
     }
 }
@@ -626,7 +624,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) audio_device: Option<String>,
     pub(crate) audio_format: LSAudioFormat,
     pub(crate) volume_controller: VolumeController,
-    pub(crate) initial_volume: Option<u16>,
+    pub(crate) initial_volume: u16,
     pub(crate) device_name: String,
     pub(crate) player_config: PlayerConfig,
     pub(crate) session_config: SessionConfig,
@@ -675,7 +673,8 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .volume_controller
         .unwrap_or(VolumeController::SoftVolume);
 
-    let initial_volume: Option<u16> = config
+    let default_initial_volume = 90;
+    let initial_volume: u16 = config
         .shared_config
         .initial_volume
         .filter(|val| {
@@ -686,7 +685,8 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
                 false
             }
         })
-        .map(|volume| (volume as i32 * (u16::MAX as i32) / 100) as u16);
+        .map(|volume| (volume as i32 * (u16::MAX as i32) / 100) as u16)
+        .unwrap_or((default_initial_volume * (u16::MAX as i32) / 100) as u16);
 
     let device_name = config
         .shared_config

@@ -44,7 +44,11 @@ pub(crate) fn initial_state(
             }
             _ => {
                 info!("Using software volume controller.");
-                Arc::new(mixer::softmixer::SoftMixer::open(MixerConfig::default()))
+
+                // This won't ever panic: https://docs.rs/librespot-playback/0.7.1/src/librespot_playback/mixer/softmixer.rs.html#18-26
+                let mixer = mixer::softmixer::SoftMixer::open(MixerConfig::default())
+                    .expect("SoftMixer::open never returns an Error");
+                Arc::new(mixer)
             }
         }
     };
