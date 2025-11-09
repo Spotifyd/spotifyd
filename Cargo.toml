@@ -85,3 +85,13 @@ assets = [
 
 [profile.release]
 lto = true
+
+[patch.crates-io]
+librespot-audio = { git = "https://github.com/librespot-org/librespot" }
+librespot-playback = {  git = "https://github.com/librespot-org/librespot" }
+librespot-core = { git = "https://github.com/librespot-org/librespot" }
+librespot-discovery = { git = "https://github.com/librespot-org/librespot" }
+librespot-connect = { git = "https://github.com/librespot-org/librespot" }
+librespot-metadata = { git = "https://github.com/librespot-org/librespot" }
+librespot-protocol = { git = "https://github.com/librespot-org/librespot" }
+librespot-oauth = { git = "https://github.com/librespot-org/librespot" }
