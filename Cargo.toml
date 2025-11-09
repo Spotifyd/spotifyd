@@ -7,7 +7,7 @@ repository = "https://github.com/Spotifyd/spotifyd"
 license = "GPL-3.0-only"
 version = "0.4.1"
 resolver = "2"
-rust-version = "1.85"
+rust-version = "1.88"
 
 [dependencies]
 alsa = { version = "0.9.1", optional = true }
