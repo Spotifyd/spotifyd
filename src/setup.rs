@@ -25,22 +25,35 @@ pub(crate) fn initial_state(
             }
             #[cfg(feature = "alsa_backend")]
             config::VolumeController::Alsa | config::VolumeController::AlsaLinear => {
-                let audio_device = config.audio_device.clone();
-                let control_device = config.alsa_config.control.clone();
-                let mixer = config.alsa_config.mixer.clone();
+                let device = config
+                    .alsa_config
+                    .mixer
+                    .as_deref()
+                    .or(config.audio_device.as_deref())
+                    .unwrap_or("default")
+                    .to_string();
+                let control = config
+                    .alsa_config
+                    .control
+                    .as_deref()
+                    .unwrap_or("Master")
+                    .to_string();
                 info!("Using alsa volume controller.");
-                let linear = matches!(
+                use librespot_playback::config::VolumeCtrl;
+                let volume_ctrl = if matches!(
                     config.volume_controller,
                     config::VolumeController::AlsaLinear
-                );
-                Arc::new(alsa_mixer::AlsaMixer {
-                    device: control_device
-                        .clone()
-                        .or_else(|| audio_device.clone())
-                        .unwrap_or_else(|| "default".to_string()),
-                    mixer: mixer.clone().unwrap_or_else(|| "Master".to_string()),
-                    linear_scaling: linear,
-                })
+                ) {
+                    VolumeCtrl::Linear
+                } else {
+                    VolumeCtrl::Log(0.0) /* this value is ignored */
+                };
+                Arc::new(alsa_mixer::AlsaMixer::open(MixerConfig {
+                    device,
+                    control,
+                    index: 0,
+                    volume_ctrl,
+                })?)
             }
             _ => {
                 info!("Using software volume controller.");
