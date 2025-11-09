@@ -56,7 +56,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        rust: [stable, 1.85]
+        rust: [stable, 1.88]
         os: [macos-latest, ubuntu-latest]
         include:
           - os: macos-latest
