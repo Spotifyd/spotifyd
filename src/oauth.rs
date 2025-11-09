@@ -4,6 +4,7 @@ use color_eyre::{
 };
 use librespot_core::SessionConfig;
 use librespot_core::{Session, authentication::Credentials};
+use librespot_oauth::OAuthClientBuilder;
 use log::info;
 use tokio::runtime::Runtime;
 
@@ -55,7 +56,7 @@ pub(crate) fn run_oauth(mut cli_config: CliConfig, oauth_port: u16) -> eyre::Res
         ..Default::default()
     };
 
-    let client = librespot_oauth::OAuthClientBuilder::new(
+    let oauth_client = OAuthClientBuilder::new(
         &session_config.client_id,
         &format!("http://127.0.0.1:{oauth_port}/login"),
         OAUTH_SCOPES.to_vec(),
@@ -63,10 +64,10 @@ pub(crate) fn run_oauth(mut cli_config: CliConfig, oauth_port: u16) -> eyre::Res
     .with_custom_message(r#"<h3 style="color: darkgreen; align: center;">Authentication successful! You can now return to spotifyd.</h3>"#)
     .open_in_browser()
     .build()
-    .wrap_err("token retrieval failed")?;
+    .wrap_err("client creation failed")?;
 
     Runtime::new().unwrap().block_on(async move {
-        let token = client.get_access_token_async().await?;
+        let token = oauth_client.get_access_token_async().await?;
         let creds = Credentials::with_access_token(token.access_token);
 
         let session = Session::new(session_config, Some(cache));

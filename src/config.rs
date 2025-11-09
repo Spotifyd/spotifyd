@@ -673,6 +673,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         .volume_controller
         .unwrap_or(VolumeController::SoftVolume);
 
+    let default_initial_volume = 90;
     let initial_volume: u16 = config
         .shared_config
         .initial_volume
@@ -685,8 +686,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
             }
         })
         .map(|volume| (volume as i32 * (u16::MAX as i32) / 100) as u16)
-        .unwrap_or((90_i32 * (u16::MAX as i32) / 100) as u16); // default to 90%
-    warn!("initial_volume: {initial_volume}");
+        .unwrap_or((default_initial_volume * (u16::MAX as i32) / 100) as u16);
 
     let device_name = config
         .shared_config

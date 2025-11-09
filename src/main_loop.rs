@@ -125,10 +125,9 @@ impl MainLoop {
                 ConnectConfig {
                     name: self.device_name.clone(),
                     device_type: self.device_type,
-                    is_group: false,
                     initial_volume: self.initial_volume,
                     disable_volume: self.disable_volume,
-                    volume_steps: 64,
+                    ..ConnectConfig::default()
                 },
                 session.clone(),
                 creds.clone(),
