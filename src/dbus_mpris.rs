@@ -13,11 +13,10 @@ use futures::{
     Future,
     task::{Context, Poll},
 };
-use librespot_connect::spirc::{Spirc, SpircLoadCommand};
+use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, Spirc};
 use librespot_core::{Session, SpotifyId, spotify_id::SpotifyItemType};
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
-use librespot_protocol::spirc::TrackRef;
 use log::{debug, error, warn};
 use std::convert::TryFrom;
 use std::{
@@ -140,7 +139,7 @@ impl Position {
 #[derive(Clone, Copy, Debug)]
 enum RepeatState {
     None,
-    // Track,
+    Track,
     All,
 }
 
@@ -148,25 +147,28 @@ impl RepeatState {
     fn to_mpris(self) -> &'static str {
         match self {
             RepeatState::None => "None",
-            // RepeatState::Track => "Track",
+            RepeatState::Track => "Track",
             RepeatState::All => "Playlist",
         }
     }
-}
 
-impl From<RepeatState> for bool {
-    fn from(repeat: RepeatState) -> Self {
-        match repeat {
-            RepeatState::None => false,
-            RepeatState::All => true,
-        }
+    fn repeat_track(self) -> bool {
+        matches!(self, RepeatState::Track)
+    }
+
+    fn repeat_context(self) -> bool {
+        !matches!(self, RepeatState::None)
     }
 }
 
-impl From<bool> for RepeatState {
-    fn from(repeat: bool) -> Self {
-        if repeat {
-            RepeatState::All
+impl From<(bool, bool)> for RepeatState {
+    fn from((context, track): (bool, bool)) -> Self {
+        if context {
+            if track {
+                RepeatState::Track
+            } else {
+                RepeatState::All
+            }
         } else {
             RepeatState::None
         }
@@ -265,6 +267,7 @@ impl CurrentStateInner {
                 insert_attr(&mut changed, "Metadata", self.to_metadata());
             }
             PlayerEvent::PositionCorrection { position_ms, .. }
+            | PlayerEvent::PositionChanged { position_ms, .. }
             | PlayerEvent::Seeked { position_ms, .. } => {
                 self.update_position(Duration::milliseconds(position_ms as i64));
                 seeked = true;
@@ -273,8 +276,8 @@ impl CurrentStateInner {
                 self.shuffle = shuffle;
                 insert_attr(&mut changed, "Shuffle", self.shuffle);
             }
-            PlayerEvent::RepeatChanged { repeat } => {
-                self.repeat = repeat.into();
+            PlayerEvent::RepeatChanged { context, track } => {
+                self.repeat = (context, track).into();
                 insert_attr(
                     &mut changed,
                     "LoopStatus",
@@ -634,15 +637,20 @@ fn register_player_interface(
         });
         let local_spirc = spirc.clone();
         b.method("PlayPause", (), (), move |_, _, (): ()| {
+            warn!("PlayPause method called via mpris");
             local_spirc.play_pause().map_err(|e| MethodErr::failed(&e))
         });
         let local_spirc = spirc.clone();
         b.method("Play", (), (), move |_, _, (): ()| {
+            warn!("Play method called via mpris");
             local_spirc.play().map_err(|e| MethodErr::failed(&e))
         });
         let local_spirc = spirc.clone();
         b.method("Stop", (), (), move |_, _, (): ()| {
-            local_spirc.disconnect().map_err(|e| MethodErr::failed(&e))
+            let pause_playback = false;
+            local_spirc
+                .disconnect(pause_playback)
+                .map_err(|e| MethodErr::failed(&e))
         });
 
         let local_spirc = spirc.clone();
@@ -710,56 +718,21 @@ fn register_player_interface(
                 shuffle, repeat, ..
             } = *local_state.read()?;
 
-            fn id_to_trackref(id: &SpotifyId) -> TrackRef {
-                let mut trackref = TrackRef::new();
-                if let Ok(uri) = id.to_uri() {
-                    trackref.set_uri(uri);
-                } else {
-                    trackref.set_gid(id.to_raw().to_vec());
-                }
-                trackref
-            }
-
             let session = session.clone();
 
-            let (playing_track_index, context_uri, tracks) = Handle::current()
+            let (playing_track_index, context_uri) = Handle::current()
                 .block_on(async move {
                     use librespot_metadata::*;
                     Ok::<_, librespot_core::Error>(match id.item_type {
-                        SpotifyItemType::Album => {
-                            let album = Album::get(&session, &id).await?;
-                            (0, uri, album.tracks().map(id_to_trackref).collect())
-                        }
-                        SpotifyItemType::Artist => {
-                            let artist = Artist::get(&session, &id).await?;
-                            (
-                                0,
-                                uri,
-                                artist
-                                    .top_tracks
-                                    .for_country(&session.country())
-                                    .iter()
-                                    .map(id_to_trackref)
-                                    .collect(),
-                            )
-                        }
-                        SpotifyItemType::Playlist => {
-                            let playlist = Playlist::get(&session, &id).await?;
-                            (0, uri, playlist.tracks().map(id_to_trackref).collect())
-                        }
                         SpotifyItemType::Track => {
                             let track = Track::get(&session, &id).await?;
-                            (
-                                track.number as u32,
-                                track.album.id.to_uri()?,
-                                vec![id_to_trackref(&track.id)],
-                            )
+                            (track.number as u32, track.album.id.to_uri()?)
                         }
-                        SpotifyItemType::Episode => (0, uri, vec![id_to_trackref(&id)]),
-                        SpotifyItemType::Show => {
-                            let show = Show::get(&session, &id).await?;
-                            (0, uri, show.episodes.iter().map(id_to_trackref).collect())
-                        }
+                        SpotifyItemType::Album
+                        | SpotifyItemType::Artist
+                        | SpotifyItemType::Playlist
+                        | SpotifyItemType::Episode
+                        | SpotifyItemType::Show => (0, uri),
                         SpotifyItemType::Local | SpotifyItemType::Unknown => {
                             return Err(librespot_core::Error::unimplemented(
                                 "this type of uri is not supported",
@@ -769,15 +742,28 @@ fn register_player_interface(
                 })
                 .map_err(|e| MethodErr::failed(&e))?;
 
+            warn!(
+                "loading context_uri {context_uri} with playing_track_index {playing_track_index}"
+            );
+
             local_spirc
-                .load(SpircLoadCommand {
+                .load(LoadRequest::from_context_uri(
                     context_uri,
-                    start_playing: true,
-                    shuffle,
-                    repeat: repeat.into(),
-                    playing_track_index,
-                    tracks,
-                })
+                    LoadRequestOptions {
+                        start_playing: true,
+                        seek_to: 0,
+                        context_options: Some(LoadContextOptions::Options(
+                            librespot_connect::Options {
+                                shuffle,
+                                repeat: repeat.repeat_context(),
+                                repeat_track: repeat.repeat_track(),
+                            },
+                        )),
+                        playing_track: Some(librespot_connect::PlayingTrack::Index(
+                            playing_track_index,
+                        )),
+                    },
+                ))
                 .map_err(|e| MethodErr::failed(&e))
         });
 
@@ -789,18 +775,17 @@ fn register_player_interface(
                 Ok(playback_state.to_mpris().to_string())
             });
 
-        // let local_spirc = spirc.clone();
+        let local_spirc = spirc.clone();
         let local_state = current_state.clone();
         b.property("Shuffle")
             .emits_changed_false()
-            .get(move |_, _| Ok(local_state.read()?.shuffle));
-        // TODO: re-enable, once setting shuffle via spirc works
-        // .set(move |_, _, value| {
-        //     local_spirc
-        //         .shuffle(value)
-        //         .map(|_| None)
-        //         .map_err(|err| dbus::MethodErr::failed(&err))
-        // });
+            .get(move |_, _| Ok(local_state.read()?.shuffle))
+            .set(move |_, _, value| {
+                local_spirc
+                    .shuffle(value)
+                    .map(|_| None)
+                    .map_err(|err| dbus::MethodErr::failed(&err))
+            });
 
         b.property("Rate").emits_changed_const().get(|_, _| Ok(1.0));
         b.property("MaximumRate")
@@ -831,20 +816,25 @@ fn register_player_interface(
                 Ok(repeat.to_mpris().to_string())
             })
             .set(move |_, _, value| {
-                let new_repeat = match value.as_str() {
-                    "None" => false,
-                    "Playlist" => true,
+                let repeat = match value.as_str() {
+                    "None" => RepeatState::None,
+                    "Playlist" => RepeatState::All,
+                    "Track" => RepeatState::Track,
                     mode => {
                         return Err(dbus::MethodErr::failed(&format!(
                             "unsupported repeat mode: {mode}"
                         )));
                     }
                 };
+
                 local_spirc
-                    .repeat(new_repeat)
+                    .repeat(repeat.repeat_context())
                     .map_err(|e| MethodErr::failed(&e))?;
-                // TODO: remove, once librespot sends us updates here
-                Ok(Some(value))
+                local_spirc
+                    .repeat_track(repeat.repeat_track())
+                    .map_err(|e| MethodErr::failed(&e))?;
+
+                Ok(None)
             });
 
         let local_state = current_state.clone();

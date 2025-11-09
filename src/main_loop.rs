@@ -13,7 +13,7 @@ use futures::{
     future::{self, Fuse, FusedFuture},
     stream::Peekable,
 };
-use librespot_connect::{config::ConnectConfig, spirc::Spirc};
+use librespot_connect::{ConnectConfig, Spirc};
 use librespot_core::{
     Error, SessionConfig, authentication::Credentials, cache::Cache, config::DeviceType,
     session::Session,
@@ -80,8 +80,8 @@ pub(crate) struct MainLoop {
     pub(crate) backend: fn(Option<String>, AudioFormat) -> Box<dyn Sink>,
     pub(crate) audio_device: Option<String>,
     pub(crate) audio_format: AudioFormat,
-    pub(crate) has_volume_ctrl: bool,
-    pub(crate) initial_volume: Option<u16>,
+    pub(crate) disable_volume: bool,
+    pub(crate) initial_volume: u16,
     pub(crate) shell: String,
     pub(crate) device_type: DeviceType,
     pub(crate) device_name: String,
@@ -125,9 +125,9 @@ impl MainLoop {
                 ConnectConfig {
                     name: self.device_name.clone(),
                     device_type: self.device_type,
-                    is_group: false,
                     initial_volume: self.initial_volume,
-                    has_volume_ctrl: self.has_volume_ctrl,
+                    disable_volume: self.disable_volume,
+                    ..ConnectConfig::default()
                 },
                 session.clone(),
                 creds.clone(),
