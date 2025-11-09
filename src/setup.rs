@@ -53,6 +53,13 @@ pub(crate) fn initial_state(
                     control,
                     index: 0,
                     volume_ctrl,
+                }).with_suggestion(|| {
+                    match alsa_mixer::get_available_controls() {
+                        Err(err) => format!("there are no controls available, maybe check that alsa is available: {err}"),
+                        Ok(controls) => {
+                            format!("maybe try one of the following as 'mixer':{}", controls.filter_map(|hint| hint.name.map(|name| format!("\n- {name}"))).collect::<String>())
+                        }
+                    }
                 })?)
             }
             _ => {

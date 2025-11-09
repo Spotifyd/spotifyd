@@ -1,7 +1,15 @@
-use color_eyre::eyre::{self, Context, eyre};
+use alsa::device_name::HintIter;
+use color_eyre::{
+    Section,
+    eyre::{self, Context, eyre},
+};
 use librespot_playback::mixer::{Mixer, MixerConfig};
 use log::error;
 use std::sync::{Arc, Mutex, MutexGuard};
+
+pub fn get_available_controls() -> alsa::Result<HintIter> {
+    alsa::device_name::HintIter::new_str(None, "ctl")
+}
 
 pub struct AlsaMixer {
     pub mixer: Arc<Mutex<alsa::Mixer>>,
@@ -20,6 +28,25 @@ impl AlsaMixer {
                 self.config.control,
                 self.config.device,
             )
+            .with_suggestion(|| {
+                format!(
+                    "maybe try one of the following for 'control':{}",
+                    lock.iter()
+                        .filter_map(|elem| {
+                            let selem = alsa::mixer::Selem::new(elem)?;
+                            if selem.has_playback_volume() {
+                                selem
+                                    .get_id()
+                                    .get_name()
+                                    .ok()
+                                    .map(|name| format!("\n- {name}"))
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<String>()
+                )
+            })
         })?;
         Ok(selem)
     }
