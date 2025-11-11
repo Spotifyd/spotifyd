@@ -723,21 +723,22 @@ fn register_player_interface(
             } = *local_state.read()?;
 
             let session = session.clone();
+            let uri_for_context = spotify_uri.clone();
 
             let (playing_track_index, context_uri) = Handle::current()
                 .block_on(async move {
                     use librespot_metadata::*;
-                    Ok::<_, librespot_core::Error>(match id.item_type {
-                        SpotifyItemType::Track => {
-                            let track = Track::get(&session, &id).await?;
+                    Ok::<_, librespot_core::Error>(match &uri_for_context {
+                        SpotifyUri::Track { .. } => {
+                            let track = Track::get(&session, &uri_for_context).await?;
                             (track.number as u32, track.album.id.to_uri()?)
                         }
-                        SpotifyItemType::Album
-                        | SpotifyItemType::Artist
-                        | SpotifyItemType::Playlist
-                        | SpotifyItemType::Episode
-                        | SpotifyItemType::Show => (0, uri),
-                        SpotifyItemType::Local | SpotifyItemType::Unknown => {
+                        SpotifyUri::Album { .. }
+                        | SpotifyUri::Artist { .. }
+                        | SpotifyUri::Playlist { .. }
+                        | SpotifyUri::Episode { .. }
+                        | SpotifyUri::Show { .. } => (0, uri),
+                        SpotifyUri::Local { .. } | SpotifyUri::Unknown { .. } => {
                             return Err(librespot_core::Error::unimplemented(
                                 "this type of uri is not supported",
                             ));
