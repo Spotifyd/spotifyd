@@ -686,7 +686,7 @@ fn register_player_interface(
                     .read()?
                     .audio_item
                     .as_ref()
-                    .map(|item| (item.track_id, item.duration_ms))
+                    .map(|item| (item.track_id.clone(), item.duration_ms))
                 else {
                     return Err(dbus::MethodErr::failed(
                         "can set position while nothing is playing",
