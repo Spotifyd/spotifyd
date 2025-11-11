@@ -14,7 +14,7 @@ use futures::{
     task::{Context, Poll},
 };
 use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, Spirc};
-use librespot_core::{Session, SpotifyId, spotify_id::SpotifyItemType};
+use librespot_core::{Session, SpotifyId, SpotifyUri};
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
 use log::{debug, error, warn};
@@ -364,6 +364,9 @@ impl CurrentStateInner {
                         insert_attr(&mut m, "xesam:contentCreated", formatted_publish);
                     }
                 }
+                Local { .. } => {
+                    // Local files don't have additional metadata
+                }
             }
         }
 
@@ -691,7 +694,7 @@ fn register_player_interface(
                 };
                 let duration = Duration::milliseconds(duration.into());
 
-                if !track_id.ends_with(&current_track_id.to_base62().unwrap()) {
+                if !track_id.ends_with(&current_track_id.to_id().unwrap()) {
                     // as per mpris spec: ignore as stale
                     return Ok(());
                 }
@@ -713,7 +716,8 @@ fn register_player_interface(
         let local_spirc = spirc.clone();
         let local_state = current_state.clone();
         b.method("OpenUri", ("uri",), (), move |_, _, (uri,): (String,)| {
-            let id = SpotifyId::from_uri(&uri).map_err(|e| MethodErr::invalid_arg(&e))?;
+            let spotify_uri = SpotifyUri::from_uri(&uri).map_err(|e| MethodErr::invalid_arg(&e))?;
+            let id = SpotifyId::try_from(&spotify_uri).map_err(|e| MethodErr::invalid_arg(&e))?;
             let CurrentStateInner {
                 shuffle, repeat, ..
             } = *local_state.read()?;
