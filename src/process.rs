@@ -29,10 +29,7 @@ fn spawn_program(shell: &str, cmd: &str, env: HashMap<&str, String>) -> Result<C
 }
 
 fn audio_item_to_env(audio_item: Box<AudioItem>, env: &mut HashMap<&str, String>) {
-    env.insert(
-        "TRACK_ID",
-        audio_item.track_id.to_id().unwrap_or_default(),
-    );
+    env.insert("TRACK_ID", audio_item.track_id.to_id().unwrap_or_default());
     env.insert("TRACK_NAME", audio_item.name);
     env.insert("TRACK_DURATION", audio_item.duration_ms.to_string());
     if let Some(cover) = audio_item.covers.into_iter().max_by_key(|c| c.width) {
