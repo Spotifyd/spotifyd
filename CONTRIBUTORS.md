@@ -114,6 +114,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://github.com/MarinPostma"><img src="https://avatars.githubusercontent.com/u/28804882?v=4?s=100" width="100px;" alt=""/><br /><sub><b>marin</b></sub></a><br /><a href="#maintenance-MarinPostma" title="Maintenance">🚧</a></td>
     <td align="center"><a href="https://tommady.com/"><img src="https://avatars.githubusercontent.com/u/11532828?v=4?s=100" width="100px;" alt=""/><br /><sub><b>tommady</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=tommady" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/zv0n"><img src="https://avatars.githubusercontent.com/u/17143863?v=4?s=100" width="100px;" alt=""/><br /><sub><b>zv0n</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=zv0n" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/sckova"><img src="https://avatars.githubusercontent.com/u/48322391?v=4?s=100" width="100px;" alt=""/><br /><sub><b>sckova</b></sub></a><br /><a href="https://github.com/Spotifyd/spotifyd/commits?author=sckova" title="Code">💻</a></td>
   </tr>
 </table>
 
