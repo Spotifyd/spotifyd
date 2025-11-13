@@ -14,7 +14,7 @@ use futures::{
     task::{Context, Poll},
 };
 use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, Spirc};
-use librespot_core::{Session, SpotifyId, spotify_id::SpotifyItemType};
+use librespot_core::{Session, SpotifyId, SpotifyUri};
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
 use log::{debug, error, warn};
@@ -364,6 +364,9 @@ impl CurrentStateInner {
                         insert_attr(&mut m, "xesam:contentCreated", formatted_publish);
                     }
                 }
+                Local { .. } => {
+                    // Local files don't have additional metadata
+                }
             }
         }
 
@@ -683,7 +686,7 @@ fn register_player_interface(
                     .read()?
                     .audio_item
                     .as_ref()
-                    .map(|item| (item.track_id, item.duration_ms))
+                    .map(|item| (item.track_id.clone(), item.duration_ms))
                 else {
                     return Err(dbus::MethodErr::failed(
                         "can set position while nothing is playing",
@@ -691,7 +694,7 @@ fn register_player_interface(
                 };
                 let duration = Duration::milliseconds(duration.into());
 
-                if !track_id.ends_with(&current_track_id.to_base62().unwrap()) {
+                if !track_id.ends_with(&current_track_id.to_id().unwrap()) {
                     // as per mpris spec: ignore as stale
                     return Ok(());
                 }
@@ -713,27 +716,29 @@ fn register_player_interface(
         let local_spirc = spirc.clone();
         let local_state = current_state.clone();
         b.method("OpenUri", ("uri",), (), move |_, _, (uri,): (String,)| {
-            let id = SpotifyId::from_uri(&uri).map_err(|e| MethodErr::invalid_arg(&e))?;
+            let spotify_uri = SpotifyUri::from_uri(&uri).map_err(|e| MethodErr::invalid_arg(&e))?;
+            let id = SpotifyId::try_from(&spotify_uri).map_err(|e| MethodErr::invalid_arg(&e))?;
             let CurrentStateInner {
                 shuffle, repeat, ..
             } = *local_state.read()?;
 
             let session = session.clone();
+            let uri_for_context = spotify_uri.clone();
 
             let (playing_track_index, context_uri) = Handle::current()
                 .block_on(async move {
                     use librespot_metadata::*;
-                    Ok::<_, librespot_core::Error>(match id.item_type {
-                        SpotifyItemType::Track => {
-                            let track = Track::get(&session, &id).await?;
+                    Ok::<_, librespot_core::Error>(match &uri_for_context {
+                        SpotifyUri::Track { .. } => {
+                            let track = Track::get(&session, &uri_for_context).await?;
                             (track.number as u32, track.album.id.to_uri()?)
                         }
-                        SpotifyItemType::Album
-                        | SpotifyItemType::Artist
-                        | SpotifyItemType::Playlist
-                        | SpotifyItemType::Episode
-                        | SpotifyItemType::Show => (0, uri),
-                        SpotifyItemType::Local | SpotifyItemType::Unknown => {
+                        SpotifyUri::Album { .. }
+                        | SpotifyUri::Artist { .. }
+                        | SpotifyUri::Playlist { .. }
+                        | SpotifyUri::Episode { .. }
+                        | SpotifyUri::Show { .. } => (0, uri),
+                        SpotifyUri::Local { .. } | SpotifyUri::Unknown { .. } => {
                             return Err(librespot_core::Error::unimplemented(
                                 "this type of uri is not supported",
                             ));
