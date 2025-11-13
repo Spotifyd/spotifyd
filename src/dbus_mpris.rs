@@ -14,7 +14,7 @@ use futures::{
     task::{Context, Poll},
 };
 use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, Spirc};
-use librespot_core::{Session, SpotifyId, spotify_id::SpotifyItemType};
+use librespot_core::{Session, SpotifyUri};
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
 use log::{debug, error, warn};
@@ -331,6 +331,31 @@ impl CurrentStateInner {
 
             use librespot_metadata::audio::UniqueFields::*;
             match &audio_item.unique_fields {
+                Local {
+                    artists,
+                    album,
+                    album_artists,
+                    number,
+                    disc_number,
+                    path,
+                } => {
+                    if let Some(artists) = artists {
+                        insert_attr(&mut m, "xesam:artist", artists.clone());
+                    }
+                    if let Some(album) = album {
+                        insert_attr(&mut m, "xesam:album", album.clone());
+                    }
+                    if let Some(album_artists) = album_artists {
+                        insert_attr(&mut m, "xesam:albumArtist", album_artists.clone());
+                    }
+                    if let Some(number) = number {
+                        insert_attr(&mut m, "xesam:trackNumber", *number);
+                    }
+                    if let Some(disc_number) = disc_number {
+                        insert_attr(&mut m, "xesam:discNumber", *disc_number);
+                    }
+                    insert_attr(&mut m, "xesam:url", format!("file://{:?}", path));
+                }
                 Track {
                     artists,
                     album,
@@ -683,7 +708,7 @@ fn register_player_interface(
                     .read()?
                     .audio_item
                     .as_ref()
-                    .map(|item| (item.track_id, item.duration_ms))
+                    .map(|item| (item.track_id.clone(), item.duration_ms))
                 else {
                     return Err(dbus::MethodErr::failed(
                         "can set position while nothing is playing",
@@ -691,7 +716,7 @@ fn register_player_interface(
                 };
                 let duration = Duration::milliseconds(duration.into());
 
-                if !track_id.ends_with(&current_track_id.to_base62().unwrap()) {
+                if !track_id.ends_with(&current_track_id.to_id().unwrap()) {
                     // as per mpris spec: ignore as stale
                     return Ok(());
                 }
@@ -713,7 +738,7 @@ fn register_player_interface(
         let local_spirc = spirc.clone();
         let local_state = current_state.clone();
         b.method("OpenUri", ("uri",), (), move |_, _, (uri,): (String,)| {
-            let id = SpotifyId::from_uri(&uri).map_err(|e| MethodErr::invalid_arg(&e))?;
+            let uri = SpotifyUri::from_uri(uri.as_str()).map_err(|e| MethodErr::invalid_arg(&e))?;
             let CurrentStateInner {
                 shuffle, repeat, ..
             } = *local_state.read()?;
@@ -723,17 +748,17 @@ fn register_player_interface(
             let (playing_track_index, context_uri) = Handle::current()
                 .block_on(async move {
                     use librespot_metadata::*;
-                    Ok::<_, librespot_core::Error>(match id.item_type {
-                        SpotifyItemType::Track => {
-                            let track = Track::get(&session, &id).await?;
+                    Ok::<_, librespot_core::Error>(match uri {
+                        SpotifyUri::Track { .. } => {
+                            let track = Track::get(&session, &uri).await?;
                             (track.number as u32, track.album.id.to_uri()?)
                         }
-                        SpotifyItemType::Album
-                        | SpotifyItemType::Artist
-                        | SpotifyItemType::Playlist
-                        | SpotifyItemType::Episode
-                        | SpotifyItemType::Show => (0, uri),
-                        SpotifyItemType::Local | SpotifyItemType::Unknown => {
+                        SpotifyUri::Album { .. }
+                        | SpotifyUri::Artist { .. }
+                        | SpotifyUri::Playlist { .. }
+                        | SpotifyUri::Episode { .. }
+                        | SpotifyUri::Show { .. } => (0, uri.to_uri()?),
+                        SpotifyUri::Local { .. } | SpotifyUri::Unknown { .. } => {
                             return Err(librespot_core::Error::unimplemented(
                                 "this type of uri is not supported",
                             ));
@@ -745,7 +770,6 @@ fn register_player_interface(
             warn!(
                 "loading context_uri {context_uri} with playing_track_index {playing_track_index}"
             );
-
             local_spirc
                 .load(LoadRequest::from_context_uri(
                     context_uri,
