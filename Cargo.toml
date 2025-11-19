@@ -26,14 +26,14 @@ sha-1 = "0.10"
 tokio = {version = "1.44.2", features = ["signal", "rt-multi-thread", "process", "io-std"] }
 tokio-stream = "0.1.7"
 url = "2.2.2"
-librespot-audio = { version = "0.7.1", default-features = false }
-librespot-playback = { version = "0.7.1", default-features = false }
-librespot-core = "0.7.1"
-librespot-discovery = "0.7.1"
-librespot-connect = "0.7.1"
-librespot-metadata = "0.7.1"
-librespot-protocol = "0.7.1"
-librespot-oauth = "0.7.1"
+librespot-audio = { version = "0.8.0", default-features = false }
+librespot-playback = { version = "0.8.0", default-features = false }
+librespot-core = "0.8.0"
+librespot-discovery = "0.8.0"
+librespot-connect = "0.8.0"
+librespot-metadata = "0.8.0"
+librespot-protocol = "0.8.0"
+librespot-oauth = "0.8.0"
 toml = "0.8.19"
 color-eyre = "0.6"
 directories = "6.0.0"
@@ -86,12 +86,13 @@ assets = [
 [profile.release]
 lto = true
 
-[patch.crates-io]
-librespot-audio = { git = "https://github.com/librespot-org/librespot" }
-librespot-playback = {  git = "https://github.com/librespot-org/librespot" }
-librespot-core = { git = "https://github.com/librespot-org/librespot" }
-librespot-discovery = { git = "https://github.com/librespot-org/librespot" }
-librespot-connect = { git = "https://github.com/librespot-org/librespot" }
-librespot-metadata = { git = "https://github.com/librespot-org/librespot" }
-librespot-protocol = { git = "https://github.com/librespot-org/librespot" }
-librespot-oauth = { git = "https://github.com/librespot-org/librespot" }
+##### uncomment to test the newest librespot git version
+# [patch.crates-io]
+# librespot-audio = { git = "https://github.com/librespot-org/librespot" }
+# librespot-playback = {  git = "https://github.com/librespot-org/librespot" }
+# librespot-core = { git = "https://github.com/librespot-org/librespot" }
+# librespot-discovery = { git = "https://github.com/librespot-org/librespot" }
+# librespot-connect = { git = "https://github.com/librespot-org/librespot" }
+# librespot-metadata = { git = "https://github.com/librespot-org/librespot" }
+# librespot-protocol = { git = "https://github.com/librespot-org/librespot" }
+# librespot-oauth = { git = "https://github.com/librespot-org/librespot" }
