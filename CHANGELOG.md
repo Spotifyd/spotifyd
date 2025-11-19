@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2]
+
+### Fixed
+- fix multiple playback issues introduced by Spotify changes ([#1362], [#1374])
+- fix crash on user switch ([#1361])
+
+### Added
+- add suggestions for alsa mixer / control device names
+- improve distribution support for Debian and Fedora ([#1364], [#1372])
+
+[#1361]: https://github.com/Spotifyd/spotifyd/pull/1361
+[#1362]: https://github.com/Spotifyd/spotifyd/pull/1362
+[#1364]: https://github.com/Spotifyd/spotifyd/pull/1364
+[#1372]: https://github.com/Spotifyd/spotifyd/pull/1372
+[#1374]: https://github.com/Spotifyd/spotifyd/pull/1374
+
 ## [0.4.1]
 
 ### Fixed
@@ -169,7 +185,8 @@ Feel free to join and ask your questions!
 
 ## [0.2.24]
 
-[Unreleased]: https://github.com/Spotifyd/spotifyd/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/Spotifyd/spotifyd/compare/v0.4.2...HEAD
+[0.4.1]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.4.2
 [0.4.1]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.4.1
 [0.4.0]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.4.0
 [0.3.5]: https://github.com/Spotifyd/spotifyd/releases/tag/v0.3.5
