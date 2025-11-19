@@ -21,10 +21,10 @@ jobs:
           # Runner configuration
           - os: macos
             arch: x86_64
-            runs_on: macos-13
+            runs_on: macos-15-intel
           - os: macos
             arch: aarch64
-            runs_on: macos-14
+            runs_on: macos-15
           - os: linux
             runs_on: ubuntu-22.04
           # DBus configuration
