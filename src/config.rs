@@ -481,7 +481,7 @@ impl CliConfig {
             }
         };
 
-        let toml_de = toml::Deserializer::new(&content);
+        let toml_de = toml::Deserializer::parse(&content)?;
         let config_content: FileConfig = serde_ignored::deserialize(toml_de, |path| {
             if let Some(problem) = get_known_config_problem(&path) {
                 match problem {
@@ -801,12 +801,13 @@ mod tests {
     fn test_example_config() {
         let example_config = include_str!("../contrib/spotifyd.conf");
 
-        let toml_de = toml::Deserializer::new(example_config);
-
-        let config: FileConfig = serde_ignored::deserialize(toml_de, |path| {
-            panic!("Unknown key in (commented) example config: '{}'", path)
-        })
-        .expect("Commented example config should be valid");
+        let config: FileConfig = toml::Deserializer::parse(example_config)
+            .and_then(|toml_de| {
+                serde_ignored::deserialize(toml_de, |path| {
+                    panic!("Unknown key in (commented) example config: '{}'", path)
+                })
+            })
+            .expect("Commented example config should be valid");
 
         assert_eq!(
             (config.global, config.spotifyd),
@@ -830,16 +831,18 @@ mod tests {
             .collect::<Vec<&str>>()
             .join("\n");
 
-        let toml_de = toml::Deserializer::new(&uncommented_example_config);
-        let config: FileConfig = serde_ignored::deserialize(toml_de, |path| {
-            if !matches!(
-                get_known_config_problem(&path),
-                Some(KnownConfigProblem::MissingFeature(_))
-            ) {
-                panic!("Unknown configuration key in example config: {}", path);
-            }
-        })
-        .expect("Uncommented example config should be valid");
+        let config: FileConfig = toml::Deserializer::parse(&uncommented_example_config)
+            .and_then(|toml_de| {
+                serde_ignored::deserialize(toml_de, |path| {
+                    if !matches!(
+                        get_known_config_problem(&path),
+                        Some(KnownConfigProblem::MissingFeature(_))
+                    ) {
+                        panic!("Unknown configuration key in example config: {}", path);
+                    }
+                })
+            })
+            .expect("Uncommented example config should be valid");
 
         assert!(
             config.spotifyd.is_none(),
