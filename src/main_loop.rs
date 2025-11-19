@@ -199,15 +199,14 @@ impl MainLoop {
             let shared_spirc = Arc::new(connection.spirc);
 
             #[cfg(feature = "dbus_mpris")]
-            if let Either::Left(mut dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {
-                if let Err(err) = dbus_server
+            if let Either::Left(mut dbus_server) = Either::as_pin_mut(dbus_server.as_mut())
+                && let Err(err) = dbus_server
                     .as_mut()
                     .set_session(shared_spirc.clone(), connection.session)
-                {
-                    let _ = shared_spirc.shutdown();
-                    let _ = (&mut spirc_task).await;
-                    break 'mainloop Err(err).wrap_err("failed to configure dbus server");
-                }
+            {
+                let _ = shared_spirc.shutdown();
+                let _ = (&mut spirc_task).await;
+                break 'mainloop Err(err).wrap_err("failed to configure dbus server");
             }
 
             let mut running_event_program = Box::pin(Fuse::terminated());
@@ -270,10 +269,10 @@ impl MainLoop {
                 )
             }
             #[cfg(feature = "dbus_mpris")]
-            if let Either::Left(dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {
-                if let Err(err) = dbus_server.drop_session() {
-                    break 'mainloop Err(err).wrap_err("failed to reconfigure DBus server");
-                }
+            if let Either::Left(dbus_server) = Either::as_pin_mut(dbus_server.as_mut())
+                && let Err(err) = dbus_server.drop_session()
+            {
+                break 'mainloop Err(err).wrap_err("failed to reconfigure DBus server");
             }
         };
 
@@ -281,16 +280,15 @@ impl MainLoop {
             let _ = stream.into_inner().shutdown().await;
         }
         #[cfg(feature = "dbus_mpris")]
-        if let Either::Left(dbus_server) = Either::as_pin_mut(dbus_server.as_mut()) {
-            if dbus_server.shutdown() {
-                if let Err(err) = dbus_server.await {
-                    let err = Err(err).wrap_err("failed to shutdown DBus server");
-                    if mainloop_result.is_ok() {
-                        return err;
-                    } else {
-                        error!("additional error while shutting down: {err:?}");
-                    }
-                }
+        if let Either::Left(dbus_server) = Either::as_pin_mut(dbus_server.as_mut())
+            && dbus_server.shutdown()
+            && let Err(err) = dbus_server.await
+        {
+            let err = Err(err).wrap_err("failed to shutdown DBus server");
+            if mainloop_result.is_ok() {
+                return err;
+            } else {
+                error!("additional error while shutting down: {err:?}");
             }
         }
         mainloop_result
