@@ -17,7 +17,7 @@ use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, Spi
 use librespot_core::{Session, SpotifyUri};
 use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
-use log::{debug, error, warn};
+use log::{debug, warn};
 use std::convert::TryFrom;
 use std::{
     collections::HashMap,
@@ -751,7 +751,10 @@ fn register_player_interface(
                     Ok::<_, librespot_core::Error>(match uri {
                         SpotifyUri::Track { .. } => {
                             let track = Track::get(&session, &uri).await?;
-                            (track.number as u32, track.album.id.to_uri()?)
+                            if track.number == 0 {
+                                warn!("track.number is not expected to be 0- but 1-indexed");
+                            }
+                            ((track.number - 1).max(0) as u32, track.album.id.to_uri()?)
                         }
                         SpotifyUri::Album { .. }
                         | SpotifyUri::Artist { .. }
