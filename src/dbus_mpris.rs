@@ -577,6 +577,7 @@ async fn create_dbus_server(
                         cr.remove::<()>(&CONTROLS_PATH.into());
                         spirc = None;
                         session = None;
+                        cur_conn = None;
                     }
                 }
             }
