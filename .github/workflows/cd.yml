@@ -27,6 +27,9 @@ jobs:
             runs_on: macos-15
           - os: linux
             runs_on: ubuntu-22.04
+          - os: linux
+            arch: aarch64
+            runs_on: ubuntu-22.04-arm
           # DBus configuration
           - artifact_type: slim
             dbus: ''
@@ -35,9 +38,6 @@ jobs:
           - artifact_type: full
             dbus: dbus_mpris
           # Cross Compilation Targets
-          - os: linux
-            arch: aarch64
-            target: aarch64-unknown-linux-gnu
           - os: linux
             arch: armv7
             target: armv7-unknown-linux-gnueabihf
