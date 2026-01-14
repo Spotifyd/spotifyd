@@ -3,6 +3,22 @@
 Getting `spotifyd` on your system should be as easy as downloading a binary in most cases.
 If you'd like to learn how to compile `spotifyd` yourself, head over to [building from source](./source.md).
 
+## Using cargo-binstall (Recommended)
+
+If you have Rust installed, the easiest way to install `spotifyd` is using `cargo-binstall`
+
+```console
+cargo binstall spotifyd
+```
+
+This will automatically download and install the appropriate pre-built binary for your system with all features enabled (`full` variant).
+
+If you don't have `cargo-binstall` installed yet, you can get it with:
+
+```console
+cargo install cargo-binstall
+```
+
 ## Linux
 
 Some linux distributions include `spotifyd` in their official repositories. Have a look at [Repology](https://repology.org/project/spotifyd/versions)
@@ -41,22 +57,39 @@ and the platform architecture that they were built for. You can find the latest 
 
 If you're unsure which version to choose, just go for `default` on desktop systems and `slim` on headless systems.
 
+**Asset Naming Convention:**
+Starting with version 0.4.2, release assets follow Rust's standard target triple naming format:
+
+Format: `spotifyd-{target-triple}-{variant}.tar.gz`
+
+Examples:
+`spotifyd-x86_64-unknown-linux-gnu-full.tar.gz`
+`spotifyd-aarch64-apple-darwin-default.tar.gz`
+`spotifyd-armv7-unknown-linux-gnueabihf-slim.tar.gz`
+
+**Legacy naming:** (deprecated, available only in version 0.4.2 for backwards compatibility)
+`spotifyd-linux-x86_64-full-legacy.tar.gz`
+`spotifyd-macos-aarch64-default-legacy.tar.gz`
+
 **Architecture:**
 
 If you're on Linux, check your platform architecture with `uname -m`:
 
-- `x86_64`: Download one of the `spotifyd-linux-x86_64-{full,default,slim}.tar.gz` packages.
-- `armhf`, `armv7`: Download one of the `spotifyd-linux-armv7-{full,default,slim}.tar.gz` packages.
-- `aarch64`: Download one of the `spotifyd-linux-aarch64-{full,default,slim}.tar.gz`
+- `x86_64`: Download one of the `spotifyd-x86_64-unknown-linux-gnu-{full,default,slim}.tar.gz` packages.
+- `armhf`, `armv7`: Download one of the `spotifyd-armv7-unknown-linux-gnueabihf-{full,default,slim}.tar.gz` packages.
+- `aarch64`: Download one of the `spotifyd-aarch64-unknown-linux-gnu-{full,default,slim}.tar.gz`
 - `armv6`: Unfortunately, we no longer support this architecture. If you still need this to work, please open an issue or join the [community matrix channel](https://matrix.to/#/#spotifyd:matrix.org) and we'll try to find a solution.
 
-If you're on macOS, download one of the `spotifyd-macos-{full,default,slim}.tar.gz` packages.
+If you're on macOS:
+
+- Intel Macs: Download one of the `spotifyd-x86_64-apple-darwin-{default,slim}.tar.gz` packages.
+
+- Apple Silicon Macs: Download one of the `spotifyd-aarch64-apple-darwin-{default,slim}.tar.gz` packages.
 
 You should now extract the downloaded archive, make the `spotifyd` file executable and copy it to a sensible location. This can be done using the following commands:
 
 ```console
 $ tar xzf spotifyd-*.tar.gz # extract
-$ cd spotifyd-*/
 $ chmod +x spotifyd # make binary executable
 $ # move to correct location, e.g. on Linux:
 $ # for a user-wide installation (make sure that your $PATH includes ~/.local/bin)
