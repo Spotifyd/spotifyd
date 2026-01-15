@@ -1,5 +1,9 @@
 [package]
-authors = ["Simon Persson <simon@flaskpost.org>", "Sven Lechner <sven.lechner@rwth-aachen.de>", "eladyn <eladyn@protonmail.com>"]
+authors = [
+    "Simon Persson <simon@flaskpost.org>",
+    "Sven Lechner <sven.lechner@rwth-aachen.de>",
+    "eladyn <eladyn@protonmail.com>",
+]
 edition = "2024"
 name = "spotifyd"
 description = "A Spotify daemon"
@@ -23,7 +27,12 @@ libc = "0.2.82"
 log = "0.4.6"
 serde = { version = "1.0.115", features = ["derive"] }
 sha-1 = "0.10"
-tokio = {version = "1.44.2", features = ["signal", "rt-multi-thread", "process", "io-std"] }
+tokio = { version = "1.44.2", features = [
+    "signal",
+    "rt-multi-thread",
+    "process",
+    "io-std",
+] }
 tokio-stream = "0.1.7"
 url = "2.2.2"
 librespot-audio = { version = "0.8.0", default-features = false }
@@ -38,7 +47,9 @@ toml = "0.9.8"
 color-eyre = "0.6"
 directories = "6.0.0"
 thiserror = "2.0"
-time = { version = "0.3.37", default-features = false, features = ["formatting"] }
+time = { version = "0.3.37", default-features = false, features = [
+    "formatting",
+] }
 clap = { version = "4.5.23", features = ["derive"] }
 serde_ignored = "0.1.10"
 
@@ -71,9 +82,21 @@ rodiojack_backend = ["librespot-playback/rodiojack-backend"]
 depends = "$auto"
 features = ["pulseaudio_backend", "dbus_mpris"]
 assets = [
-    ["target/release/spotifyd", "usr/bin/", "755"],
-    ["README.md", "usr/share/doc/spotifyd/README", "644"],
-    ["contrib/spotifyd.service", "etc/systemd/user/", "644"],
+    [
+        "target/release/spotifyd",
+        "usr/bin/",
+        "755",
+    ],
+    [
+        "README.md",
+        "usr/share/doc/spotifyd/README",
+        "644",
+    ],
+    [
+        "contrib/spotifyd.service",
+        "etc/systemd/user/",
+        "644",
+    ],
 ]
 
 [package.metadata.generate-rpm]
@@ -82,6 +105,17 @@ assets = [
     { source = "README.md", dest = "/usr/share/doc/spotifyd/README", mode = "644" },
     { source = "contrib/spotifyd.service", dest = "/etc/systemd/user/spotifyd.service", mode = "644" },
 ]
+
+# cargo-binstall support
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ target }-full{ archive-suffix }"
+bin-dir = "{ bin }{ binary-ext }"
+pkg-fmt = "tgz"
+disabled-strategies = ["quick-install", "compile"]
+
+[package.metadata.binstall.overrides.x86_64-pc-windows-msvc]
+pkg-fmt = "zip"
+
 
 [profile.release]
 lto = true

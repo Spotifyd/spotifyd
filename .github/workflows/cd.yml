@@ -5,7 +5,7 @@ on:
     branches:
       - master
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
         os: [macos, linux]
         arch: [x86_64, aarch64, armv7]
         rust: [stable]
-        artifact_type: ['slim', 'default', 'full']  # The build strategy will build all types for each OS specified
+        artifact_type: ["slim", "default", "full"] # The build strategy will build all types for each OS specified
         include:
           # Runner configuration
           - os: macos
@@ -32,7 +32,7 @@ jobs:
             runs_on: ubuntu-22.04-arm
           # DBus configuration
           - artifact_type: slim
-            dbus: ''
+            dbus: ""
           - artifact_type: default
             dbus: dbus_mpris
           - artifact_type: full
@@ -56,7 +56,7 @@ jobs:
             audio_backends: portaudio_backend,rodio_backend
         exclude:
           - os: macos
-            artifact_type: 'full'
+            artifact_type: "full"
           - os: macos
             arch: armv7
     steps:
@@ -86,10 +86,30 @@ jobs:
         run: |
           features="--no-default-features --features ${{ matrix.dbus }},${{ matrix.audio_backends }}"
           echo CARGO_ARGS="--locked --release $features" | tee -a "$GITHUB_ENV"
+      - name: Determine target triple
+        id: target_triple
+        shell: bash
+        run: |
+          # Map OS/arch to Rust target target_triple
+          if [ "${{ matrix.target }}" != "" ]; then
+            # Use the cross-compilation target if specified
+            TARGET_TRIPLE="${{ matrix.target }}"
+          elif [ "${{ matrix.os }}" = "linux" ] && [ "${{ matrix.arch }}" = "x86_64" ]; then
+            TARGET_TRIPLE="x86_64-unknown-linux-gnu"
+          elif [ "${{ matrix.os }}" = "macos" ] && [ "${{ matrix.arch }}" = "x86_64" ]; then
+            TARGET_TRIPLE="x86_64-apple-darwin"
+          elif [ "${{ matrix.os }}" = "macos" ] && [ "${{ matrix.arch }}" = "aarch64" ]; then
+            TARGET_TRIPLE="aarch64-apple-darwin"
+          else 
+            echo "Unknown target: ${{ matrix.os }}-${{ matrix.arch }}"
+            exit 1
+          fi
+          echo "target_triple=$TARGET_TRIPLE" >> $GITHUB_OUTPUT
+          echo "Target triple: $TARGET_TRIPLE"
       - name: Build (using cargo)
         if: matrix.target == ''
         run: |
-           cargo +${{ matrix.rust }} build $CARGO_ARGS
+          cargo +${{ matrix.rust }} build $CARGO_ARGS
       - name: Build (using cross)
         if: matrix.target != ''
         uses: houseabsolute/actions-rust-cross@v1
@@ -99,10 +119,15 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
           args: $CARGO_ARGS
-      - name: Uploading artifacts
+      - name: Uploading artifacts (new naming)
         uses: actions/upload-artifact@v4
         with:
-          name: spotifyd-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.artifact_type }}
+          name: spotifyd-${{ steps.target_triple.outputs.target_triple }}-${{ matrix.artifact_type }}
+          path: target/${{ matrix.target }}/release/spotifyd
+      - name: Uploading artifacts (legacy naming - deprecated)
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotifyd-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.artifact_type }}-legacy
           path: target/${{ matrix.target }}/release/spotifyd
   release: # only runs when a version tag is pushed
     if: startsWith(github.ref, 'refs/tags/v')
@@ -118,6 +143,8 @@ jobs:
           do
             pushd $artifact_dir
             artifact_name=$(basename $artifact_dir)
+            # Remove -legacy suffix for old naming format
+            artifact_name=${artifact_name%-legacy}
             tar czvf $artifact_name.tar.gz spotifyd
             shasum -a 512 $artifact_name.tar.gz > $artifact_name.sha512
             popd
@@ -128,5 +155,16 @@ jobs:
           files: |
             **/*.tar.gz
             **/*.sha512
+          body: |
+            ## Asset Naming Change
+            Starting with this release, we're transitioning to Rust's standard target triple naming convention to support `cargo-binstall`.
+
+            **New format:** `spotifyd-{target-triple}-{variant}.tar.gz`
+            - Example: `spotifyd-x86_64-unknown-linux-gnu-full.tar.gz`
+
+            **Legacy format** (deprecated, will be removed in next release): `spotifyd-{os}-{arch}-{variant}.tar.gz`
+            - Example: `spotifyd-linux-x86_64-full-legacy.tar.gz`
+
+            Both formats are available in this release for backwards compatibility.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
