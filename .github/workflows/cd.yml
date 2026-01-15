@@ -5,7 +5,7 @@ on:
     branches:
       - master
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
         os: [macos, linux]
         arch: [x86_64, aarch64, armv7]
         rust: [stable]
-        artifact_type: ['slim', 'default', 'full']  # The build strategy will build all types for each OS specified
+        artifact_type: ["slim", "default", "full"] # The build strategy will build all types for each OS specified
         include:
           # Runner configuration
           - os: macos
@@ -29,7 +29,7 @@ jobs:
             runs_on: ubuntu-22.04
           # DBus configuration
           - artifact_type: slim
-            dbus: ''
+            dbus: ""
           - artifact_type: default
             dbus: dbus_mpris
           - artifact_type: full
@@ -56,7 +56,7 @@ jobs:
             audio_backends: portaudio_backend,rodio_backend
         exclude:
           - os: macos
-            artifact_type: 'full'
+            artifact_type: "full"
           - os: macos
             arch: armv7
     steps:
@@ -109,7 +109,7 @@ jobs:
       - name: Build (using cargo)
         if: matrix.target == ''
         run: |
-           cargo +${{ matrix.rust }} build $CARGO_ARGS
+          cargo +${{ matrix.rust }} build $CARGO_ARGS
       - name: Build (using cross)
         if: matrix.target != ''
         uses: houseabsolute/actions-rust-cross@v1
@@ -165,6 +165,6 @@ jobs:
             **Legacy format** (deprecated, will be removed in next release): `spotifyd-{os}-{arch}-{variant}.tar.gz`
             - Example: `spotifyd-linux-x86_64-full-legacy.tar.gz`
 
-          Both formats are available in this release for backwards compatibility.
+            Both formats are available in this release for backwards compatibility.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
