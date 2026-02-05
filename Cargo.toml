@@ -38,7 +38,7 @@ toml = "0.9.8"
 color-eyre = "0.6"
 directories = "6.0.0"
 thiserror = "2.0"
-time = { version = "0.3.37", default-features = false, features = ["formatting"] }
+time = { version = "0.3.47", default-features = false, features = ["formatting"] }
 clap = { version = "4.5.23", features = ["derive"] }
 serde_ignored = "0.1.10"
 
