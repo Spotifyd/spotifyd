@@ -32,6 +32,41 @@ use url::Url;
 
 const CONFIG_FILE_NAME: &str = "spotifyd.conf";
 
+fn get_version() -> &'static str {
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+    let mut features = Vec::new();
+
+    #[cfg(feature = "alsa_backend")]
+    features.push("alsa_backend");
+
+    #[cfg(feature = "pulseaudio_backend")]
+    features.push("pulseaudio_backend");
+
+    #[cfg(feature = "portaudio_backend")]
+    features.push("portaudio_backend");
+
+    #[cfg(feature = "rodio_backend")]
+    features.push("rodio_backend");
+
+    #[cfg(feature = "rodiojack_backend")]
+    features.push("rodiojack_backend");
+
+    #[cfg(feature = "dbus_mpris")]
+    features.push("dbus_mpris");
+
+    if features.is_empty() {
+        Box::leak(Box::new(VERSION.to_string())).as_str()
+    } else {
+        Box::leak(Box::new(format!(
+            "{} (features: {})",
+            VERSION,
+            features.join(", ")
+        )))
+        .as_str()
+    }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, ValueEnum)]
 #[serde(rename_all = "snake_case")]
 pub enum VolumeController {
@@ -218,7 +253,7 @@ where
 }
 
 #[derive(Debug, Default, Parser)]
-#[command(version, about, long_about = None, args_conflicts_with_subcommands = true)]
+#[command(version = get_version(), about, long_about = None, args_conflicts_with_subcommands = true)]
 pub struct CliConfig {
     /// The path to the config file to use
     #[arg(long, value_name = "PATH", global = true)]
