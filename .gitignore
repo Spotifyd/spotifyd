@@ -36,3 +36,6 @@ tags
 .vscode
 # Windows logs
 *.log
+
+# docker cross build
+dist/

@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         os: [macos, linux]
-        arch: [x86_64, aarch64, armv7]
+        arch: [x86_64, aarch64, armv7, armv6]
         rust: [stable]
         artifact_type: ['slim', 'default', 'full']  # The build strategy will build all types for each OS specified
         include:
@@ -28,8 +28,8 @@ jobs:
           - os: linux
             runs_on: ubuntu-22.04
           - os: linux
-            arch: aarch64
-            runs_on: ubuntu-22.04-arm
+            arch: armv6
+            runs_on: ubuntu-latest
           # DBus configuration
           - artifact_type: slim
             dbus: ''
@@ -37,10 +37,16 @@ jobs:
             dbus: dbus_mpris
           - artifact_type: full
             dbus: dbus_mpris
-          # Cross Compilation Targets
+          # Docker/QEMU build platforms
+          - os: linux
+            arch: armv6
+            docker_platform: linux/arm/v6
           - os: linux
             arch: armv7
-            target: armv7-unknown-linux-gnueabihf
+            docker_platform: linux/arm/v7
+          - os: linux
+            arch: aarch64
+            docker_platform: linux/arm64
           # Audio backend configuration: Linux
           - os: linux
             artifact_type: slim
@@ -59,6 +65,8 @@ jobs:
             artifact_type: 'full'
           - os: macos
             arch: armv7
+          - os: macos
+            arch: armv6
     steps:
       - name: Checking out sources
         uses: actions/checkout@v4
@@ -66,7 +74,7 @@ jobs:
         if: matrix.os == 'macos'
         run: brew install dbus portaudio
       - name: Installing needed Ubuntu dependencies
-        if: startsWith(matrix.runs_on, 'ubuntu') && matrix.target == ''
+        if: matrix.os == 'linux' && matrix.docker_platform == ''
         run: |
           sudo apt-get update
           # WORKAROUND: fix aws-lc-sys compiler bug failure
@@ -87,23 +95,72 @@ jobs:
           features="--no-default-features --features ${{ matrix.dbus }},${{ matrix.audio_backends }}"
           echo CARGO_ARGS="--locked --release $features" | tee -a "$GITHUB_ENV"
       - name: Build (using cargo)
-        if: matrix.target == ''
+        if: matrix.docker_platform == ''
         run: |
            cargo +${{ matrix.rust }} build $CARGO_ARGS
-      - name: Build (using cross)
-        if: matrix.target != ''
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          cross-version: baf457e # currently needed (check again if cross version > 0.2.5)
-          command: build
-          toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.target }}
-          args: $CARGO_ARGS
+      - name: Set up QEMU
+        if: matrix.docker_platform != ''
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        if: matrix.docker_platform != ''
+        uses: docker/setup-buildx-action@v3
+      - name: Build (using docker buildx)
+        if: matrix.docker_platform != ''
+        run: |
+          docker buildx build \
+            --platform ${{ matrix.docker_platform }} \
+            --file .github/Dockerfile.armv6 \
+            --target export \
+            --output type=local,dest=./${{ matrix.arch }}-out \
+            --cache-from type=gha,scope=${{ matrix.arch }}-${{ matrix.artifact_type }} \
+            --cache-to type=gha,scope=${{ matrix.arch }}-${{ matrix.artifact_type }},mode=max \
+            --build-arg FEATURES="--no-default-features --features ${{ matrix.dbus }},${{ matrix.audio_backends }}" \
+            .
+          mkdir -p target/release
+          cp ./${{ matrix.arch }}-out/spotifyd target/release/spotifyd
+      - name: Package .deb
+        if: matrix.os == 'linux'
+        run: |
+          case "${{ matrix.arch }}" in
+            x86_64)  DEB_ARCH=amd64  ;;
+            aarch64) DEB_ARCH=arm64  ;;
+            armv7)   DEB_ARCH=armhf  ;;
+            armv6)   DEB_ARCH=armel  ;;
+          esac
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ "$VERSION" == "$GITHUB_REF_NAME" ]]; then
+            VERSION="0.0.0+$(git rev-parse --short HEAD)"
+          fi
+          PKG="spotifyd_${VERSION}_${DEB_ARCH}"
+          mkdir -p "${PKG}/DEBIAN" \
+                   "${PKG}/usr/bin" \
+                   "${PKG}/usr/lib/systemd/user"
+          cp target/release/spotifyd "${PKG}/usr/bin/spotifyd"
+          cp contrib/spotifyd.service "${PKG}/usr/lib/systemd/user/spotifyd.service"
+          cat > "${PKG}/DEBIAN/control" <<EOF
+          Package: spotifyd
+          Version: ${VERSION}
+          Architecture: ${DEB_ARCH}
+          Maintainer: spotifyd contributors <https://github.com/Spotifyd/spotifyd>
+          Section: sound
+          Priority: optional
+          Description: A spotify playing daemon
+           Spotifyd streams music just like the official client, but is more
+           lightweight and can be run on devices that the Spotify app does not support.
+          EOF
+          dpkg-deb --build --root-owner-group "${PKG}"
+          echo "DEB_PATH=${PKG}.deb" >> "$GITHUB_ENV"
       - name: Uploading artifacts
         uses: actions/upload-artifact@v4
         with:
           name: spotifyd-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.artifact_type }}
-          path: target/${{ matrix.target }}/release/spotifyd
+          path: target/release/spotifyd
+      - name: Uploading .deb artifact
+        if: matrix.os == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotifyd-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.artifact_type }}-deb
+          path: ${{ env.DEB_PATH }}
   release: # only runs when a version tag is pushed
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
@@ -118,8 +175,14 @@ jobs:
           do
             pushd $artifact_dir
             artifact_name=$(basename $artifact_dir)
-            tar czvf $artifact_name.tar.gz spotifyd
-            shasum -a 512 $artifact_name.tar.gz > $artifact_name.sha512
+            if ls *.deb 2>/dev/null; then
+              for deb in *.deb; do
+                shasum -a 512 "$deb" > "$deb.sha512"
+              done
+            else
+              tar czvf $artifact_name.tar.gz spotifyd
+              shasum -a 512 $artifact_name.tar.gz > $artifact_name.sha512
+            fi
             popd
           done
       - name: Releasing assets
@@ -127,6 +190,22 @@ jobs:
         with:
           files: |
             **/*.tar.gz
+            **/*.deb
             **/*.sha512
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-apt-repo:
+    name: Trigger APT repo update
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions: {}
+    steps:
+      - name: Trigger apt-repo rebuild
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.APT_REPO_TOKEN }}
+          repository: b0bbywan/odio-apt-repo
+          event-type: release-published
+          client-payload: '{"repo": "${{ github.repository }}", "tag": "${{ github.ref_name }}"}'
