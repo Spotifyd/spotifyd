@@ -8,11 +8,14 @@ use config::ExecutionMode;
 use daemonize::Daemonize;
 use fern::colors::ColoredLevelConfig;
 use log::{LevelFilter, info, trace};
+#[cfg(unix)]
+use nix::fcntl::{Flock, FlockArg};
 use oauth::run_oauth;
 #[cfg(target_os = "openbsd")]
 use pledge::pledge;
 #[cfg(windows)]
 use std::fs;
+use std::fs::File;
 use tokio::runtime::Runtime;
 
 #[cfg(feature = "alsa_backend")]
@@ -124,6 +127,7 @@ fn main() -> eyre::Result<()> {
 
 fn run_daemon(mut cli_config: CliConfig) -> eyre::Result<()> {
     let is_daemon = !cli_config.no_daemon;
+    let mut _single_daemon_lock: Flock<File>;
 
     let log_target = if is_daemon {
         #[cfg(unix)]
@@ -164,6 +168,18 @@ fn run_daemon(mut cli_config: CliConfig) -> eyre::Result<()> {
 
         #[cfg(unix)]
         {
+            _single_daemon_lock = match Flock::lock(
+                File::create("/tmp/spotifyd-daemon-lock")?,
+                FlockArg::LockExclusiveNonblock,
+            ) {
+                Ok(l) => l,
+                Err(e) => {
+                    return Err(e.1).wrap_err(
+                        "Could not acquire lock, is there another daemon instance running ?",
+                    );
+                }
+            };
+
             let mut daemonize = Daemonize::new();
             if let Some(pid) = internal_config.pid.as_ref() {
                 daemonize = daemonize.pid_file(pid);
