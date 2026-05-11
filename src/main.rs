@@ -1,4 +1,4 @@
-use crate::config::CliConfig;
+use crate::config::{CliConfig, SpotifydConfig};
 use clap::Parser;
 #[cfg(unix)]
 use color_eyre::eyre::eyre;
@@ -158,6 +158,16 @@ fn run_daemon(mut cli_config: CliConfig) -> eyre::Result<()> {
 
     // Returns the old SpotifydConfig struct used within the rest of the daemon.
     let internal_config = config::get_internal_config(cli_config);
+
+    #[cfg(unix)]
+    let internal_config = if internal_config.pid.is_none() {
+        SpotifydConfig {
+            pid: Some("/tmp/spotifyd.pid".to_string()), // Default PID location when running as daemon
+            ..internal_config
+        }
+    } else {
+        internal_config
+    };
 
     if is_daemon {
         info!("Daemonizing running instance");
