@@ -6,6 +6,7 @@ on:
       - master
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [macos, linux]
-        arch: [x86_64, aarch64, armv7]
+        arch: [x86_64, aarch64, armv7, riscv64]
         rust: [stable]
         artifact_type: ['slim', 'default', 'full']  # The build strategy will build all types for each OS specified
         include:
@@ -41,6 +42,9 @@ jobs:
           - os: linux
             arch: armv7
             target: armv7-unknown-linux-gnueabihf
+          - os: linux
+            arch: riscv64
+            target: riscv64gc-unknown-linux-gnu
           # Audio backend configuration: Linux
           - os: linux
             artifact_type: slim
@@ -59,9 +63,11 @@ jobs:
             artifact_type: 'full'
           - os: macos
             arch: armv7
+          - os: macos
+            arch: riscv64
     steps:
       - name: Checking out sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Installing needed macOS dependencies
         if: matrix.os == 'macos'
         run: brew install dbus portaudio
@@ -94,13 +100,13 @@ jobs:
         if: matrix.target != ''
         uses: houseabsolute/actions-rust-cross@v1
         with:
-          cross-version: baf457e # currently needed (check again if cross version > 0.2.5)
+          cross-version: 64b5bb4 # currently needed (check again if cross version > 0.2.5)
           command: build
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
           args: $CARGO_ARGS
       - name: Uploading artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: spotifyd-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.artifact_type }}
           path: target/${{ matrix.target }}/release/spotifyd
