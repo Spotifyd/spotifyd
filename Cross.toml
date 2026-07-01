@@ -2,6 +2,9 @@
 pre-build = [
   "dpkg --add-architecture $CROSS_DEB_ARCH",
   "apt-get update",
+  # satisfy libglib2.0-dev's python3 | qemu-user | qemu-user-static dependency
+  # python3's postinst calls a target binary executable, failing without binfmt registration at the host
+  "apt-get install -y qemu-user",
   # bindgen requirements
   "apt-get install -y libclang-dev cmake",
   # alsa_backend,rodio_backend and base requirements
@@ -13,6 +16,3 @@ pre-build = [
   # portaudio_backend
   "apt-get install -y portaudio19-dev:$CROSS_DEB_ARCH",
 ]
-
-[target.armv7-unknown-linux-gnueabihf]
-image = ":edge" # needed, since dbus and pulse dependencies on older ubuntu versions are messy

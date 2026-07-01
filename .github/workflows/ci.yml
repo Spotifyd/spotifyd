@@ -18,7 +18,7 @@ jobs:
           toolchain: stable
           override: true
       - name: Checking out sources
-        uses: actions/checkout@v1
+        uses: actions/checkout@v7
       - name: Installing rustfmt
         run: rustup component add rustfmt
       - name: Running rustfmt
@@ -42,7 +42,7 @@ jobs:
           sudo apt-get install -y -qq libasound2-dev libssl-dev libpulse-dev libdbus-1-dev portaudio19-dev
 
       - name: Checking out sources
-        uses: actions/checkout@v1
+        uses: actions/checkout@v7
       - name: Installing clippy
         run: rustup component add clippy
       - name: Linting project
@@ -80,7 +80,7 @@ jobs:
           sudo apt-get install -y -qq libasound2-dev libssl-dev libpulse-dev libdbus-1-dev
 
       - name: Checking out sources
-        uses: actions/checkout@v1
+        uses: actions/checkout@v7
       - name: Checking Rust code
         uses: actions-rs/cargo@v1
         with:
