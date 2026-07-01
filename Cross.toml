@@ -1,7 +1,10 @@
 [build]
 pre-build = [
+  "sed -i \"s/arm64 armhf/$CROSS_DEB_ARCH/\" /etc/apt/sources.list.d/ubuntu.sources",
   "dpkg --add-architecture $CROSS_DEB_ARCH",
   "apt-get update",
+  # binfmt support since some packages' postinst scripts call target arch binaries
+  "apt-get install -y qemu-user-static binfmt-support",
   # bindgen requirements
   "apt-get install -y libclang-dev cmake",
   # alsa_backend,rodio_backend and base requirements
@@ -15,4 +18,7 @@ pre-build = [
 ]
 
 [target.armv7-unknown-linux-gnueabihf]
+image = ":edge" # needed, since dbus and pulse dependencies on older ubuntu versions are messy
+
+[target.riscv64gc-unknown-linux-gnu]
 image = ":edge" # needed, since dbus and pulse dependencies on older ubuntu versions are messy
