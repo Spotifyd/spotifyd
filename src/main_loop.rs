@@ -13,21 +13,40 @@ use futures::{
     future::{self, Fuse, FusedFuture},
     stream::Peekable,
 };
+#[cfg(feature = "dbus_mpris")]
+use librespot_connect::ClusterState;
 use librespot_connect::{ConnectConfig, Spirc};
+#[cfg(feature = "dbus_mpris")]
+use librespot_core::SpotifyUri;
 use librespot_core::{
     Error, SessionConfig, authentication::Credentials, cache::Cache, config::DeviceType,
     session::Session,
 };
 use librespot_discovery::Discovery;
+#[cfg(feature = "dbus_mpris")]
+use librespot_metadata::audio::AudioItem;
+#[cfg(feature = "dbus_mpris")]
+use librespot_playback::player::PlayerEvent;
 use librespot_playback::{
     audio_backend::Sink,
     config::{AudioFormat, PlayerConfig},
     mixer::Mixer,
     player::Player,
 };
+#[cfg(feature = "dbus_mpris")]
+use librespot_protocol::player::PlayerState;
 use log::{error, info};
 use std::pin::Pin;
 use std::sync::Arc;
+#[cfg(feature = "dbus_mpris")]
+use tokio::sync::{mpsc::UnboundedSender, watch};
+
+#[cfg(feature = "dbus_mpris")]
+const SPECTATOR_CONNECTION_ID: &str = "spectator-remote";
+#[cfg(feature = "dbus_mpris")]
+const SPECTATOR_USER_NAME: &str = "spectator";
+#[cfg(feature = "dbus_mpris")]
+const SPECTATOR_PLAY_REQUEST_ID: u64 = 0;
 
 #[cfg(not(feature = "dbus_mpris"))]
 type DbusServer = Pending<()>;
@@ -87,6 +106,7 @@ pub(crate) struct MainLoop {
     pub(crate) device_name: String,
     pub(crate) player_event_program: Option<String>,
     pub(crate) credentials_provider: CredentialsProvider,
+    pub(crate) spectator: bool,
     #[cfg(feature = "dbus_mpris")]
     pub(crate) mpris_config: MprisConfig,
 }
@@ -97,6 +117,151 @@ struct ConnectionInfo<SpircTask: Future<Output = ()>> {
     session: Session,
     player: Arc<Player>,
     spirc_task: SpircTask,
+}
+
+#[cfg(feature = "dbus_mpris")]
+async fn fetch_audio_item(session: &Session, track_uri: &str) -> Option<Box<AudioItem>> {
+    let uri = SpotifyUri::from_uri(track_uri).ok()?;
+    AudioItem::get_file(session, uri).await.ok().map(Box::new)
+}
+
+/// Emits mpris session connect/disconnect on active-device transitions in the cluster snapshot.
+#[cfg(feature = "dbus_mpris")]
+fn sync_cluster_state(
+    watch: &mut watch::Receiver<ClusterState>,
+    has_active_remote: &mut bool,
+    last_track_uri: &mut Option<String>,
+    mpris_event_tx: &Option<UnboundedSender<PlayerEvent>>,
+) {
+    let now_active = watch.borrow_and_update().active_device_id.is_some();
+
+    if now_active && !*has_active_remote {
+        *has_active_remote = true;
+        if let Some(tx) = mpris_event_tx {
+            let _ = tx.send(PlayerEvent::SessionConnected {
+                connection_id: SPECTATOR_CONNECTION_ID.to_string(),
+                user_name: SPECTATOR_USER_NAME.to_string(),
+            });
+        }
+    } else if !now_active && *has_active_remote {
+        *has_active_remote = false;
+        if let Some(tx) = mpris_event_tx {
+            if let Some(uri) = last_track_uri.as_deref()
+                && let Ok(track_id) = SpotifyUri::from_uri(uri)
+            {
+                let _ = tx.send(PlayerEvent::Stopped {
+                    play_request_id: SPECTATOR_PLAY_REQUEST_ID,
+                    track_id,
+                });
+            }
+            let _ = tx.send(PlayerEvent::SessionDisconnected {
+                connection_id: SPECTATOR_CONNECTION_ID.to_string(),
+                user_name: SPECTATOR_USER_NAME.to_string(),
+            });
+        }
+        *last_track_uri = None;
+    }
+}
+
+/// Mirrors the current player snapshot's track/play state into mpris.
+#[cfg(feature = "dbus_mpris")]
+fn sync_player_state(
+    watch: &mut watch::Receiver<Option<PlayerState>>,
+    last_track_uri: &mut Option<String>,
+    spectator_session: &Session,
+    mpris_event_tx: &Option<UnboundedSender<PlayerEvent>>,
+) {
+    let Some(state) = watch.borrow_and_update().clone() else {
+        return;
+    };
+    let Some(track_uri) = state
+        .track
+        .as_ref()
+        .map(|t| t.uri.clone())
+        .filter(|uri| !uri.is_empty())
+    else {
+        return;
+    };
+    let is_playing = state.is_playing;
+    let is_paused = state.is_paused;
+    let position_ms = extrapolated_position_ms(
+        state.position_as_of_timestamp,
+        state.timestamp,
+        is_playing && !is_paused,
+        chrono::Utc::now().timestamp_millis(),
+    );
+
+    if last_track_uri.as_deref() != Some(track_uri.as_str()) {
+        let session = spectator_session.clone();
+        let uri = track_uri.clone();
+        let tx_clone = mpris_event_tx.clone();
+        tokio::spawn(async move {
+            if let Some(audio_item) = fetch_audio_item(&session, &uri).await
+                && let Some(ref tx) = tx_clone
+            {
+                let _ = tx.send(PlayerEvent::TrackChanged { audio_item });
+            }
+        });
+        *last_track_uri = Some(track_uri.clone());
+    }
+
+    if let Ok(track_id) = SpotifyUri::from_uri(&track_uri) {
+        let event = if is_playing && !is_paused {
+            PlayerEvent::Playing {
+                play_request_id: SPECTATOR_PLAY_REQUEST_ID,
+                track_id,
+                position_ms,
+            }
+        } else {
+            PlayerEvent::Paused {
+                play_request_id: SPECTATOR_PLAY_REQUEST_ID,
+                track_id,
+                position_ms,
+            }
+        };
+        if let Some(tx) = mpris_event_tx {
+            let _ = tx.send(event);
+        }
+    }
+}
+
+/// `position_as_of_timestamp` is only accurate as of `timestamp`, so extrapolate forward.
+#[cfg(feature = "dbus_mpris")]
+fn extrapolated_position_ms(
+    position_as_of_timestamp: i64,
+    timestamp: i64,
+    is_playing: bool,
+    now_ms: i64,
+) -> u32 {
+    let elapsed_ms = if is_playing {
+        (now_ms - timestamp).max(0)
+    } else {
+        0
+    };
+    (position_as_of_timestamp + elapsed_ms).max(0) as u32
+}
+
+#[cfg(all(test, feature = "dbus_mpris"))]
+mod tests {
+    use super::extrapolated_position_ms;
+
+    #[test]
+    fn playing_extrapolates_forward_from_stale_timestamp() {
+        assert_eq!(extrapolated_position_ms(10_000, 1_000, true, 4_000), 13_000);
+    }
+
+    #[test]
+    fn paused_does_not_extrapolate() {
+        assert_eq!(
+            extrapolated_position_ms(10_000, 1_000, false, 4_000),
+            10_000
+        );
+    }
+
+    #[test]
+    fn negative_diff_clamps_to_zero_elapsed() {
+        assert_eq!(extrapolated_position_ms(10_000, 4_000, true, 1_000), 10_000);
+    }
 }
 
 impl MainLoop {
@@ -162,6 +327,7 @@ impl MainLoop {
     }
 
     pub(crate) async fn run(mut self) -> eyre::Result<()> {
+        info!("spectator mode: {}", self.spectator);
         tokio::pin! {
             let ctrl_c = tokio::signal::ctrl_c();
             // we don't necessarily have a dbus server
@@ -197,6 +363,8 @@ impl MainLoop {
             tokio::pin!(spirc_task);
 
             let shared_spirc = Arc::new(connection.spirc);
+            #[cfg(feature = "dbus_mpris")]
+            let spectator_session = connection.session.clone();
 
             #[cfg(feature = "dbus_mpris")]
             if let Either::Left(mut dbus_server) = Either::as_pin_mut(dbus_server.as_mut())
@@ -212,6 +380,32 @@ impl MainLoop {
             let mut running_event_program = Box::pin(Fuse::terminated());
 
             let mut event_channel = connection.player.get_player_event_channel();
+
+            let mut cluster_state_watch =
+                self.spectator.then(|| shared_spirc.watch_cluster_state());
+            let mut player_state_watch = self.spectator.then(|| shared_spirc.watch_player_state());
+            let mut last_track_uri: Option<String> = None;
+            let mut has_active_remote = false;
+
+            // a fresh watch::Receiver doesn't treat its current value as a "change", so seed
+            // once upfront in case a remote is already active
+            #[cfg(feature = "dbus_mpris")]
+            if let Some(watch) = cluster_state_watch.as_mut() {
+                sync_cluster_state(
+                    watch,
+                    &mut has_active_remote,
+                    &mut last_track_uri,
+                    &mpris_event_tx,
+                );
+                if has_active_remote && let Some(watch) = player_state_watch.as_mut() {
+                    sync_player_state(
+                        watch,
+                        &mut last_track_uri,
+                        &spectator_session,
+                        &mpris_event_tx,
+                    );
+                }
+            }
 
             loop {
                 tokio::select!(
@@ -243,8 +437,53 @@ impl MainLoop {
                         #[cfg(not(feature = "dbus_mpris"))]
                         result // unused variable
                     }
+                    // a cluster snapshot changed: track whether some remote device is active
+                    cluster_changed = async {
+                        match cluster_state_watch.as_mut() {
+                            Some(watch) => watch.changed().await,
+                            None => future::pending().await,
+                        }
+                    }, if self.spectator => {
+                        #[cfg(feature = "dbus_mpris")]
+                        if cluster_changed.is_ok() {
+                            sync_cluster_state(
+                                cluster_state_watch.as_mut().unwrap(),
+                                &mut has_active_remote,
+                                &mut last_track_uri,
+                                &mpris_event_tx,
+                            );
+                            // player watch may not fire its own changed() here, so sync it too
+                            if has_active_remote
+                                && let Some(watch) = player_state_watch.as_mut()
+                            {
+                                sync_player_state(
+                                    watch,
+                                    &mut last_track_uri,
+                                    &spectator_session,
+                                    &mpris_event_tx,
+                                );
+                            }
+                        }
+                    }
+                    // the remote player snapshot changed: mirror track/play state into mpris
+                    player_changed = async {
+                        match player_state_watch.as_mut() {
+                            Some(watch) => watch.changed().await,
+                            None => future::pending().await,
+                        }
+                    }, if self.spectator && has_active_remote => {
+                        #[cfg(feature = "dbus_mpris")]
+                        if player_changed.is_ok() {
+                            sync_player_state(
+                                player_state_watch.as_mut().unwrap(),
+                                &mut last_track_uri,
+                                &spectator_session,
+                                &mpris_event_tx,
+                            );
+                        }
+                    }
                     // a new player event is available and no program is running
-                    event = event_channel.recv(), if running_event_program.is_terminated() => {
+                    event = event_channel.recv(), if running_event_program.is_terminated() && !self.spectator => {
                         let event = event.unwrap();
                         #[cfg(feature = "dbus_mpris")]
                         if let Some(ref tx) = mpris_event_tx {
