@@ -160,6 +160,7 @@ pub(crate) fn initial_state(
         device_type: config.device_type,
         device_name: config.device_name,
         player_event_program: config.onevent,
+        spectator: config.spectator,
         #[cfg(feature = "dbus_mpris")]
         mpris_config: config.mpris,
     })

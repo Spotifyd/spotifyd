@@ -232,6 +232,16 @@ pub struct CliConfig {
     #[arg(long)]
     pub no_daemon: bool,
 
+    /// Enable spectator mode (listen only, no playback control)
+    #[arg(
+        long,
+        default_missing_value("true"),
+        require_equals = true,
+        num_args(0..=1),
+        value_name = "BOOL"
+    )]
+    pub spectator: Option<bool>,
+
     /// Path to PID file.
     #[cfg(unix)]
     #[arg(long, value_name = "PATH")]
@@ -635,6 +645,7 @@ pub(crate) struct SpotifydConfig {
     pub(crate) discovery: bool,
     pub(crate) zeroconf_port: Option<u16>,
     pub(crate) device_type: LSDeviceType,
+    pub(crate) spectator: bool,
     #[cfg(feature = "dbus_mpris")]
     pub(crate) mpris: MprisConfig,
     #[cfg(feature = "alsa_backend")]
@@ -758,6 +769,7 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         discovery: !config.shared_config.disable_discovery.unwrap_or(false),
         zeroconf_port: config.shared_config.zeroconf_port,
         device_type,
+        spectator: config.spectator.unwrap_or(false),
         #[cfg(unix)]
         pid,
         #[cfg(feature = "dbus_mpris")]
