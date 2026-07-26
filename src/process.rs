@@ -3,7 +3,7 @@ use librespot_metadata::audio::AudioItem;
 use librespot_playback::player::PlayerEvent;
 use log::info;
 
-use std::{collections::HashMap, process::Stdio};
+use std::{collections::HashMap, path::Path, process::Stdio};
 use tokio::{
     io::{self, AsyncWriteExt},
     process::{self, Command},
@@ -11,12 +11,23 @@ use tokio::{
 
 /// Spawns provided command in a subprocess using the provided shell.
 fn spawn_program(shell: &str, cmd: &str, env: HashMap<&str, String>) -> Result<Child, Error> {
+    let exec_flag = match Path::new(shell)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("cmd") => "/c",
+        Some("powershell") | Some("pwsh") => "-Command",
+        _ => "-c",
+    };
+
     info!(
         "Running {:?} using {:?} with environment variables {:?}",
         cmd, shell, env
     );
     let inner = Command::new(shell)
-        .arg("-c")
+        .arg(exec_flag)
         .arg(cmd)
         .envs(env.iter())
         .stdin(Stdio::piped())
