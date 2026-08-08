@@ -4,7 +4,10 @@ use crate::config::{DBusType, MprisConfig};
 use crate::dbus_mpris::DbusServer;
 use crate::process::spawn_program_on_event;
 use crate::utils::Backoff;
-use color_eyre::eyre::{self, Context};
+use color_eyre::{
+    Section,
+    eyre::{self, Context, eyre},
+};
 use futures::future::Either;
 #[cfg(not(feature = "dbus_mpris"))]
 use futures::future::Pending;
@@ -15,8 +18,7 @@ use futures::{
 };
 use librespot_connect::{ConnectConfig, Spirc};
 use librespot_core::{
-    Error, SessionConfig, authentication::Credentials, cache::Cache, config::DeviceType,
-    session::Session,
+    SessionConfig, authentication::Credentials, cache::Cache, config::DeviceType, session::Session,
 };
 use librespot_discovery::Discovery;
 use librespot_playback::{
@@ -41,7 +43,7 @@ pub(crate) enum CredentialsProvider {
 }
 
 impl CredentialsProvider {
-    async fn get_credentials(&mut self) -> Credentials {
+    async fn get_credentials(&mut self) -> eyre::Result<Credentials> {
         match self {
             CredentialsProvider::Discovery {
                 stream,
@@ -49,12 +51,20 @@ impl CredentialsProvider {
             } => {
                 let new_creds = match last_credentials.take() {
                     Some(creds) => stream.next().now_or_never().flatten().unwrap_or(creds),
-                    None => stream.next().await.unwrap(),
+                    // librespot also ends the stream on zeroconf errors, without reporting them
+                    None => stream
+                        .next()
+                        .await
+                        .ok_or_else(|| eyre!("Discovery stopped without providing credentials."))
+                        .with_suggestion(|| {
+                            "Check the log for zeroconf errors, or log in with \
+                             `spotifyd authenticate` so that spotifyd doesn't depend on discovery."
+                        })?,
                 };
                 *last_credentials = Some(new_creds.clone());
-                new_creds
+                Ok(new_creds)
             }
-            CredentialsProvider::CredentialsOnly(creds) => creds.clone(),
+            CredentialsProvider::CredentialsOnly(creds) => Ok(creds.clone()),
         }
     }
 
@@ -102,8 +112,8 @@ struct ConnectionInfo<SpircTask: Future<Output = ()>> {
 impl MainLoop {
     async fn get_connection(
         &mut self,
-    ) -> Result<ConnectionInfo<impl Future<Output = ()> + use<>>, Error> {
-        let creds = self.credentials_provider.get_credentials().await;
+    ) -> eyre::Result<ConnectionInfo<impl Future<Output = ()> + use<>>> {
+        let creds = self.credentials_provider.get_credentials().await?;
 
         let mut connection_backoff = Backoff::default();
         loop {
@@ -146,7 +156,7 @@ impl MainLoop {
                 }
                 Err(err) => {
                     let Ok(backoff) = connection_backoff.next_backoff() else {
-                        break Err(err);
+                        break Err(err.into());
                     };
                     error!("connection to spotify failed: {err}");
                     info!(
