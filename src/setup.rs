@@ -76,6 +76,7 @@ pub(crate) fn initial_state(
     let backend = config.backend.clone();
 
     let zeroconf_port = config.zeroconf_port.unwrap_or(0);
+    let zeroconf_ip = config.zeroconf_ip.unwrap_or_default();
 
     let creds = if let Some(creds) = config.oauth_cache.as_ref().and_then(|c| c.credentials()) {
         info!(
@@ -105,6 +106,7 @@ pub(crate) fn initial_state(
             .name(config.device_name.clone())
             .device_type(config.device_type)
             .port(zeroconf_port)
+            .zeroconf_ip(zeroconf_ip.clone())
             .launch()
             {
                 Ok(discovery_stream) => break Some(discovery_stream),
