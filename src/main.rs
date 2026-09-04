@@ -24,6 +24,10 @@ mod error;
 mod main_loop;
 mod no_mixer;
 mod oauth;
+#[cfg(feature = "pipewire_backend")]
+mod pipewire_backend;
+#[cfg(feature = "pipewire_backend")]
+mod pipewire_mixer;
 mod process;
 mod setup;
 mod utils;

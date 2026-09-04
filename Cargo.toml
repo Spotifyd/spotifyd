@@ -41,6 +41,10 @@ thiserror = "2.0"
 time = { version = "0.3.47", default-features = false, features = ["formatting"] }
 clap = { version = "4.5.23", features = ["derive"] }
 serde_ignored = "0.1.10"
+# Pinned: 0.9 renamed MainLoop/Context/Core to *Rc variants, which
+# pipewire_backend.rs/pipewire_mixer.rs don't use yet.
+pipewire = { version = "=0.8.0", optional = true }
+ringbuf = { version = "0.4", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 daemonize = "0.5"
@@ -62,6 +66,7 @@ env_logger = "0.11"
 alsa_backend = ["librespot-playback/alsa-backend", "dep:alsa"]
 dbus_mpris = ["dep:dbus", "dep:dbus-tokio", "dep:dbus-crossroads"]
 default = ["alsa_backend", "pulseaudio_backend", "dbus_mpris"]
+pipewire_backend = ["dep:pipewire", "dep:ringbuf"]
 portaudio_backend = ["librespot-playback/portaudio-backend"]
 pulseaudio_backend = ["librespot-playback/pulseaudio-backend"]
 rodio_backend = ["librespot-playback/rodio-backend"]

@@ -39,6 +39,10 @@ pub enum VolumeController {
     Alsa,
     #[cfg(feature = "alsa_backend")]
     AlsaLinear,
+    #[cfg(feature = "pipewire_backend")]
+    Pipewire,
+    #[cfg(feature = "pipewire_backend")]
+    PipewireLinear,
     #[serde(rename = "softvol")]
     SoftVolume,
     None,
@@ -168,7 +172,12 @@ impl From<AudioFormat> for LSAudioFormat {
 }
 
 fn possible_backends() -> Vec<&'static str> {
-    audio_backend::BACKENDS.iter().map(|b| b.0).collect()
+    let mut backends: Vec<&'static str> = audio_backend::BACKENDS.iter().map(|b| b.0).collect();
+    // Not in librespot's backend table; add explicitly or CLI/config
+    // validation rejects "pipewire".
+    #[cfg(feature = "pipewire_backend")]
+    backends.push("pipewire");
+    backends
 }
 
 fn deserialize_backend<'de, D>(de: D) -> Result<Option<String>, D::Error>
@@ -363,6 +372,11 @@ pub struct SharedConfigValues {
     #[serde(flatten)]
     alsa_config: AlsaConfig,
 
+    #[cfg(feature = "pipewire_backend")]
+    #[command(flatten)]
+    #[serde(flatten)]
+    pipewire_config: PipewireConfig,
+
     #[cfg(feature = "dbus_mpris")]
     #[command(flatten)]
     #[serde(flatten)]
@@ -391,13 +405,26 @@ pub struct MprisConfig {
 #[cfg(feature = "alsa_backend")]
 #[derive(Debug, Default, Clone, Deserialize, Args, PartialEq, Eq)]
 pub struct AlsaConfig {
-    /// The control device
+    /// The ALSA control device
     #[arg(long)]
     pub(crate) control: Option<String>,
 
-    /// The mixer to use
+    /// The ALSA mixer to use
     #[arg(long)]
     pub(crate) mixer: Option<String>,
+}
+
+#[cfg(feature = "pipewire_backend")]
+#[derive(Debug, Default, Clone, Deserialize, Args, PartialEq, Eq)]
+pub struct PipewireConfig {
+    /// The PipeWire mixer "stream" (default) or "sink".
+    #[arg(long)]
+    pub(crate) pipewire_mixer_mode: Option<String>,
+
+    /// For PipeWire "sink" mixer. The name of the PipeWire sink node 
+    /// Leave unset for `default.audio.sink`
+    #[arg(long)]
+    pub(crate) pipewire_mixer_device: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -421,7 +448,11 @@ impl FileConfig {
 #[derive(Copy, Clone)]
 enum KnownConfigProblem {
     #[cfg_attr(
-        all(feature = "alsa_backend", feature = "dbus_mpris"),
+        all(
+            feature = "alsa_backend",
+            feature = "pipewire_backend",
+            feature = "dbus_mpris"
+        ),
         expect(dead_code)
     )]
     MissingFeature(&'static str),
@@ -434,6 +465,11 @@ fn get_known_config_problem(path: &serde_ignored::Path<'_>) -> Option<KnownConfi
         (
             KnownConfigProblem::MissingFeature("alsa_backend"),
             &["control", "mixer"],
+        ),
+        #[cfg(not(feature = "pipewire_backend"))]
+        (
+            KnownConfigProblem::MissingFeature("pipewire_backend"),
+            &["pipewire_mixer_mode", "pipewire_mixer_device"],
         ),
         #[cfg(not(feature = "dbus_mpris"))]
         (
@@ -594,6 +630,8 @@ impl SharedConfigValues {
         merge!(self.mpris_config; and other.mpris_config => {use_mpris, dbus_type});
         #[cfg(feature = "alsa_backend")]
         merge!(self.alsa_config; and other.alsa_config => {mixer, control});
+        #[cfg(feature = "pipewire_backend")]
+        merge!(self.pipewire_config; and other.pipewire_config => {pipewire_mixer_mode, pipewire_mixer_device});
     }
 }
 
@@ -639,6 +677,8 @@ pub(crate) struct SpotifydConfig {
     pub(crate) mpris: MprisConfig,
     #[cfg(feature = "alsa_backend")]
     pub(crate) alsa_config: AlsaConfig,
+    #[cfg(feature = "pipewire_backend")]
+    pub(crate) pipewire_config: PipewireConfig,
 }
 
 pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
@@ -764,6 +804,8 @@ pub(crate) fn get_internal_config(config: CliConfig) -> SpotifydConfig {
         mpris: config.shared_config.mpris_config,
         #[cfg(feature = "alsa_backend")]
         alsa_config: config.shared_config.alsa_config,
+        #[cfg(feature = "pipewire_backend")]
+        pipewire_config: config.shared_config.pipewire_config,
     }
 }
 

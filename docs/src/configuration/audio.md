@@ -16,6 +16,9 @@ Instead of using the default device, which can sometimes be different to what yo
 
 - For ALSA, you can use `aplay -L` to get a list of possible devices.
 - For PulseAudio, run `pactl list short sinks` to get a list of possible names.
+- For PipeWire, run `wpctl status` to get a list of sink names, or leave unset to use the current default sink.
+
+## Bitrate
 
 ## Bitrate
 
@@ -29,7 +32,7 @@ To reduce bandwidth usage or increase quality, you can play with the bitrate.
 
 In most cases, leaving this at the default (`softvol`) should be fine.
 
-If you want your `spotifyd` volume to be synchronized with an output device's hardware volume, you can set this to `alsa` or `alsa_linear`. In both cases, you might also want to set the `mixer` device to set which device's volume should be changed.
+If you want your `spotifyd` volume to be synchronized with an output device's hardware volume, you can set this to `alsa` or `alsa_linear` (with the `mixer`/`control` settings), or, when using the PipeWire backend, `pipewire` or `pipewire_linear` (with the `pipewire_mixer_mode`/`pipewire_mixer_device` settings.
 
 If you want to prevent the user to be able to adjust the volume, set this instead to `none`.
 
