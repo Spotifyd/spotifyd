@@ -2,6 +2,8 @@
 use crate::config::{DBusType, MprisConfig};
 #[cfg(feature = "dbus_mpris")]
 use crate::dbus_mpris::DbusServer;
+#[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+use crate::macos_media_remote::MacosMediaRemote;
 use crate::process::spawn_program_on_event;
 use crate::utils::Backoff;
 use color_eyre::eyre::{self, Context};
@@ -180,6 +182,23 @@ impl MainLoop {
             None
         };
 
+        #[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+        let mut media_remote = match MacosMediaRemote::new() {
+            Ok(remote) => Some(remote),
+            Err(err) => {
+                error!("failed to set up macOS media remote integration: {err:?}");
+                None
+            }
+        };
+        // macOS evicts a Now Playing claim that goes too long without an
+        // update and falls back to launching Music.app, so keep refreshing
+        // it on a timer independent of `PlayerEvent`s (which can be sparse
+        // for the length of a single track). 1s to reliably win macOS's
+        // re-arbitration race after a Spotify Connect device-list change
+        // (5s was too slow to consistently reclaim the active slot).
+        #[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+        let mut media_remote_heartbeat = tokio::time::interval(std::time::Duration::from_secs(1));
+
         let mainloop_result: eyre::Result<()> = 'mainloop: loop {
             let connection = tokio::select!(
                 _ = &mut ctrl_c => {
@@ -197,6 +216,11 @@ impl MainLoop {
             tokio::pin!(spirc_task);
 
             let shared_spirc = Arc::new(connection.spirc);
+
+            #[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+            if let Some(remote) = media_remote.as_mut() {
+                remote.set_session(shared_spirc.clone());
+            }
 
             #[cfg(feature = "dbus_mpris")]
             if let Either::Left(mut dbus_server) = Either::as_pin_mut(dbus_server.as_mut())
@@ -231,6 +255,18 @@ impl MainLoop {
                     _ = &mut spirc_task => {
                         break;
                     }
+                    // keep the macOS Now Playing claim fresh between PlayerEvents
+                    _ = async {
+                        #[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+                        { media_remote_heartbeat.tick().await; }
+                        #[cfg(not(all(target_os = "macos", feature = "macos_media_remote")))]
+                        { future::pending::<()>().await; }
+                    } => {
+                        #[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+                        if let Some(remote) = media_remote.as_mut() {
+                            remote.tick();
+                        }
+                    }
                     // dbus stopped unexpectedly
                     result = &mut dbus_server => {
                         #[cfg(feature = "dbus_mpris")]
@@ -249,6 +285,10 @@ impl MainLoop {
                         #[cfg(feature = "dbus_mpris")]
                         if let Some(ref tx) = mpris_event_tx {
                             tx.send(event.clone()).unwrap();
+                        }
+                        #[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+                        if let Some(remote) = media_remote.as_mut() {
+                            remote.handle_event(&event);
                         }
                         if let Some(ref cmd) = self.player_event_program {
                             match spawn_program_on_event(&self.shell, cmd, event) {
@@ -273,6 +313,11 @@ impl MainLoop {
                 && let Err(err) = dbus_server.drop_session()
             {
                 break 'mainloop Err(err).wrap_err("failed to reconfigure DBus server");
+            }
+
+            #[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+            if let Some(remote) = media_remote.as_mut() {
+                remote.drop_session();
             }
         };
 
