@@ -225,9 +225,37 @@ fn run_daemon(mut cli_config: CliConfig) -> eyre::Result<()> {
         }
     }
 
-    let runtime = Runtime::new().unwrap();
-    runtime.block_on(async {
-        let initial_state = setup::initial_state(internal_config)?;
-        initial_state.run().await
-    })
+    // macOS's Now Playing arbitration (mediaremoted) only lets a process
+    // reclaim the Now Playing slot after losing it to another app if that
+    // process is running a live, responsive Cocoa run loop -- a one-shot
+    // NSApplication registration with no run loop behind it can win the
+    // slot cold but is never re-granted it after contest. So the tokio
+    // runtime moves to its own OS thread, and the real main thread spends
+    // the rest of the process's life inside `NSApplication::run`.
+    #[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+    {
+        macos_media_remote::ensure_nsapplication();
+        std::thread::spawn(move || {
+            let runtime = Runtime::new().unwrap();
+            let result = runtime.block_on(async {
+                let initial_state = setup::initial_state(internal_config)?;
+                initial_state.run().await
+            });
+            if let Err(err) = result {
+                eprintln!("{err:?}");
+                std::process::exit(1);
+            }
+            std::process::exit(0);
+        });
+        macos_media_remote::run_event_loop()
+    }
+
+    #[cfg(not(all(target_os = "macos", feature = "macos_media_remote")))]
+    {
+        let runtime = Runtime::new().unwrap();
+        runtime.block_on(async {
+            let initial_state = setup::initial_state(internal_config)?;
+            initial_state.run().await
+        })
+    }
 }

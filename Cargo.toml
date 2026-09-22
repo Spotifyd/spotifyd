@@ -49,6 +49,8 @@ syslog = "7"
 [target.'cfg(target_os = "macos")'.dependencies]
 whoami = "1"
 souvlaki = { version = "0.8.3", optional = true }
+cocoa = { version = "0.24.1", optional = true }
+objc = { version = "0.2.7", optional = true }
 
 [target.'cfg(target_os = "openbsd")'.dependencies]
 pledge = "0.4.2"
@@ -62,7 +64,7 @@ env_logger = "0.11"
 [features]
 alsa_backend = ["librespot-playback/alsa-backend", "dep:alsa"]
 dbus_mpris = ["dep:dbus", "dep:dbus-tokio", "dep:dbus-crossroads"]
-macos_media_remote = ["dep:souvlaki"]
+macos_media_remote = ["dep:souvlaki", "dep:cocoa", "dep:objc"]
 default = ["alsa_backend", "pulseaudio_backend", "dbus_mpris"]
 portaudio_backend = ["librespot-playback/portaudio-backend"]
 pulseaudio_backend = ["librespot-playback/pulseaudio-backend"]

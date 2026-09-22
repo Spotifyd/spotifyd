@@ -190,6 +190,14 @@ impl MainLoop {
                 None
             }
         };
+        // macOS evicts a Now Playing claim that goes too long without an
+        // update and falls back to launching Music.app, so keep refreshing
+        // it on a timer independent of `PlayerEvent`s (which can be sparse
+        // for the length of a single track). 1s to reliably win macOS's
+        // re-arbitration race after a Spotify Connect device-list change
+        // (5s was too slow to consistently reclaim the active slot).
+        #[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+        let mut media_remote_heartbeat = tokio::time::interval(std::time::Duration::from_secs(1));
 
         let mainloop_result: eyre::Result<()> = 'mainloop: loop {
             let connection = tokio::select!(
@@ -246,6 +254,18 @@ impl MainLoop {
                     // spirc was shut down by some external factor
                     _ = &mut spirc_task => {
                         break;
+                    }
+                    // keep the macOS Now Playing claim fresh between PlayerEvents
+                    _ = async {
+                        #[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+                        { media_remote_heartbeat.tick().await; }
+                        #[cfg(not(all(target_os = "macos", feature = "macos_media_remote")))]
+                        { future::pending::<()>().await; }
+                    } => {
+                        #[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+                        if let Some(remote) = media_remote.as_mut() {
+                            remote.tick();
+                        }
                     }
                     // dbus stopped unexpectedly
                     result = &mut dbus_server => {
