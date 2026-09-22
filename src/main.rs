@@ -21,6 +21,8 @@ mod config;
 #[cfg(feature = "dbus_mpris")]
 mod dbus_mpris;
 mod error;
+#[cfg(all(target_os = "macos", feature = "macos_media_remote"))]
+mod macos_media_remote;
 mod main_loop;
 mod no_mixer;
 mod oauth;
