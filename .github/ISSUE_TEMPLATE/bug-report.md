@@ -8,29 +8,29 @@ assignees: ''
 ---
 
 **Description**
-<!-- A clear and concise description of what the bug is -->
+<!-- Please write a clear and concise description about the bug -->
 
 **To Reproduce**
-<!-- Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error -->
+<!-- Steps to reproduce the behavior: -->
+1. 
+2. 
+3. 
+4. 
 
 **Expected behavior**
-<!-- A clear and concise description of what you expected to happen (if applicable) -->
+<!-- Please write a clear and concise description of what you have expected to happen (if applicable) -->
 
 **Logs**
 <details><summary>Click to show logs</summary>
 
 ```
 <!-- PLEASE PASTE YOUR LOGS BELOW THIS LINE WHEN REPORTING BUGS. Make sure to run spotifyd using the `--verbose` flag -->
-<!-- They have to be betwenn the `/summary` and the `/details` HTML tags, and inside the backticks '`' -->  
+<!-- They have to be inside of the backticks '```'. --> 
 ```
 
 </details>
 
-<!-- if you compiled spotifyd yourself. Alsa backend enabled by default unless compiled with the `--no-default-features` flag -->
+<!-- If you compiled Spotifyd yourself. Alsa backend enabled by default unless compiled with the `--no-default-features` flag. Standard users don't need to change this. -->
 **Compilation flags** 
 - [ ] dbus_mpris
 - [x] alsa_backend
@@ -40,9 +40,9 @@ assignees: ''
 
 **Versions (please complete the following information):**
 <!-- DO NOT use words like `latest`. Please specify the exact version/commit hash -->
-- OS: <!-- e.g. Ubuntu 18.04 LTS, Windows 10 -->
-- Spotifyd: <!-- commit hash or release version -->
+- OS: <!-- e.g. Debian 13, Fedora 44, Windows 10 -->
+- Spotifyd: <!-- release version or commit hash (spotifyd --version) -->
 - cargo: <!-- cargo --version -->
 
 <!-- **Additional context**
-Add any other context about the problem here. -->
+Add any other context about the problem that might be helpful for fixing the bug here. -->
