@@ -112,11 +112,16 @@ impl MainLoop {
                 let audio_device = self.audio_device.clone();
                 let audio_format = self.audio_format;
                 let backend = self.backend;
+                #[cfg(target_os = "macos")]
+                let sink_builder =
+                    move || crate::macos_audio::open_sink(backend, audio_device, audio_format);
+                #[cfg(not(target_os = "macos"))]
+                let sink_builder = move || backend(audio_device, audio_format);
                 Player::new(
                     self.player_config.clone(),
                     session.clone(),
                     self.mixer.get_soft_volume(),
-                    move || backend(audio_device, audio_format),
+                    sink_builder,
                 )
             };
 

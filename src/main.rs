@@ -21,6 +21,8 @@ mod config;
 #[cfg(feature = "dbus_mpris")]
 mod dbus_mpris;
 mod error;
+#[cfg(target_os = "macos")]
+mod macos_audio;
 mod main_loop;
 mod no_mixer;
 mod oauth;
