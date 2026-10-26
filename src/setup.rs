@@ -1,5 +1,7 @@
 #[cfg(feature = "alsa_backend")]
 use crate::alsa_mixer;
+#[cfg(feature = "pipewire_backend")]
+use crate::{pipewire_backend, pipewire_mixer};
 use crate::{
     config,
     main_loop::{self, CredentialsProvider},
@@ -60,6 +62,39 @@ pub(crate) fn initial_state(
                             format!("maybe try one of the following as 'mixer':{}", controls.filter_map(|hint| hint.name.map(|name| format!("\n- {name}"))).collect::<String>())
                         }
                     }
+                })?)
+            }
+            #[cfg(feature = "pipewire_backend")]
+            config::VolumeController::Pipewire | config::VolumeController::PipewireLinear => {
+                let mode = config
+                    .pipewire_config
+                    .pipewire_mixer_mode
+                    .as_deref()
+                    .unwrap_or("stream")
+                    .to_string();
+                // Not the top-level `device` — that targets the playback stream (often
+                // leftover ALSA routing like "pipewire") — so the mixer doesn't search
+                // for a sink name that will never exist.
+                let target = config
+                    .pipewire_config
+                    .pipewire_mixer_device
+                    .clone()
+                    .unwrap_or_default();
+                info!("Using PipeWire volume controller ({mode}).");
+                use librespot_playback::config::VolumeCtrl;
+                let volume_ctrl = if matches!(
+                    config.volume_controller,
+                    config::VolumeController::PipewireLinear
+                ) {
+                    VolumeCtrl::Linear
+                } else {
+                    VolumeCtrl::Log(0.0) /* this value is ignored */
+                };
+                Arc::new(pipewire_mixer::PipewireMixer::open(MixerConfig {
+                    device: target,
+                    control: mode,
+                    index: 0,
+                    volume_ctrl,
                 })?)
             }
             _ => {
@@ -143,7 +178,21 @@ pub(crate) fn initial_state(
         }
     };
 
-    let backend = audio_backend::find(backend).expect("available backends should match ours");
+    let backend = if backend.as_deref() == Some("pipewire") {
+        #[cfg(feature = "pipewire_backend")]
+        {
+            pipewire_backend::open as audio_backend::SinkBuilder
+        }
+        #[cfg(not(feature = "pipewire_backend"))]
+        {
+            return Err(eyre!(
+                "backend = \"pipewire\" was requested, but this build of spotifyd \
+                 doesn't have the `pipewire_backend` feature enabled"
+            ));
+        }
+    } else {
+        audio_backend::find(backend).expect("available backends should match ours")
+    };
 
     Ok(main_loop::MainLoop {
         credentials_provider,
