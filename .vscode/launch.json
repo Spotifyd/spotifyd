@@ -1,0 +1,37 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Spotifyd: Authenticate",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/target/debug/spotifyd",
+      "args": ["authenticate"],
+      "cwd": "${workspaceFolder}",
+      "terminal": "integrated"
+    },
+    {
+      "name": "Spotifyd: Run",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/target/debug/spotifyd",
+      "args": ["--no-daemon"],
+      "cwd": "${workspaceFolder}",
+      "terminal": "integrated"
+    },
+    {
+      "name": "Spotify Web Player",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "https://open.spotify.com/",
+      "webRoot": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Spotifyd + Spotify Web Player",
+      "configurations": ["Spotifyd: Run", "Spotify Web Player"],
+      "stopAll": true
+    }
+  ]
+}

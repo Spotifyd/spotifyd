@@ -23,12 +23,22 @@ If for some reason, discovery is not a viable option for your use case or you pr
 
 Before you begin the login flow, make sure that you won't need to change `cache_path` later on, because that location will be used to store the login data.
 
-Now, you're ready to run `spotifyd authenticate` (for available options, see `spotifyd auth --help`).
-This will ask you to browse to a link with your preferred web browser. On the page, you need to log into your Spotify account and confirm the connection.
+For a single-user setup, you can configure a dedicated credential location in `spotifyd.conf`:
+
+```toml
+[global]
+cache_path = "/home/your-user/.cache/spotifyd"
+```
+
+Then run `spotifyd authenticate` and complete the OAuth flow in your browser. The credentials are stored in `<cache_path>/oauth/credentials.json`; do not create or edit that file manually. Spotifyd reads its configuration from TOML, not JSON.
+
+The accompanying [JSON profile example](./oauth-profile.json) is a non-secret reference for the same settings only. Spotifyd does not load it.
+
+This asks you to open a link in your preferred web browser, log into Spotify, and confirm the connection. For available options, run `spotifyd authenticate --help`.
 
 If the process was successful, you should see the message "Go back to your terminal :)" in your browser window. You can now close the tab and return to the terminal.
 
-Now, when running `spotifyd --no-daemon`, you should see that `spotifyd` automatically connects to your account.
+When running `spotifyd --no-daemon`, spotifyd should connect to your account:
 
 ```
 Loading config from "..."
@@ -38,4 +48,30 @@ Login via OAuth as user <your username>.
 Authenticated as '<your username>' !
 ```
 
-> __Note:__ Even if you logged into `spotifyd` using this method, discovery will still be enabled by default and any incoming connection will interrupt the current session. If you don't want or need this, you can disable it via the `--disable-discovery` cli option / `disable_discovery = true` config value.
+### Using Spotify clients, including the web player
+
+OAuth authorizes spotifyd; it does not sign the browser into Spotify Web Player or make spotifyd play audio inside the browser. To use the web player, open [open.spotify.com](https://open.spotify.com/) and sign in there separately. With spotifyd running and Connect discovery enabled, select `spotifyd` from the web player's device picker to play through spotifyd.
+
+The web player and spotifyd need to be able to discover each other on the local network. If `spotifyd` does not appear, check that discovery is enabled and that your firewall allows mDNS (`5353/UDP`) and spotifyd's zeroconf TCP port. Setting `disable_discovery = true` (or passing `--disable-discovery`) prevents Spotify clients, including the web player, from connecting to spotifyd.
+
+### Web Playback SDK quick-start player
+
+The Spotify Web Playback SDK is a separate browser integration; it does not connect to spotifyd. A minimal player setup looks like this:
+
+```js
+window.onSpotifyWebPlaybackSDKReady = () => {
+  const player = new Spotify.Player({
+    name: "Web Playback SDK Quick Start Player",
+    getOAuthToken: (cb) => {
+      getSpotifyAccessToken()
+        .then((token) => cb(token))
+        .catch((error) => console.error("Could not get Spotify access token:", error));
+    },
+    volume: 0.5,
+  });
+
+  player.connect();
+};
+```
+
+Load the Spotify Web Playback SDK before this code and implement `getSpotifyAccessToken()` in your application to obtain and refresh a valid Spotify access token securely. Do not hard-code a token or use spotifyd's cached credentials here. The SDK has its own account, permission, and application requirements; see Spotify's [Web Playback SDK guide](https://developer.spotify.com/documentation/web-playback-sdk).
