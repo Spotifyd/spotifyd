@@ -296,7 +296,8 @@ impl CurrentStateInner {
             | PlayerEvent::FilterExplicitContentChanged { .. }
             | PlayerEvent::SessionConnected { .. }
             | PlayerEvent::SessionDisconnected { .. }
-            | PlayerEvent::SessionClientChanged { .. } => (),
+            | PlayerEvent::SessionClientChanged { .. }
+            | PlayerEvent::SetQueue { .. } => (),
         }
 
         (changed, seeked)
@@ -311,7 +312,7 @@ impl CurrentStateInner {
             uri_to_object_path(
                 self.audio_item
                     .as_deref()
-                    .and_then(|item| item.track_id.to_uri().ok())
+                    .map(|item| item.track_id.to_uri())
                     .as_deref(),
             ),
         );
@@ -717,7 +718,7 @@ fn register_player_interface(
                 };
                 let duration = Duration::milliseconds(duration.into());
 
-                if !track_id.ends_with(&current_track_id.to_id().unwrap()) {
+                if !track_id.ends_with(&current_track_id.to_id()) {
                     // as per mpris spec: ignore as stale
                     return Ok(());
                 }
@@ -755,13 +756,13 @@ fn register_player_interface(
                             if track.number == 0 {
                                 warn!("track.number is not expected to be 0- but 1-indexed");
                             }
-                            ((track.number - 1).max(0) as u32, track.album.id.to_uri()?)
+                            ((track.number - 1).max(0) as u32, track.album.id.to_uri())
                         }
                         SpotifyUri::Album { .. }
                         | SpotifyUri::Artist { .. }
                         | SpotifyUri::Playlist { .. }
                         | SpotifyUri::Episode { .. }
-                        | SpotifyUri::Show { .. } => (0, uri.to_uri()?),
+                        | SpotifyUri::Show { .. } => (0, uri.to_uri()),
                         SpotifyUri::Local { .. } | SpotifyUri::Unknown { .. } => {
                             return Err(librespot_core::Error::unimplemented(
                                 "this type of uri is not supported",

@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- picking a track inside a playlist plays the first track instead, by updating librespot to a git version with the fix ([#1435])
+
+[#1435]: https://github.com/Spotifyd/spotifyd/pull/1435
+
 ## [0.4.2]
 
 ### Fixed
